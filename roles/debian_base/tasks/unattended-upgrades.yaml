@@ -3,7 +3,7 @@
   block:
     - name: "set unattended-upgrades on ${distro_codename}-updates if enabled"
       when:
-        - (unattended_upgrade_updates_enabled | ansible.builtin.bool)
+        - (debian_base_unattended_upgrade_updates_enabled | ansible.builtin.bool)
       ansible.builtin.copy:
         dest: /etc/apt/apt.conf.d/90unattended-upgrades-updates
         mode: "0644"
@@ -12,7 +12,7 @@
 
     - name: "revert unattended-upgrades on ${distro_codename}-updates if not enabled"
       when:
-        - not (unattended_upgrade_updates_enabled | ansible.builtin.bool)
+        - not (debian_base_unattended_upgrade_updates_enabled | ansible.builtin.bool)
       ansible.builtin.file:
         path: /etc/apt/apt.conf.d/90unattended-upgrades-updates
         state: absent
@@ -21,8 +21,8 @@
   block:
     - name: set unattended-upgrades on debian-backports if enabled
       when:
-        - (apt_repo_debian_backports_enabled | ansible.builtin.bool)
-        - (unattended_upgrade_backports_enabled | ansible.builtin.bool)
+        - (debian_base_apt_repo_debian_backports_enabled | ansible.builtin.bool)
+        - (debian_base_unattended_upgrade_backports_enabled | ansible.builtin.bool)
       ansible.builtin.copy:
         dest: /etc/apt/apt.conf.d/90unattended-upgrades-backports
         mode: "0644"
@@ -31,8 +31,8 @@
 
     - name: revert unattended-upgrades on debian-backports if not enabled
       when:
-        - not (apt_repo_debian_backports_enabled | ansible.builtin.bool)
-        - not (unattended_upgrade_backports_enabled | ansible.builtin.bool)
+        - not (debian_base_apt_repo_debian_backports_enabled | ansible.builtin.bool)
+        - not (debian_base_unattended_upgrade_backports_enabled | ansible.builtin.bool)
       ansible.builtin.file:
         path: /etc/apt/apt.conf.d/90unattended-upgrades-backports
         state: absent
@@ -41,7 +41,7 @@
   block:
     - name: set unattended-upgrades automatic reboot if enabled
       when:
-        - (unattended_upgrade_automatic_reboot_enabled | ansible.builtin.bool)
+        - (debian_base_unattended_upgrade_automatic_reboot_enabled | ansible.builtin.bool)
       ansible.builtin.copy:
         dest: /etc/apt/apt.conf.d/90unattended-upgrades-automatic-reboot
         mode: "0644"
@@ -57,11 +57,11 @@
           // If automatic reboot is enabled and needed, reboot at the specific
           // time instead of immediately
           //  Default: "now"
-          Unattended-Upgrade::Automatic-Reboot-Time "{{ unattended_upgrade_automatic_reboot_time }}";
+          Unattended-Upgrade::Automatic-Reboot-Time "{{ debian_base_unattended_upgrade_automatic_reboot_time }}";
 
     - name: revert unattended-upgrades automatic reboot if not enabled
       when:
-        - not (unattended_upgrade_automatic_reboot_enabled | ansible.builtin.bool)
+        - not (debian_base_unattended_upgrade_automatic_reboot_enabled | ansible.builtin.bool)
       ansible.builtin.file:
         path: /etc/apt/apt.conf.d/90unattended-upgrades-automatic-reboot
         state: absent

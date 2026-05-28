@@ -1,11 +1,11 @@
 ---
 # list[str]: Which types of packages to look for from a given source; either binary deb or source code deb-src.
-apt_repo_debian_types:
+debian_base_apt_repo_debian_types:
   - deb
 
 # https://www.debian.org/mirror/list.html
 # list[str]: apt repo uris and mirrors
-apt_repo_debian_uris:
+debian_base_apt_repo_debian_uris:
   # - http://mirrors.tencentyun.com/debian/
   # - https://mirrors.tencent.com/debian/
   # - https://mirrors.aliyun.com/debian/
@@ -15,18 +15,18 @@ apt_repo_debian_uris:
 # list[str]: debian repo suites
 # https://deb.debian.org/debian/dists/
 # bookworm, bookworm-updates, bookworm-backports
-apt_repo_debian_suites:
+debian_base_apt_repo_debian_suites:
   - "{{ ansible_facts['distribution_release'] }}"
   - "{{ ansible_facts['distribution_release'] }}-updates"
 # list[str]: debian repo components
-apt_repo_debian_components:
+debian_base_apt_repo_debian_components:
   - main
   - contrib
   - non-free
   - non-free-firmware
 
 # list[str]: Which types of packages to look for from a given source; either binary deb or source code deb-src.
-apt_repo_debian_security_types:
+debian_base_apt_repo_debian_security_types:
   - deb
 
 # 一般来说, 为了更及时地获得安全更新, 不推荐使用镜像站安全更新软件源, 因为镜像站往往有同步延迟.
@@ -34,7 +34,7 @@ apt_repo_debian_security_types:
 # that is usually not needed and that can cause frustration if these mirrors are not kept up to date.
 # https://www.debian.org/security/faq.en.html#mirror
 # list[str]: apt repo uris and mirrors
-apt_repo_debian_security_uris:
+debian_base_apt_repo_debian_security_uris:
   # - http://mirrors.tencentyun.com/debian-security/
   # - https://mirrors.tencent.com/debian-security/
   # - https://mirrors.aliyun.com/debian-security/
@@ -44,52 +44,52 @@ apt_repo_debian_security_uris:
 # list[str]: debian-security suites
 # https://deb.debian.org/debian-security/dists/
 # bullseye-security, bookworm-security
-apt_repo_debian_security_suites:
+debian_base_apt_repo_debian_security_suites:
   - "{{ ansible_facts['distribution_release'] }}-security"
 # list[str]: debian-security components
-apt_repo_debian_security_components:
+debian_base_apt_repo_debian_security_components:
   - main
   - contrib
   - non-free
   - non-free-firmware
 
 # bool: 是否启用 debian-backports
-apt_repo_debian_backports_enabled: false
-apt_repo_debian_backports_preferences_package: "linux-* initramfs-tools"
-apt_repo_debian_backports_preferences_pin_priority: 500
+debian_base_apt_repo_debian_backports_enabled: false
+debian_base_apt_repo_debian_backports_preferences_package: "linux-* initramfs-tools"
+debian_base_apt_repo_debian_backports_preferences_pin_priority: 500
 
 # The default setup auto-updates packages in the main and security archives,
 # which means that only stable and security updates are applied.
 # https://github.com/mvo5/unattended-upgrades/blob/b94d28de01504b421f4c06e8a21569cea07890f0/data/50unattended-upgrades.Debian#L29-L34
 # bool: 是否启用 ${distro_codename}-updates 自动更新
-unattended_upgrade_updates_enabled: false
+debian_base_unattended_upgrade_updates_enabled: false
 # bool: 是否启用 ${distro_codename}-backports 自动更新
-unattended_upgrade_backports_enabled: false
+debian_base_unattended_upgrade_backports_enabled: false
 
 # bool: 是否允许 unattended-upgrades 更新后自动重启
-unattended_upgrade_automatic_reboot_enabled: false
+debian_base_unattended_upgrade_automatic_reboot_enabled: false
 # systemctl cat apt-daily-upgrade.timer
 # [Timer]
 # OnCalendar=*-*-* 6:00
 # RandomizedDelaySec=60m
 # Persistent=true
-unattended_upgrade_automatic_reboot_time: "02:00"
+debian_base_unattended_upgrade_automatic_reboot_time: "02:00"
 
 # bool: 强制 apt 使用 IPv4
-apt_force_ipv4_enabled: true
+debian_base_apt_force_ipv4_enabled: true
 
 # bool: 是否开启 TCP BBR 拥塞控制算法
-tcp_bbr_enabled: false
+debian_base_tcp_bbr_enabled: false
 
 # bool: 是否设置 IPv4 ip_forward
-ip_forward_enabled: false
+debian_base_ip_forward_enabled: false
 
 # bool: 是否安装 qemu-guest-agent
-qemu_guest_agent_enabled: true
+debian_base_qemu_guest_agent_enabled: true
 
 # bool: 是否设置自定义 /etc/ssh/sshd_config
-custom_sshd_config_enabled: false
-custom_sshd_config_entries:
+debian_base_custom_sshd_config_enabled: false
+debian_base_custom_sshd_config_entries:
   ## Specifies whether root can log in using ssh(1).
   ## The argument must be yes, prohibit-password, forced-commands-only, or no. The default is prohibit-password.
   - regexp: "^#?PermitRootLogin"
@@ -108,8 +108,8 @@ custom_sshd_config_entries:
 
 # bool: 是否设置自定义 sysctl.conf
 # 我并不完全理解下面这些值的作用, 因此此项默认值为 false
-custom_sysctl_conf_enabled: false
-custom_sysctl_conf_entries:
+debian_base_custom_sysctl_conf_enabled: false
+debian_base_custom_sysctl_conf_entries:
   # ref: https://www.kernel.org/doc/html/latest/admin-guide/sysctl/net.html
   # Low latency busy poll timeout for socket reads. (needs CONFIG_NET_RX_BUSY_POLL)
   - name: net.core.busy_read
@@ -179,7 +179,7 @@ custom_sysctl_conf_entries:
   - name: vm.swappiness
     value: "30"
 
-common_apt_packages:
+debian_base_apt_packages:
   - bash-completion
   - bat
   - bc

@@ -3,18 +3,18 @@
   block:
     - name: set linux kernel preferences on debian-backports if enabled
       when:
-        - (apt_repo_debian_backports_enabled | ansible.builtin.bool)
+        - (debian_base_apt_repo_debian_backports_enabled | ansible.builtin.bool)
       ansible.builtin.copy:
         dest: /etc/apt/preferences.d/90debian-backports
         mode: "0644"
         content: |
-          Package: {{ apt_repo_debian_backports_preferences_package }}
+          Package: {{ debian_base_apt_repo_debian_backports_preferences_package }}
           Pin: release n={{ ansible_facts['distribution_release'] }}-backports
-          Pin-Priority: {{ apt_repo_debian_backports_preferences_pin_priority | int }}
+          Pin-Priority: {{ debian_base_apt_repo_debian_backports_preferences_pin_priority | int }}
 
     - name: revert linux kernel preferences on debian-backports if not enabled
       when:
-        - not (apt_repo_debian_backports_enabled | ansible.builtin.bool)
+        - not (debian_base_apt_repo_debian_backports_enabled | ansible.builtin.bool)
       ansible.builtin.file:
         path: /etc/apt/preferences.d/90debian-backports
         state: absent

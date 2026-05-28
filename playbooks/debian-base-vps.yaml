@@ -1,0 +1,37 @@
+---
+- name: debian base | vps
+  hosts: "{{ playbook_hosts | default('localhost') }}"
+  become: true
+  vars:
+    debian_base_apt_repo_debian_uris:
+      # - http://mirrors.tencentyun.com/debian/
+      # - https://mirrors.tencent.com/debian/
+      # - https://mirrors.aliyun.com/debian/
+      # - https://cdn-aws.deb.debian.org/debian/
+      - https://deb.debian.org/debian/
+
+    debian_base_apt_repo_debian_security_uris:
+      # - http://mirrors.tencentyun.com/debian-security/
+      # - https://mirrors.tencent.com/debian-security/
+      # - https://mirrors.aliyun.com/debian-security/
+      # - https://cdn-aws.deb.debian.org/debian-security/
+      - https://deb.debian.org/debian-security/
+
+    debian_base_apt_repo_debian_backports_enabled: false
+    debian_base_apt_repo_debian_backports_preferences_package: "*"
+    debian_base_apt_repo_debian_backports_preferences_pin_priority: 500
+
+    debian_base_unattended_upgrade_updates_enabled: true
+    debian_base_unattended_upgrade_backports_enabled: false
+    debian_base_unattended_upgrade_automatic_reboot_enabled: true
+
+    debian_base_apt_force_ipv4_enabled: true
+
+    debian_base_tcp_bbr_enabled: true
+    debian_base_custom_sshd_config_enabled: true
+    debian_base_custom_sysctl_conf_enabled: false
+
+  tasks:
+    - name: apply ak1ra_lab.general.debian_base role
+      ansible.builtin.import_role:
+        name: ak1ra_lab.general.debian_base

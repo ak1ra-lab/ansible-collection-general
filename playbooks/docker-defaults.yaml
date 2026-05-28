@@ -1,6 +1,6 @@
 ---
-- name: import playbooks/common-defaults.yaml
-  ansible.builtin.import_playbook: common-defaults.yaml
+- name: import playbooks/debian-base-defaults.yaml
+  ansible.builtin.import_playbook: debian-base-defaults.yaml
 
 - name: install docker | defaults
   hosts: "{{ playbook_hosts | default('localhost') }}"
@@ -19,5 +19,6 @@
     # - https://docker-registry.example.com
 
   tasks:
-    - ansible.builtin.import_role:
-        name: docker
+    - name: apply ak1ra_lab.general.docker role
+      ansible.builtin.import_role:
+        name: ak1ra_lab.general.docker

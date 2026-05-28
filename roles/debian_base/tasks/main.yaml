@@ -3,7 +3,7 @@
   when:
     - (ansible_facts['os_family'] | lower) == 'debian'
     - (ansible_facts['distribution_major_version'] | int) >= 11
-  ansible.builtin.include_tasks: debian.yml
+  ansible.builtin.include_tasks: debian.yaml
 
 # The module automatically uses visudo for validation if available
 - name: Grant group 'sudo' with NOPASSWD sudo access
@@ -17,12 +17,12 @@
 - name: enable tcp_bbr
   when:
     - ansible_facts['kernel'] >= '4.9.0'
-    - (tcp_bbr_enabled | ansible.builtin.bool)
-  ansible.builtin.include_tasks: tcp_bbr.yml
+    - (debian_base_tcp_bbr_enabled | ansible.builtin.bool)
+  ansible.builtin.include_tasks: tcp_bbr.yaml
 
 - name: enable net.ipv4.ip_forward
   when:
-    - (ip_forward_enabled | ansible.builtin.bool)
+    - (debian_base_ip_forward_enabled | ansible.builtin.bool)
   ansible.posix.sysctl:
     name: net.ipv4.ip_forward
     value: 1
@@ -31,30 +31,30 @@
 
 - name: update /etc/ssh/sshd_config entries
   when:
-    - (custom_sshd_config_enabled | ansible.builtin.bool)
+    - (debian_base_custom_sshd_config_enabled | ansible.builtin.bool)
   ansible.builtin.lineinfile:
     path: /etc/ssh/sshd_config
     regexp: "{{ entry.regexp }}"
     line: "{{ entry.line }}"
     state: present
-  loop: "{{ custom_sshd_config_entries }}"
+  loop: "{{ debian_base_custom_sshd_config_entries }}"
   loop_control:
     loop_var: entry
 
 - name: update /etc/sysctl.conf
-  when: custom_sysctl_conf_enabled
+  when: debian_base_custom_sysctl_conf_enabled
   ansible.posix.sysctl:
     name: "{{ entry.name }}"
     value: "{{ entry.value }}"
     state: present
     ignoreerrors: true
-  loop: "{{ custom_sysctl_conf_entries }}"
+  loop: "{{ debian_base_custom_sysctl_conf_entries }}"
   loop_control:
     loop_var: entry
 
 - name: ensure qemu-guest-agent package installed
   when:
-    - (qemu_guest_agent_enabled | ansible.builtin.bool)
+    - (debian_base_qemu_guest_agent_enabled | ansible.builtin.bool)
   ansible.builtin.package:
     name:
       - qemu-guest-agent
