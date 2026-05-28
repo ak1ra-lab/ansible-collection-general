@@ -1,0 +1,84 @@
+---
+- name: assert ansible_facts['distribution'] is debian
+  ansible.builtin.assert:
+    that:
+      - (ansible_facts['distribution'] | lower) == 'debian'
+      - (ansible_facts['distribution_major_version'] | int) >= 12
+    fail_msg: "roles/apt_install currently only support Debian Linux"
+
+- name: assert required vars are set
+  ansible.builtin.assert:
+    that:
+      - >
+        (apt_repo | default('') | length > 0) and
+        (apt_repo_uris | default([]) | length > 0) and
+        (apt_keyrings_dest | default('') | length > 0)
+    fail_msg: "All of [apt_repo, apt_repo_uris, apt_keyrings_dest] must be set"
+
+- name: ensure apt directories exists
+  ansible.builtin.file:
+    path: "{{ directory }}"
+    state: directory
+  loop:
+    - "/etc/apt/keyrings"
+    - "/etc/apt/apt.conf.d"
+    - "/etc/apt/preferences.d"
+  loop_control:
+    loop_var: directory
+
+- name: include_tasks apt_keyrings.yml
+  ansible.builtin.include_tasks: apt_keyrings.yml
+
+- name: remove apt_repo in legacy format
+  ansible.builtin.file:
+    path: "/etc/apt/sources.list.d/{{ apt_repo }}.list"
+    state: absent
+
+- name: add apt_repo in DEB822 format
+  vars:
+    default_types:
+      - deb
+    default_suites:
+      - "{{ ansible_facts['distribution_release'] }}"
+    default_components:
+      - main
+  ansible.builtin.deb822_repository:
+    name: "{{ apt_repo }}"
+    state: present
+    enabled: "{{ apt_repo_enabled | ansible.builtin.bool }}"
+    types: "{{ apt_repo_types | default(default_types) }}"
+    uris: "{{ apt_repo_uris }}"
+    suites: "{{ apt_repo_suites | default(default_suites) }}"
+    components: "{{ apt_repo_components | default(default_components) }}"
+    architectures: "{{ dpkg_architectures[ansible_facts['architecture']] | default(ansible_facts['architecture']) }}"
+    signed_by: "{{ apt_keyrings_dest }}"
+
+- name: include_tasks apt_pinning.yml
+  ansible.builtin.include_tasks: apt_pinning.yml
+
+- name: include_tasks unattended_upgrades.yml
+  ansible.builtin.include_tasks: unattended_upgrades.yml
+
+- name: apt_install packages from apt_repo
+  when:
+    - (apt_repo_packages | length) > 0
+  ansible.builtin.apt:
+    name: "{{ apt_repo_packages }}"
+    update_cache: true
+    state: present
+
+- name: apt-mark hold on apt_repo_packages
+  when:
+    - (apt_repo_packages | length) > 0
+    - (apt_mark_hold | ansible.builtin.bool)
+  block:
+    - name: apt-mark hold on apt_repo_packages
+      ansible.builtin.command: "apt-mark hold {{ package }}"
+      loop: "{{ apt_repo_packages }}"
+      loop_control:
+        loop_var: package
+      register: apt_mark_hold_register
+
+    - name: debug_var on apt_mark_hold_register
+      ansible.builtin.debug:
+        var: apt_mark_hold_register

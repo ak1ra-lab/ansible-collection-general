@@ -1,0 +1,33 @@
+---
+# https://pkg.cloudflare.com/index.html
+- name: apt_install - cloudflared
+  hosts: "{{ playbook_hosts | default('localhost') }}"
+  become: true
+  vars:
+    # curl -sL https://pkg.cloudflare.com/cloudflare-main.gpg | gpg
+    # pub   rsa2048 2015-01-28 [SC]
+    #       FBA8C0EE63617C5EED695C43254B391D8CACCBF8
+    # uid           CloudFlare Software Packaging <help@cloudflare.com>
+    apt_keyrings_url: https://pkg.cloudflare.com/cloudflare-main.gpg
+    apt_keyrings_dest: /etc/apt/keyrings/cloudflare.gpg
+
+    apt_repo: cloudflared
+    apt_repo_uris:
+      - https://pkg.cloudflare.com/cloudflared
+    apt_repo_suites:
+      - any
+    apt_repo_components:
+      - main
+
+    apt_pinning: true
+    apt_unattended_upgrade: true
+    apt_mark_hold: false
+    apt_pinning_pin_release: "o=cloudflared,n=any"
+    apt_unattended_upgrade_origins_pattern: "origin=cloudflared,codename=any"
+
+    apt_repo_packages:
+      - cloudflared
+
+  tasks:
+    - ansible.builtin.import_role:
+        name: apt_install
