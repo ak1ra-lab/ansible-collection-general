@@ -19,6 +19,7 @@
   ansible.builtin.file:
     path: "{{ directory }}"
     state: directory
+    mode: "0755"
   loop:
     - "/etc/apt/keyrings"
     - "/etc/apt/apt.conf.d"
@@ -26,8 +27,8 @@
   loop_control:
     loop_var: directory
 
-- name: include_tasks apt_keyrings.yml
-  ansible.builtin.include_tasks: apt_keyrings.yml
+- name: include_tasks apt_keyrings.yaml
+  ansible.builtin.include_tasks: apt_keyrings.yaml
 
 - name: remove apt_repo in legacy format
   ansible.builtin.file:
@@ -53,11 +54,11 @@
     architectures: "{{ dpkg_architectures[ansible_facts['architecture']] | default(ansible_facts['architecture']) }}"
     signed_by: "{{ apt_keyrings_dest }}"
 
-- name: include_tasks apt_pinning.yml
-  ansible.builtin.include_tasks: apt_pinning.yml
+- name: include_tasks apt_pinning.yaml
+  ansible.builtin.include_tasks: apt_pinning.yaml
 
-- name: include_tasks unattended_upgrades.yml
-  ansible.builtin.include_tasks: unattended_upgrades.yml
+- name: include_tasks unattended_upgrades.yaml
+  ansible.builtin.include_tasks: unattended_upgrades.yaml
 
 - name: apt_install packages from apt_repo
   when:
@@ -71,14 +72,9 @@
   when:
     - (apt_repo_packages | length) > 0
     - (apt_mark_hold | ansible.builtin.bool)
-  block:
-    - name: apt-mark hold on apt_repo_packages
-      ansible.builtin.command: "apt-mark hold {{ package }}"
-      loop: "{{ apt_repo_packages }}"
-      loop_control:
-        loop_var: package
-      register: apt_mark_hold_register
-
-    - name: debug_var on apt_mark_hold_register
-      ansible.builtin.debug:
-        var: apt_mark_hold_register
+  ansible.builtin.dpkg_selections:
+    name: "{{ package }}"
+    selection: hold
+  loop: "{{ apt_repo_packages }}"
+  loop_control:
+    loop_var: package

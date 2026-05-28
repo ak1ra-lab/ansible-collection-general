@@ -33,13 +33,7 @@ exclude_paths:
 # Rules to warn about instead of failing on.
 # These are either stylistic preferences or rules that generate too many
 # false-positives for the patterns used in this project.
-warn_list:
-  # 'no-changed-when' fires on shell tasks that use '|| true' for idempotent reads.
-  # The preflight tasks set changed_when: false explicitly where it matters.
-  # - command-instead-of-shell
-  # Jinja2 control flow ({% for %}, {% if %}) inside shell: cmd blocks is
-  # intentional in preflight.yaml and is not a mistake.
-  # - no-jinja-when
+warn_list: []
 
 # Rules to skip entirely.
 skip_list:

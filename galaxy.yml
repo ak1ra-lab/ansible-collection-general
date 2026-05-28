@@ -11,7 +11,9 @@ tags:
   - automation
   - build
   - go
+  - linux
   - python
+  - tools
 dependencies: {}
 repository: https://github.com/ak1ra-lab/ansible-collection-general
 documentation: https://github.com/ak1ra-lab/ansible-collection-general

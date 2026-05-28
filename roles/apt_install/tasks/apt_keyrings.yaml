@@ -9,7 +9,7 @@
 
 - name: count apt_keyrings vars
   ansible.builtin.set_fact:
-    apt_keyrings_vars_count: >-
+    apt_install_keyrings_vars_count: >-
       {{
           [apt_keyrings_url, apt_keyrings_file, apt_keyrings_content, apt_keyrings_package] |
           map('default', '') |
@@ -21,7 +21,7 @@
 - name: fail if not exactly one of the apt_keyrings vars is set
   ansible.builtin.assert:
     that:
-      - (apt_keyrings_vars_count | int) == 1
+      - (apt_install_keyrings_vars_count | int) == 1
     fail_msg: "Exactly one of [apt_keyrings_url, apt_keyrings_file, apt_keyrings_content, apt_keyrings_package] should be set"
 
 # https://docs.ansible.com/ansible/latest/collections/ansible/builtin/apt_key_module.html
@@ -59,22 +59,23 @@
     - name: create tempfile for apt_keyrings_package
       ansible.builtin.tempfile:
         suffix: .deb
-      register: apt_keyrings_package_file
+      register: apt_install_keyrings_package_file
 
     - name: download apt_keyrings_package
       ansible.builtin.get_url:
         url: "{{ apt_keyrings_package }}"
-        dest: "{{ apt_keyrings_package_file.path }}"
+        dest: "{{ apt_install_keyrings_package_file.path }}"
         checksum: "{{ apt_keyrings_package_checksum }}"
+        mode: "0600"
 
     # 尽管 ansible.builtin.apt 可以直接从 url 安装, 不过这种方式它不支持 checksum
     # TODO: 是不是可以尝试向 ansible.builtin.apt 提个 PR 新增 checksum 参数?
     - name: install apt_keyrings_package from local package
       ansible.builtin.apt:
-        deb: "{{ apt_keyrings_package_file.path }}"
+        deb: "{{ apt_install_keyrings_package_file.path }}"
         state: present
 
     - name: remove apt_keyrings_package_file
       ansible.builtin.file:
-        path: "{{ apt_keyrings_package_file.path }}"
+        path: "{{ apt_install_keyrings_package_file.path }}"
         state: absent
