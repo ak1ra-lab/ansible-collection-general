@@ -1,6 +1,6 @@
 ---
 # https://nginx.org/en/linux_packages.html#Debian
-- name: apt_install - nginx-org
+- name: ak1ra_lab.general.apt_install - nginx-org
   hosts: "{{ playbook_hosts | default('localhost') }}"
   become: true
   vars:
@@ -37,5 +37,6 @@
     apt_repo_packages: []
 
   tasks:
-    - ansible.builtin.import_role:
-        name: apt_install
+    - name: apply ak1ra_lab.general.apt_install role
+      ansible.builtin.import_role:
+        name: ak1ra_lab.general.apt_install

@@ -1,7 +1,7 @@
 ---
 - name: import roles/apt_install
   ansible.builtin.import_role:
-    name: apt_install
+    name: ak1ra_lab.general.apt_install
   vars:
     # https://docs.docker.com/engine/install/debian/
     # curl -sL https://download.docker.com/linux/debian/gpg | gpg
@@ -20,7 +20,7 @@
     apt_pinning: "{{ docker_apt_pinning | ansible.builtin.bool }}"
     apt_pinning_package: "{{ docker_apt_pinning_package }}"
     apt_unattended_upgrade: "{{ docker_apt_unattended_upgrade | ansible.builtin.bool }}"
-    apt_mark_hold: "{{docker_apt_mark_hold | ansible.builtin.bool }}"
+    apt_mark_hold: "{{ docker_apt_mark_hold | ansible.builtin.bool }}"
     apt_pinning_pin_release: "{{ docker_apt_pinning_pin_release }}"
     apt_unattended_upgrade_origins_pattern: "{{ docker_apt_unattended_upgrade_origins_pattern }}"
 
@@ -43,7 +43,7 @@
 - name: register ansible regular user
   ansible.builtin.command:
     cmd: "awk -F: '$NF !~ /nologin|false/ && $3 >= 1000 {print $1}' /etc/passwd"
-  register: ansible_regular_user
+  register: docker_regular_users
   changed_when: false
 
 - name: append 'docker' groups
@@ -52,7 +52,7 @@
     groups:
       - docker
     append: true
-  loop: "{{ ansible_regular_user.stdout_lines }}"
+  loop: "{{ docker_regular_users.stdout_lines }}"
   loop_control:
     loop_var: user
 

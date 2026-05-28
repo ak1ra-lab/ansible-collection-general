@@ -1,6 +1,6 @@
 ---
 # https://grafana.com/docs/grafana/latest/setup-grafana/installation/debian/
-- name: apt_install - grafana
+- name: ak1ra_lab.general.apt_install - grafana
   hosts: "{{ playbook_hosts | default('localhost') }}"
   become: true
   vars:
@@ -31,5 +31,6 @@
       - grafana
 
   tasks:
-    - ansible.builtin.import_role:
-        name: apt_install
+    - name: apply ak1ra_lab.general.apt_install role
+      ansible.builtin.import_role:
+        name: ak1ra_lab.general.apt_install

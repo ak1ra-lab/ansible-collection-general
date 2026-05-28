@@ -1,7 +1,7 @@
 ---
 # https://enterprise.proxmox.com/debian/
 # https://pve.proxmox.com/wiki/Package_Repositories#sysadmin_no_subscription_repo
-- name: apt_install - pve-ceph-squid-enterprise
+- name: ak1ra_lab.general.apt_install - pve-ceph-squid-enterprise
   hosts: "{{ playbook_hosts | default('localhost') }}"
   become: true
   vars:
@@ -37,5 +37,6 @@
     apt_repo_packages: []
 
   tasks:
-    - ansible.builtin.import_role:
-        name: apt_install
+    - name: apply ak1ra_lab.general.apt_install role
+      ansible.builtin.import_role:
+        name: ak1ra_lab.general.apt_install

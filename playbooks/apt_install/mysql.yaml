@@ -1,6 +1,6 @@
 ---
 # https://dev.mysql.com/doc/refman/8.4/en/linux-installation-apt-repo.html
-- name: apt_install - mysql
+- name: ak1ra_lab.general.apt_install - mysql
   hosts: "{{ playbook_hosts | default('localhost') }}"
   become: true
   vars:
@@ -41,5 +41,6 @@
     apt_repo_packages: []
 
   tasks:
-    - ansible.builtin.import_role:
-        name: apt_install
+    - name: apply ak1ra_lab.general.apt_install role
+      ansible.builtin.import_role:
+        name: ak1ra_lab.general.apt_install

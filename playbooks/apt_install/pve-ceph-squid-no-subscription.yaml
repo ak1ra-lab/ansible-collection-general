@@ -1,7 +1,7 @@
 ---
 # https://enterprise.proxmox.com/debian/
 # https://pve.proxmox.com/wiki/Package_Repositories#sysadmin_no_subscription_repo
-- name: apt_install - pve-ceph-squid-no-subscription
+- name: ak1ra_lab.general.apt_install - pve-ceph-squid-no-subscription
   hosts: "{{ playbook_hosts | default('localhost') }}"
   become: true
   vars:
@@ -37,11 +37,14 @@
     apt_pinning: false
     apt_unattended_upgrade: false
     apt_mark_hold: false
-    apt_pinning_pin_release: "o=Proxmox,n={{ ansible_facts['distribution_release'] }},c=no-subscription,l=Proxmox Ceph 19 Squid Debian Repository"
-    apt_unattended_upgrade_origins_pattern: "origin=Proxmox,codename={{ ansible_facts['distribution_release'] }},component=no-subscription,label=Proxmox Ceph 19 Squid Debian Repository"
+    apt_pinning_pin_release: >-
+      o=Proxmox,n={{ ansible_facts['distribution_release'] }},c=no-subscription,l=Proxmox Ceph 19 Squid Debian Repository
+    apt_unattended_upgrade_origins_pattern: >-
+      origin=Proxmox,codename={{ ansible_facts['distribution_release'] }},component=no-subscription,label=Proxmox Ceph 19 Squid Debian Repository
 
     apt_repo_packages: []
 
   tasks:
-    - ansible.builtin.import_role:
-        name: apt_install
+    - name: apply ak1ra_lab.general.apt_install role
+      ansible.builtin.import_role:
+        name: ak1ra_lab.general.apt_install

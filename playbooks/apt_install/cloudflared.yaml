@@ -1,6 +1,6 @@
 ---
 # https://pkg.cloudflare.com/index.html
-- name: apt_install - cloudflared
+- name: ak1ra_lab.general.apt_install - cloudflared
   hosts: "{{ playbook_hosts | default('localhost') }}"
   become: true
   vars:
@@ -29,5 +29,6 @@
       - cloudflared
 
   tasks:
-    - ansible.builtin.import_role:
-        name: apt_install
+    - name: apply ak1ra_lab.general.apt_install role
+      ansible.builtin.import_role:
+        name: ak1ra_lab.general.apt_install

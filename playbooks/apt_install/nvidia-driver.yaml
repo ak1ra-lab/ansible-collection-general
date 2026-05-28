@@ -1,6 +1,6 @@
 ---
 # https://docs.nvidia.com/datacenter/tesla/driver-installation-guide/debian.html#debian-installation
-- name: apt_install - nvidia-driver
+- name: ak1ra_lab.general.apt_install - nvidia-driver
   hosts: "{{ playbook_hosts | default('localhost') }}"
   become: true
   vars:
@@ -27,7 +27,14 @@
 
     apt_repo: nvidia-driver
     apt_repo_uris:
-      - "https://developer.download.nvidia.com/compute/cuda/repos/{{ apt_keyrings[ansible_facts['distribution_release']].distro }}/{{ ansible_facts['architecture'] }}/"
+      - >-
+        {{
+          'https://developer.download.nvidia.com/compute/cuda/repos/'
+          ~ apt_keyrings[ansible_facts['distribution_release']].distro
+          ~ '/'
+          ~ ansible_facts['architecture']
+          ~ '/'
+        }}
     apt_repo_suites:
       - /
     apt_repo_components:
@@ -68,5 +75,6 @@
       ansible.builtin.apt:
         name: "linux-headers-{{ dpkg_architectures[ansible_facts['architecture']] | default('generic', true) }}"
 
-    - ansible.builtin.import_role:
-        name: apt_install
+    - name: apply ak1ra_lab.general.apt_install role
+      ansible.builtin.import_role:
+        name: ak1ra_lab.general.apt_install

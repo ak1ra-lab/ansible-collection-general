@@ -1,6 +1,6 @@
 ---
 # https://caddyserver.com/docs/install#debian-ubuntu-raspbian
-- name: apt_install - caddy
+- name: ak1ra_lab.general.apt_install - caddy
   hosts: "{{ playbook_hosts | default('localhost') }}"
   become: true
   vars:
@@ -38,5 +38,6 @@
     apt_repo_packages: []
 
   tasks:
-    - ansible.builtin.import_role:
-        name: apt_install
+    - name: apply ak1ra_lab.general.apt_install role
+      ansible.builtin.import_role:
+        name: ak1ra_lab.general.apt_install

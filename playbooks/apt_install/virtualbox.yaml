@@ -1,6 +1,6 @@
 ---
 # https://www.virtualbox.org/wiki/Linux_Downloads
-- name: apt_install - virtualbox
+- name: ak1ra_lab.general.apt_install - virtualbox
   hosts: "{{ playbook_hosts | default('localhost') }}"
   become: true
   vars:
@@ -34,5 +34,6 @@
     apt_repo_packages: []
 
   tasks:
-    - ansible.builtin.import_role:
-        name: apt_install
+    - name: apply ak1ra_lab.general.apt_install role
+      ansible.builtin.import_role:
+        name: ak1ra_lab.general.apt_install

@@ -1,6 +1,6 @@
 ---
 # https://www.mongodb.com/docs/manual/tutorial/install-mongodb-on-debian/
-- name: apt_install - mongodb-server
+- name: ak1ra_lab.general.apt_install - mongodb-server
   hosts: "{{ playbook_hosts | default('localhost') }}"
   become: true
   vars:
@@ -35,5 +35,6 @@
     apt_repo_packages: []
 
   tasks:
-    - ansible.builtin.import_role:
-        name: apt_install
+    - name: apply ak1ra_lab.general.apt_install role
+      ansible.builtin.import_role:
+        name: ak1ra_lab.general.apt_install

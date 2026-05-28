@@ -1,6 +1,6 @@
 ---
 # https://pkgs.tailscale.com/stable/#debian-bookworm
-- name: apt_install - tailscale
+- name: ak1ra_lab.general.apt_install - tailscale
   hosts: "{{ playbook_hosts | default('localhost') }}"
   become: true
   vars:
@@ -29,5 +29,6 @@
       - tailscale
 
   tasks:
-    - ansible.builtin.import_role:
-        name: apt_install
+    - name: apply ak1ra_lab.general.apt_install role
+      ansible.builtin.import_role:
+        name: ak1ra_lab.general.apt_install

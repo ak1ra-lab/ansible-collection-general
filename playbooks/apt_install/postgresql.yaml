@@ -6,7 +6,7 @@
 # PostgreSQL 13, 14, 15, 16, 17, 18 beta, 19 devel
 # Server extensions such as PostGIS, various PL languages, and datatypes
 # Applications like omnidb, pgbouncer, and pgpool-II
-- name: apt_install - postgresql
+- name: ak1ra_lab.general.apt_install - postgresql
   hosts: "{{ playbook_hosts | default('localhost') }}"
   become: true
   vars:
@@ -35,5 +35,6 @@
     apt_repo_packages: []
 
   tasks:
-    - ansible.builtin.import_role:
-        name: apt_install
+    - name: apply ak1ra_lab.general.apt_install role
+      ansible.builtin.import_role:
+        name: ak1ra_lab.general.apt_install

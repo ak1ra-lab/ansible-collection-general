@@ -1,7 +1,9 @@
 ---
 # https://www.hashicorp.com/en/official-packaging-guide
-# The fingerprint must match 798A EC65 4E5C 1542 8C8E 42EE AA16 FCBC A621 E701, which can also be verified at https://www.hashicorp.com/security under "Linux Package Checksum Verification".
-- name: apt_install - hashicorp
+# The fingerprint must match 798A EC65 4E5C 1542 8C8E 42EE AA16 FCBC A621 E701.
+# It can also be verified at https://www.hashicorp.com/security under
+# "Linux Package Checksum Verification".
+- name: ak1ra_lab.general.apt_install - hashicorp
   hosts: "{{ playbook_hosts | default('localhost') }}"
   become: true
   vars:
@@ -31,5 +33,6 @@
       - terraform
 
   tasks:
-    - ansible.builtin.import_role:
-        name: apt_install
+    - name: apply ak1ra_lab.general.apt_install role
+      ansible.builtin.import_role:
+        name: ak1ra_lab.general.apt_install

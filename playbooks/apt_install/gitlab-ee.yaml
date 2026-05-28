@@ -1,6 +1,6 @@
 ---
 # https://packages.gitlab.com/gitlab/gitlab-ee/install#manual-deb
-- name: apt_install - gitlab-ee
+- name: ak1ra_lab.general.apt_install - gitlab-ee
   hosts: "{{ playbook_hosts | default('localhost') }}"
   become: true
   vars:
@@ -30,5 +30,6 @@
       - gitlab-ee
 
   tasks:
-    - ansible.builtin.import_role:
-        name: apt_install
+    - name: apply ak1ra_lab.general.apt_install role
+      ansible.builtin.import_role:
+        name: ak1ra_lab.general.apt_install

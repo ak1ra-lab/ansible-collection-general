@@ -1,6 +1,6 @@
 ---
 # https://www.spotify.com/us/download/linux/
-- name: apt_install - spotify
+- name: ak1ra_lab.general.apt_install - spotify
   hosts: "{{ playbook_hosts | default('localhost') }}"
   become: true
   vars:
@@ -39,5 +39,6 @@
       - spotify-client
 
   tasks:
-    - ansible.builtin.import_role:
-        name: apt_install
+    - name: apply ak1ra_lab.general.apt_install role
+      ansible.builtin.import_role:
+        name: ak1ra_lab.general.apt_install

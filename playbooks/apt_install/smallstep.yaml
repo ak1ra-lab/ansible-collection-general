@@ -1,7 +1,7 @@
 ---
 # https://github.com/smallstep/cli
 # https://smallstep.com/docs/step-cli/installation/#debianubuntu
-- name: apt_install - smallstep
+- name: ak1ra_lab.general.apt_install - smallstep
   hosts: "{{ playbook_hosts | default('localhost') }}"
   become: true
   vars:
@@ -28,5 +28,6 @@
       - step-cli
 
   tasks:
-    - ansible.builtin.import_role:
-        name: apt_install
+    - name: apply ak1ra_lab.general.apt_install role
+      ansible.builtin.import_role:
+        name: ak1ra_lab.general.apt_install
