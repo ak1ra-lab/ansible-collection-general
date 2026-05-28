@@ -1,0 +1,79 @@
+---
+- name: append debian-backports on apt_repo_debian_suites
+  when:
+    - (apt_repo_debian_backports_enabled | ansible.builtin.bool)
+  ansible.builtin.set_fact:
+    apt_repo_debian_suites: "{{ apt_repo_debian_suites | default([]) + [ansible_facts['distribution_release'] ~ '-backports'] }}"
+
+- name: ensure python3-debian installed for deb822_repository module
+  ansible.builtin.apt:
+    name: python3-debian
+    state: present
+    update_cache: true
+
+- name: create /etc/apt/sources.list placeholder
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list
+    mode: "0644"
+    content: |
+      # See /etc/apt/sources.list.d/debian.sources and /etc/apt/sources.list.d/debian-security.sources
+
+- name: add debian.sources in DEB822 format
+  vars:
+    default_types:
+      - deb
+    default_uris:
+      - https://deb.debian.org/debian/
+    default_suites:
+      - "{{ ansible_facts['distribution_release'] }}"
+      - "{{ ansible_facts['distribution_release'] }}-updates"
+    default_components:
+      - main
+  ansible.builtin.deb822_repository:
+    name: debian
+    state: present
+    enabled: true
+    types: "{{ apt_repo_debian_types | default(default_types) }}"
+    uris: "{{ apt_repo_debian_uris | default(default_uris) }}"
+    suites: "{{ apt_repo_debian_suites | default(default_suites) }}"
+    components: "{{ apt_repo_debian_components | default(default_components) }}"
+    signed_by: /usr/share/keyrings/debian-archive-keyring.gpg
+
+- name: add debian-security.sources in DEB822 format
+  vars:
+    default_types:
+      - deb
+    default_uris:
+      - https://deb.debian.org/debian-security/
+    default_suites:
+      - "{{ ansible_facts['distribution_release'] }}-security"
+    default_components:
+      - main
+  ansible.builtin.deb822_repository:
+    name: debian-security
+    state: present
+    enabled: true
+    types: "{{ apt_repo_debian_security_types | default(default_types) }}"
+    uris: "{{ apt_repo_debian_security_uris | default(default_uris) }}"
+    suites: "{{ apt_repo_debian_security_suites | default(default_suites) }}"
+    components: "{{ apt_repo_debian_security_components | default(default_components) }}"
+    signed_by: /usr/share/keyrings/debian-archive-keyring.gpg
+
+- name: include_tasks unattended-upgrades.yml
+  ansible.builtin.include_tasks: unattended-upgrades.yml
+
+- name: include_tasks debian-backports.yml
+  ansible.builtin.include_tasks: debian-backports.yml
+
+- name: include_tasks apt-force-ipv4.yml
+  ansible.builtin.include_tasks: apt-force-ipv4.yml
+
+- name: apt update and apt upgrade
+  ansible.builtin.apt:
+    upgrade: true
+    update_cache: true
+
+- name: apt install common_apt_packages
+  ansible.builtin.apt:
+    name: "{{ common_apt_packages }}"
+    state: present
