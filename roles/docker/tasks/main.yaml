@@ -1,0 +1,63 @@
+---
+- name: import roles/apt_install
+  ansible.builtin.import_role:
+    name: apt_install
+  vars:
+    # https://docs.docker.com/engine/install/debian/
+    # curl -sL https://download.docker.com/linux/debian/gpg | gpg
+    # pub   rsa4096 2017-02-22 [SCEA]
+    #       9DC858229FC7DD38854AE2D88D81803C0EBFCD88
+    # uid           Docker Release (CE deb) <docker@docker.com>
+    # sub   rsa4096 2017-02-22 [S]
+    apt_keyrings_url: "{{ docker_apt_keyrings_url }}"
+    apt_keyrings_dest: "{{ docker_apt_keyrings_dest }}"
+
+    apt_repo: "{{ docker_apt_repo }}"
+    apt_repo_uris: "{{ docker_apt_repo_uris | list }}"
+    apt_repo_suites: "{{ docker_apt_repo_suites }}"
+    apt_repo_components: "{{ docker_apt_repo_components }}"
+
+    apt_pinning: "{{ docker_apt_pinning | ansible.builtin.bool }}"
+    apt_pinning_package: "{{ docker_apt_pinning_package }}"
+    apt_unattended_upgrade: "{{ docker_apt_unattended_upgrade | ansible.builtin.bool }}"
+    apt_mark_hold: "{{docker_apt_mark_hold | ansible.builtin.bool }}"
+    apt_pinning_pin_release: "{{ docker_apt_pinning_pin_release }}"
+    apt_unattended_upgrade_origins_pattern: "{{ docker_apt_unattended_upgrade_origins_pattern }}"
+
+    apt_repo_packages: "{{ docker_apt_repo_packages | list }}"
+
+- name: ensure /etc/docker directory exist
+  ansible.builtin.file:
+    path: /etc/docker
+    state: directory
+    mode: "0755"
+
+- name: add /etc/docker/daemon.json
+  ansible.builtin.template:
+    src: daemon.json.j2
+    dest: /etc/docker/daemon.json
+    mode: "0644"
+    force: true
+  notify: systemctl restart docker.service
+
+- name: register ansible regular user
+  ansible.builtin.command:
+    cmd: "awk -F: '$NF !~ /nologin|false/ && $3 >= 1000 {print $1}' /etc/passwd"
+  register: ansible_regular_user
+  changed_when: false
+
+- name: append 'docker' groups
+  ansible.builtin.user:
+    name: "{{ user | trim }}"
+    groups:
+      - docker
+    append: true
+  loop: "{{ ansible_regular_user.stdout_lines }}"
+  loop_control:
+    loop_var: user
+
+- name: ensure docker.service are started and enabled
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true
