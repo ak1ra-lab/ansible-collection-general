@@ -1,0 +1,25 @@
+---
+# ansible-playbook playbooks/go_build/yq.yaml -e 'playbook_hosts=localhost'
+- name: execute go build mikefarah/yq
+  hosts: "{{ playbook_hosts | default('localhost') }}"
+  become: false
+
+  tasks:
+    - name: build mikefarah/yq binary on localhost
+      become: false
+      ansible.builtin.import_role:
+        name: ak1ra_lab.general.go_build
+      vars:
+        go_build_repo_url: "https://github.com/mikefarah/yq.git"
+        go_build_repo_version: "master"
+        go_build_package: "."
+        go_build_output_name: "yq"
+
+    - name: copy yq binary to /usr/local/bin
+      become: true
+      ansible.builtin.copy:
+        src: "{{ go_build_binary_path }}"
+        dest: "/usr/local/bin/yq"
+        mode: "0755"
+        owner: root
+        group: root

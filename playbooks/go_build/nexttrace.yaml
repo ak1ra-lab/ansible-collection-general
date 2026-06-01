@@ -1,0 +1,33 @@
+---
+# ansible-playbook playbooks/go_build/nexttrace.yaml -e 'playbook_hosts=localhost'
+- name: execute go build nxtrace/Ntrace-core
+  hosts: "{{ playbook_hosts | default('localhost') }}"
+  become: false
+
+  tasks:
+    - name: build nxtrace/Ntrace-core binary on localhost
+      become: false
+      ansible.builtin.import_role:
+        name: ak1ra_lab.general.go_build
+      vars:
+        go_build_repo_url: "https://github.com/nxtrace/Ntrace-core.git"
+        go_build_repo_version: "main"
+        go_build_package: "."
+        go_build_output_name: "nexttrace"
+
+    # sudo setcap cap_net_raw,cap_net_admin+eip /usr/local/bin/nexttrace
+    - name: setcap on nexttrace binary
+      become: true
+      community.general.capabilities:
+        path: "{{ go_build_binary_path }}"
+        capability: "cap_net_raw,cap_net_admin+eip"
+        state: present
+
+    - name: copy nexttrace binary to /usr/local/bin
+      become: true
+      ansible.builtin.copy:
+        src: "{{ go_build_binary_path }}"
+        dest: "/usr/local/bin/nexttrace"
+        mode: "0755"
+        owner: root
+        group: root
