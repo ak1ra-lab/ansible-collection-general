@@ -22,7 +22,31 @@ ansible-galaxy collection install -r requirements.yaml -p ./.ansible/collections
 `version` can be a tag, branch, or commit-ish. Use tags or immutable commits for
 CI and normal day-to-day consumption.
 
-## Editable Workflow
+## Repository Development Workflow
+
+When working inside this repository, refresh the repo-local installed copy
+before running `ansible-lint`, `ansible-playbook --syntax-check`, or any local
+playbook that imports `ak1ra_lab.general.*`:
+
+```shell
+just install
+```
+
+This uses the checked-in `justfile` to run:
+
+```shell
+ansible-galaxy collection install --upgrade --collections-path .ansible/collections .
+```
+
+The repository's `ansible.cfg` expects collection resolution through
+`./.ansible/collections`, so local validation should target that installed copy.
+
+Do not create a symlink at
+`./.ansible/collections/ansible_collections/ak1ra_lab/general` inside this
+repository. That layout can conflict with `ansible-lint` and
+`ansible-galaxy collection build`.
+
+## Cross-Repository Local Development
 
 For cross-repository local development, install from the local source checkout:
 
@@ -30,13 +54,8 @@ For cross-repository local development, install from the local source checkout:
 ansible-galaxy collection install /path/to/ansible-collection-general -p ./.ansible/collections --force
 ```
 
-You can also create a symlink at:
-
-```text
-./.ansible/collections/ansible_collections/ak1ra_lab/general
-```
-
-pointing to the repository root.
+Re-run the install after source changes so the consumer repository sees the
+updated collection content.
 
 ## Consumer Usage
 

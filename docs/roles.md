@@ -1,5 +1,29 @@
 # Roles
 
+## debian_base
+
+Applies a Debian or Ubuntu baseline for freshly provisioned hosts.
+
+Primary inputs:
+
+- `debian_base_apt_repo_debian_uris`
+- `debian_base_apt_repo_debian_security_uris`
+- `debian_base_apt_repo_debian_backports_enabled`
+- `debian_base_unattended_upgrade_updates_enabled`
+- `debian_base_unattended_upgrade_automatic_reboot_enabled`
+- `debian_base_apt_force_ipv4_enabled`
+- `debian_base_tcp_bbr_enabled`
+- `debian_base_custom_sshd_config_enabled`
+- `debian_base_custom_sysctl_conf_enabled`
+- `debian_base_apt_packages`
+
+Primary outcomes:
+
+- Debian archive and security repositories rendered in DEB822 format
+- unattended-upgrades toggled for stable updates and optional backports
+- baseline packages installed for day-to-day host administration
+- optional TCP BBR, SSH hardening entries, sysctl tuning, and qemu-guest-agent enablement
+
 ## go_build
 
 Builds a Go project from a Git repository on `localhost` and caches a metadata
