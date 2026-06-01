@@ -1,22 +1,8 @@
 ---
-- name: debian base | defaults
+- name: ak1ra_lab.general.debian_base | defaults
   hosts: "{{ playbook_hosts | default('localhost') }}"
   become: true
   vars:
-    debian_base_apt_repo_debian_uris:
-      # - http://mirrors.tencentyun.com/debian/
-      # - https://mirrors.tencent.com/debian/
-      # - https://mirrors.aliyun.com/debian/
-      # - https://cdn-aws.deb.debian.org/debian/
-      - https://deb.debian.org/debian/
-
-    debian_base_apt_repo_debian_security_uris:
-      # - http://mirrors.tencentyun.com/debian-security/
-      # - https://mirrors.tencent.com/debian-security/
-      # - https://mirrors.aliyun.com/debian-security/
-      # - https://cdn-aws.deb.debian.org/debian-security/
-      - https://deb.debian.org/debian-security/
-
     debian_base_apt_repo_debian_backports_enabled: false
     debian_base_apt_repo_debian_backports_preferences_package: "*"
     debian_base_apt_repo_debian_backports_preferences_pin_priority: 500

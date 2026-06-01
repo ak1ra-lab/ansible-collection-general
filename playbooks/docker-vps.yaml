@@ -2,21 +2,13 @@
 - name: import playbooks/debian-base-vps.yaml
   ansible.builtin.import_playbook: debian-base-vps.yaml
 
-- name: install docker | unattended-upgrade
+- name: ak1ra_lab.general.docker | vps
   hosts: "{{ playbook_hosts | default('localhost') }}"
   become: true
   vars:
-    docker_apt_repo_uris:
-      # - https://mirrors.tencent.com/docker-ce/linux/debian
-      # - https://mirrors.aliyun.com/docker-ce/linux/debian
-      - https://download.docker.com/linux/debian
-
     docker_apt_pinning: true
     docker_apt_unattended_upgrade: true
     docker_apt_mark_hold: false
-
-    docker_daemon_registry_mirrors: []
-    # - https://docker-registry.example.com
 
   tasks:
     - name: apply ak1ra_lab.general.docker role
