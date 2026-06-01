@@ -2,47 +2,16 @@
 default:
     @just --list --unsorted
 
-# Sync development dependencies (may update uv.lock if pyproject.toml changed)
-sync *ARGS:
-    uv sync {{ARGS}} --group dev
+# Install project-local Ansible collections
+install:
+    mkdir -p .ansible/collections
+    ansible-galaxy collection install --upgrade --collections-path .ansible/collections .
 
-# Lint and format source code
-lint:
-    uv run ruff check --fix src/ tests/
-    uv run ruff format src/ tests/
-
-# Run static type checks with Astral ty
-typecheck:
-    uv run ty check src/
-
-# Run tests
-test *ARGS:
-    uv run pytest -v {{ARGS}} tests/
-
-# Run tests with coverage report
-coverage:
-    uv run pytest --cov=general --cov-report=term-missing tests/
-
-# Build distribution packages
+# Build project-local Ansible collection
 build:
-    uv build -v
-
-# Serve documentation locally
-docs-serve:
-    uv run zensical serve
-
-# Build documentation
-docs-build:
-    uv run zensical build
+    mkdir -p dist/
+    ansible-galaxy collection build --force --output-path dist/ .
 
 # Remove build artifacts
 clean:
-    rm -rf dist/ site/ .cache/ .ruff_cache/ .pytest_cache/ htmlcov/ .coverage ansible-navigator.log
-    find src/ tests/ -type f -name "*.pyc" -delete
-    find src/ tests/ -type d -name "__pycache__" -delete
-
-# Install project-local Ansible collections
-ansible-collections:
-    mkdir -p ./.ansible/collections/ansible_collections/ak1ra_lab
-    test -L ./.ansible/collections/ansible_collections/ak1ra_lab/general || \
-        ln -s ../../../.. ./.ansible/collections/ansible_collections/ak1ra_lab/general
+    rm -rf dist/ site/ .cache/
