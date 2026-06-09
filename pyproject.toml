@@ -1,0 +1,22 @@
+[project]
+name = "ansible-collection-general"
+version = "0.1.0"
+description = "Development tooling for the ak1ra_lab.general Ansible collection"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+target-version = "py311"
+
+[dependency-groups]
+lint = [
+    "ruff>=0.15.0",
+    "ty>=0.0.40",
+]
+dev = [
+    { include-group = "lint" },
+    "pre-commit>=4.2.0",
+]

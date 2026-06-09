@@ -1,13 +1,17 @@
 # ak1ra_lab.general
 
-`ak1ra_lab.general` is a shared Ansible collection for reusable roles that are
-consumed across multiple `ak1ra-lab` repositories.
+`ak1ra_lab.general` is a shared Ansible collection for reusable roles and custom
+modules consumed across multiple `ak1ra-lab` repositories.
 
 Roles include:
 
 - `ak1ra_lab.general.debian_base`
 - `ak1ra_lab.general.go_build`
 - `ak1ra_lab.general.pyproject_install`
+
+Modules include:
+
+- `ak1ra_lab.general.github_releases`
 
 ## Install
 
@@ -43,5 +47,12 @@ tree without any additional install step.
 - `go_build`: clone and build a Go project on `localhost`, then expose the built binary path for follow-up tasks.
 - `pyproject_install`: build or install a Python package into a target virtual environment from a local wheel, PyPI, or TestPyPI.
 
-See [docs/installation.md](docs/installation.md) and [docs/roles.md](docs/roles.md)
-for usage details.
+## Modules
+
+- `github_releases`: query GitHub release metadata, normalize asset names, select a matching asset for the local platform, and optionally download it on the managed host.
+
+For full module argument and return-value reference, use `ansible-doc ak1ra_lab.general.github_releases`
+against an installed copy of the collection.
+
+See [docs/installation.md](docs/installation.md), [docs/roles.md](docs/roles.md), and
+[docs/modules.md](docs/modules.md) for usage details.
