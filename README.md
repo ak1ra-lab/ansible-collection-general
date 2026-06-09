@@ -32,32 +32,10 @@ the consumer repository's `ansible.cfg` including that path at the front of
 
 ## Local Development
 
-When validating this collection from its own repository, refresh the repo-local
-installed copy before running `ansible-lint`, `ansible-playbook`, or other
-commands that resolve `ak1ra_lab.general.*` from `./.ansible/collections`:
-
-```shell
-just install
-```
-
-This wraps `ansible-galaxy collection install --upgrade --collections-path
-.ansible/collections .` from the repository root so the installed copy matches
-the working tree.
-
-Do not create a symlink at
-`./.ansible/collections/ansible_collections/ak1ra_lab/general` inside this
-repository. That shortcut can interfere with `ansible-lint` and
-`ansible-galaxy collection build`.
-
-For cross-repository local development, install directly from the source
-checkout into the consumer repository:
-
-```shell
-ansible-galaxy collection install /path/to/ansible-collection-general -p ./.ansible/collections --force
-```
-
-Re-run the install after source changes so the consumer repository sees the
-updated collection content.
+This repository is structured to sit inside an `ansible_collections/ak1ra_lab/`
+directory tree. The `ansible.cfg` sets `collections_path=../../../../collections`
+so Ansible resolves `ak1ra_lab.*` namespaces directly from the surrounding checkout
+tree without any additional install step.
 
 ## Roles
 

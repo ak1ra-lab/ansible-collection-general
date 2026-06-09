@@ -24,38 +24,16 @@ CI and normal day-to-day consumption.
 
 ## Repository Development Workflow
 
-When working inside this repository, refresh the repo-local installed copy
-before running `ansible-lint`, `ansible-playbook --syntax-check`, or any local
-playbook that imports `ak1ra_lab.general.*`:
+Clone this repository into the `ansible_collections/ak1ra_lab/` namespace layout:
 
 ```shell
-just install
+mkdir -p ~/code/github.com/ansible/collections/ansible_collections/ak1ra_lab
+git clone https://github.com/ak1ra-lab/ansible-collection-general.git \
+  ~/code/github.com/ansible/collections/ansible_collections/ak1ra_lab/general
 ```
 
-This uses the checked-in `justfile` to run:
-
-```shell
-ansible-galaxy collection install --upgrade --collections-path .ansible/collections .
-```
-
-The repository's `ansible.cfg` expects collection resolution through
-`./.ansible/collections`, so local validation should target that installed copy.
-
-Do not create a symlink at
-`./.ansible/collections/ansible_collections/ak1ra_lab/general` inside this
-repository. That layout can conflict with `ansible-lint` and
-`ansible-galaxy collection build`.
-
-## Cross-Repository Local Development
-
-For cross-repository local development, install from the local source checkout:
-
-```shell
-ansible-galaxy collection install /path/to/ansible-collection-general -p ./.ansible/collections --force
-```
-
-Re-run the install after source changes so the consumer repository sees the
-updated collection content.
+Use the same parent layout for other `ak1ra_lab` collections and change only the
+repository URL and final directory name.
 
 ## Consumer Usage
 
