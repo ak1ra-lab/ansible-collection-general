@@ -50,6 +50,14 @@
     go_build_binary_path: "{{ go_build_base_dir }}/bin/{{ go_build_output_name }}"
     go_build_stamp_path: "{{ go_build_base_dir }}/.{{ go_build_output_name }}.build-meta"
 
+- name: set go_build chdir fact
+  ansible.builtin.set_fact:
+    go_build_chdir: >-
+      {{
+        go_build_repo_dir
+        ~ ('/' ~ go_build_chdir if go_build_chdir | length > 0 else '')
+      }}
+
 - name: verify go binary is available on localhost
   ansible.builtin.command:
     argv:
@@ -126,6 +134,7 @@
       repo_commit={{ go_build_repo_head.stdout | trim }}
       package={{ go_build_package }}
       output={{ go_build_output_name }}
+      chdir={{ go_build_chdir }}
       goos={{ go_build_goos }}
       goarch={{ go_build_goarch }}
       static={{ go_build_static }}
@@ -153,7 +162,7 @@
       - -o
       - "{{ go_build_binary_path }}"
       - "{{ go_build_package }}"
-    chdir: "{{ go_build_repo_dir }}"
+    chdir: "{{ go_build_chdir }}"
   environment:
     CGO_ENABLED: "{{ '0' if go_build_static else '1' }}"
     GOOS: "{{ go_build_goos }}"

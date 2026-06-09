@@ -26,7 +26,8 @@ found.
 | go_build_repo_url    | empty string  | **(required)** Git repository URL                        |
 | go_build_output_name | empty string  | **(required)** Expected output binary filename           |
 | go_build_repo_version| HEAD          | Git branch, tag, or commit to check out                 |
-| go_build_package     | .             | Go package path passed to `go build`, for example `.` or `./cmd/app` |
+| go_build_package     | .             | Go package path passed to `go build`, e.g. `.` or `./cmd/app` |
+| go_build_chdir       | empty string  | Working directory for `go build`, relative to `go_build_repo_dir`. Empty means the repo root. Set to e.g. `cmd/caddy` for subdirectory builds. |
 | go_build_static      | true          | When true, sets `CGO_ENABLED=0` for a static binary      |
 | go_build_ldflags     | -s -w         | Extra linker flags passed through `-ldflags`             |
 | go_build_goos        | linux         | Target `GOOS`                                            |
@@ -43,3 +44,26 @@ go_build_binary_path: "{{ go_build_base_dir }}/bin/{{ go_build_output_name }}"
 ```
 
 Use it in subsequent tasks to copy the binary to the remote host.
+
+## Lightweight repo pattern
+
+For projects like caddyserver/caddy where custom builds only need a `main.go`
+with plugin imports (not the full upstream source), create a minimal repo with
+just `main.go` and `go.mod`.  Example structure:
+
+```
+ak1ra-lab/caddy-build/
+  main.go    # imports caddy + desired DNS plugins
+  go.mod     # module caddy
+```
+
+Then use standard git-clone workflow:
+
+```yaml
+- name: build caddy with DNS plugins
+  ansible.builtin.import_role:
+    name: ak1ra_lab.general.go_build
+  vars:
+    go_build_repo_url: "https://github.com/ak1ra-lab/caddy-build.git"
+    go_build_output_name: "caddy"
+```
