@@ -1,0 +1,26 @@
+---
+# ansible-playbook playbooks/github_releases/inspect-latest.yaml -e 'github_releases_repo=sharkdp/bat'
+- name: inspect latest GitHub release assets
+  hosts: "{{ playbook_hosts | default('localhost') }}"
+  gather_facts: false
+  become: false
+
+  tasks:
+    - name: inspect github release assets
+      ak1ra_lab.general.github_releases:
+        repo: "{{ github_releases_repo }}"
+        token: "{{ github_releases_token | default(lookup('ansible.builtin.env', 'GITHUB_TOKEN', default='')) }}"
+        download: false
+      register: github_releases_result
+
+    - name: print normalized github release metadata
+      ansible.builtin.debug:
+        var: github_releases_result.release
+
+    - name: print normalized github release assets
+      ansible.builtin.debug:
+        var: github_releases_result.assets
+
+    - name: print selected github release asset
+      ansible.builtin.debug:
+        var: github_releases_result.selected_asset

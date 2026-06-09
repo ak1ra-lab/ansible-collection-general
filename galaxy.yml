@@ -25,6 +25,7 @@ manifest:
   directives:
     - graft docs
     - graft playbooks
+    - graft plugins
     - graft roles
     - recursive-exclude playbooks/host_vars *
     - recursive-exclude playbooks/group_vars *
