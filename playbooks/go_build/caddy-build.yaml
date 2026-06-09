@@ -1,0 +1,38 @@
+---
+# ansible-playbook playbooks/go_build/caddy.yaml -e 'playbook_hosts=localhost'
+#
+# A lightweight repo containing only main.go + go.mod (no full caddy fork)
+# is the preferred pattern.  Create one at e.g. ak1ra-lab/caddy-build with:
+#   - main.go that imports caddy + desired DNS plugins
+#   - go.mod pre-initialised as "module caddy"
+# Then point go_build_repo_url at that repo.
+- name: execute go build on ak1ra-lab/caddy-build
+  hosts: "{{ playbook_hosts | default('localhost') }}"
+  become: false
+
+  tasks:
+    - name: build ak1ra-lab/caddy-build binary on localhost
+      become: false
+      ansible.builtin.import_role:
+        name: ak1ra_lab.general.go_build
+      vars:
+        go_build_repo_url: "https://github.com/ak1ra-lab/caddy-build.git"
+        go_build_repo_version: "master"
+        go_build_output_name: "caddy"
+
+    # sudo setcap cap_net_bind_service=+ep /usr/local/bin/caddy
+    - name: setcap on caddy binary
+      become: true
+      community.general.capabilities:
+        path: "{{ go_build_binary_path }}"
+        capability: "cap_net_bind_service+ep"
+        state: present
+
+    - name: copy caddy binary to /usr/local/bin
+      become: true
+      ansible.builtin.copy:
+        src: "{{ go_build_binary_path }}"
+        dest: "/usr/local/bin/caddy"
+        mode: "0755"
+        owner: root
+        group: root
