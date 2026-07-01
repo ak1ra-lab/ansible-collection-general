@@ -1,0 +1,131 @@
+---
+# https://github.com/astral-sh/python-build-standalone/releases
+#
+# Usage:
+#   ansible-playbook playbooks/github_releases/python-build-standalone.yaml \
+#     -e 'playbook_hosts=<target>'
+#
+# Pin a specific build:
+#   ansible-playbook playbooks/github_releases/python-build-standalone.yaml \
+#     -e 'playbook_hosts=<target> python_build_standalone_release_tag=20260112'
+#
+# Force reinstall (removes existing dir, re-extracts from scratch):
+#   ansible-playbook playbooks/github_releases/python-build-standalone.yaml \
+#     -e 'playbook_hosts=<target> python_build_standalone_force=true'
+#
+# Extra pip packages:
+#   ansible-playbook playbooks/github_releases/python-build-standalone.yaml \
+#     -e '{"playbook_hosts": "<target>", "python_build_standalone_extra_packages": ["ansible-core", "cryptography"]}'
+#
+# Override Python version:
+#   ansible-playbook playbooks/github_releases/python-build-standalone.yaml \
+#     -e 'playbook_hosts=<target> python_build_standalone_version=3.12'
+#
+# The download location is controlled by github_releases_remote_src in
+# host_vars/all/github_releases.yaml.  When false the asset is downloaded
+# on the controller and copied to the target — useful when the target
+# cannot reach GitHub.  When true the target fetches the asset directly.
+- name: ak1ra_lab.general.github_releases - python-build-standalone
+  hosts: "{{ playbook_hosts | default('localhost') }}"
+  become: true
+  vars:
+    python_build_standalone_version: "3.11"
+    python_build_standalone_prefix: "/usr/local"
+    python_build_standalone_dir: "{{ python_build_standalone_prefix }}/python{{ python_build_standalone_version }}"
+    # Pin a specific build date (e.g. "20260112").  Empty = latest release.
+    python_build_standalone_release_tag: ""
+    # Remove existing installation and re-extract from scratch.
+    # The tarball is still cached unless force_download is also set.
+    python_build_standalone_force: false
+    # list[str]: extra pip packages installed after bootstrap.
+    # packaging is always installed (required by ansible.builtin.pip module).
+    python_build_standalone_extra_packages: []
+
+    # Architecture name as used in asset filenames.
+    _python_build_standalone_arch: >-
+      {{-
+        {'x86_64': 'x86_64', 'aarch64': 'aarch64'}[ansible_facts['architecture']]
+        | default(ansible_facts['architecture'])
+      }}
+
+    _pbs_remote_download: "{{ github_releases_remote_src | default(true) }}"
+    _pbs_download_dir: /tmp/github-releases
+    _pbs_asset_path_remote: "/tmp/python-build-standalone-{{ python_build_standalone_version }}.tar.gz"
+    _pbs_pip_packages: "{{ ['packaging'] + python_build_standalone_extra_packages }}"
+
+  tasks:
+    # Run python --version to verify the interpreter actually works, not
+    # just that the file exists.  become: false since we only read.
+    - name: check if standalone Python already installed
+      ansible.builtin.command:
+        cmd: "{{ python_build_standalone_dir }}/bin/python{{ python_build_standalone_version }} --version"
+      become: false
+      register: _pbs_version_check
+      failed_when: false
+      changed_when: false
+
+    - name: install standalone Python
+      when: python_build_standalone_force or _pbs_version_check.rc != 0
+      block:
+        - name: remove existing installation (force)
+          ansible.builtin.file:
+            path: "{{ python_build_standalone_dir }}"
+            state: absent
+          when: python_build_standalone_force and _pbs_version_check.rc == 0
+
+        - name: fetch python-build-standalone release
+          ak1ra_lab.general.github_releases:
+            repo: astral-sh/python-build-standalone
+            release_tag: "{{ python_build_standalone_release_tag or omit }}"
+            token: "{{ github_releases_token | default(lookup('ansible.builtin.env', 'GITHUB_TOKEN', default='')) }}"
+            download: true
+            download_dir: "{{ _pbs_download_dir }}"
+            force_download: false
+            asset_name_regex: 'cpython-{{ python_build_standalone_version }}\.\d+\+\d+-{{ _python_build_standalone_arch }}-unknown-linux-gnu-install_only_stripped\.tar\.gz'  # noqa: yaml[line-length]
+          delegate_to: "{{ 'localhost' if not _pbs_remote_download else omit }}"
+          run_once: "{{ not _pbs_remote_download }}"
+          become: false
+          register: _pbs_release
+
+        - name: print selected github release asset
+          ansible.builtin.debug:
+            var: _pbs_release.selected_asset
+
+        - name: copy release asset to target
+          when: not _pbs_remote_download
+          ansible.builtin.copy:
+            src: "{{ _pbs_release.download_path }}"
+            dest: "{{ _pbs_asset_path_remote }}"
+            mode: "0644"
+
+        - name: ensure install directory exists
+          ansible.builtin.file:
+            path: "{{ python_build_standalone_dir }}"
+            state: directory
+            mode: "0755"
+
+        # python-build-standalone tarballs extract to a "python/" top-level
+        # directory.  --strip-components=1 (GNU tar) strips that prefix so
+        # the contents land directly under python_build_standalone_dir.
+        - name: extract standalone Python
+          ansible.builtin.unarchive:
+            src: "{{ _pbs_asset_path_remote if not _pbs_remote_download else _pbs_release.download_path }}"
+            dest: "{{ python_build_standalone_dir }}"
+            remote_src: true
+            extra_opts:
+              - --strip-components=1
+
+        - name: bootstrap pip via ensurepip
+          ansible.builtin.command:
+            cmd: >-
+              {{ python_build_standalone_dir }}/bin/python{{ python_build_standalone_version }}
+              -m ensurepip --upgrade
+          changed_when: true
+
+        - name: install required pip packages
+          ansible.builtin.command:
+            cmd: >-
+              {{ python_build_standalone_dir }}/bin/python{{ python_build_standalone_version }}
+              -m pip install {{ _pbs_pip_packages | join(' ') }}
+          register: _pbs_pip_install
+          changed_when: "'Successfully installed' in _pbs_pip_install.stdout"
