@@ -1,5 +1,7 @@
 ---
 - name: install required system packages
+  when:
+    - pyproject_install_system_packages | length > 0
   ansible.builtin.apt:
     name: "{{ pyproject_install_system_packages }}"
     state: present
@@ -7,7 +9,7 @@
 
 - name: ensure venv parent directory exists
   ansible.builtin.file:
-    path: "{{ pyproject_install_venv_dir | dirname }}"
+    path: "{{ pyproject_install_venv_dir | ansible.builtin.dirname }}"
     state: directory
     mode: "0755"
     owner: root

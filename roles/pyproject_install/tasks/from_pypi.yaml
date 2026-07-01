@@ -7,5 +7,5 @@
             if pyproject_install_package_extras else '') }}
     state: latest
     virtualenv: "{{ pyproject_install_venv_dir }}"
-    virtualenv_command: python3 -m venv
+    virtualenv_command: "{{ pyproject_install_python_interpreter }} -m venv"
     extra_args: "{{ _pyproject_install_pip_extra_args[pyproject_install_source] }}"

@@ -14,6 +14,9 @@ pyproject_install_package_extras: ""
 #      playbooks/ is a subdirectory of the project root, so we go one level up from playbook_dir
 pyproject_install_local_project_root: "{{ playbook_dir | dirname }}"
 
+# str: python interpreter for virtualenv_command
+pyproject_install_python_interpreter: "{{ ansible_python_interpreter | default('/usr/bin/python3') }}"
+
 # str: absolute path to the venv directory on the remote host (FHS: /var/lib/<project>/.venv)
 #      callers should override this to their specific path
 pyproject_install_venv_dir: "/var/lib/{{ pyproject_install_package_name }}/.venv"
@@ -21,6 +24,17 @@ pyproject_install_venv_dir: "/var/lib/{{ pyproject_install_package_name }}/.venv
 # str: temporary directory on the remote host to hold the wheel during transfer
 pyproject_install_remote_tmp_dir: /tmp
 
-# list[str]: system packages installed via apt before creating the venv
+# list[str]: system packages installed via apt before creating the venv.
+#
+# ansible.builtin.pip requires pip + packaging (or setuptools) in the
+# ansible_python_interpreter environment. On Debian/Ubuntu the stdlib is
+# split: venv, pip, and packaging are separate packages.
+#
+# Set to [] when using a self-contained interpreter (python-build-standalone,
+# conda-forge, etc.) that has been bootstrapped with:
+#   python3.x -m ensurepip --upgrade
+#   python3.x -m pip install packaging
 pyproject_install_system_packages:
+  - python3-pip
+  - python3-packaging
   - python3-venv

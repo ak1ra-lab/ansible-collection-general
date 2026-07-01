@@ -52,7 +52,7 @@
          ~ ' @ file://' ~ _pyproject_install_wheel_remote.dest }}
     state: forcereinstall
     virtualenv: "{{ pyproject_install_venv_dir }}"
-    virtualenv_command: python3 -m venv
+    virtualenv_command: "{{ pyproject_install_python_interpreter }} -m venv"
 
 - name: remove wheel from remote tmp
   ansible.builtin.file:
