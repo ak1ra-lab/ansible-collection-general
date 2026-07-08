@@ -15,6 +15,12 @@
     owner: root
     group: root
 
+- name: remove existing venv (force)
+  when: pyproject_install_venv_force | ansible.builtin.bool
+  ansible.builtin.file:
+    path: "{{ pyproject_install_venv_dir }}"
+    state: absent
+
 - name: install from local wheel
   when: pyproject_install_source == 'local'
   ansible.builtin.import_tasks: local_wheel.yaml
