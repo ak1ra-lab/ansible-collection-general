@@ -42,3 +42,11 @@ pyproject_install_system_packages:
   - python3-pip
   - python3-packaging
   - python3-venv
+
+# dict[str, str]: pip install state by install source (internal; override the
+# entire dict to change per-source behavior)
+# local: forcereinstall ensures dev version bumps from git rebase are not skipped
+_pyproject_install_pip_state:
+  local: forcereinstall
+  pypi: latest
+  testpypi: latest

@@ -50,7 +50,7 @@
          ~ ('[' ~ pyproject_install_package_extras ~ ']'
             if pyproject_install_package_extras else '')
          ~ ' @ file://' ~ _pyproject_install_wheel_remote.dest }}
-    state: forcereinstall
+    state: "{{ _pyproject_install_pip_state[pyproject_install_source] }}"
     virtualenv: "{{ pyproject_install_venv_dir }}"
     virtualenv_command: "{{ pyproject_install_python_interpreter }} -m venv"
 
