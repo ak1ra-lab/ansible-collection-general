@@ -36,10 +36,19 @@ the consumer repository's `ansible.cfg` including that path at the front of
 
 ## Local Development
 
-This repository is structured to sit inside an `ansible_collections/ak1ra_lab/`
-directory tree. The `ansible.cfg` sets `collections_path=../../../../collections`
-so Ansible resolves `ak1ra_lab.*` namespaces directly from the surrounding checkout
-tree without any additional install step.
+`ansible.cfg` sets `collections_path=./.ansible/collections` and
+`roles_path=./roles` — no user-level paths are included. Install dependencies
+and the collection itself before running playbooks (playbooks use FQCN roles,
+so the local collection must be installed):
+
+```shell
+cp --update=none requirements.yaml requirements.dev.yaml
+ansible-galaxy collection install -r requirements.dev.yaml -p ./.ansible/collections
+ansible-galaxy collection install --force --collections-path .ansible/collections .
+```
+
+`requirements.dev.yaml` is git-ignored and may point to local Git repos or file
+paths for in-development dependency collections.
 
 ## Roles
 

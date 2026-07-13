@@ -24,16 +24,23 @@ CI and normal day-to-day consumption.
 
 ## Repository Development Workflow
 
-Clone this repository into the `ansible_collections/ak1ra_lab/` namespace layout:
+Clone to any location:
 
 ```shell
-mkdir -p ~/code/github.com/ansible/collections/ansible_collections/ak1ra_lab
-git clone https://github.com/ak1ra-lab/ansible-collection-general.git \
-  ~/code/github.com/ansible/collections/ansible_collections/ak1ra_lab/general
+git clone https://github.com/ak1ra-lab/ansible-collection-general.git
 ```
 
-Use the same parent layout for other `ak1ra_lab` collections and change only the
-repository URL and final directory name.
+Install dependencies via `requirements.dev.yaml` (copy from `requirements.yaml`
+if absent), then install the collection itself:
+
+```shell
+cp --update=none requirements.yaml requirements.dev.yaml
+ansible-galaxy collection install -r requirements.dev.yaml -p ./.ansible/collections
+ansible-galaxy collection install --force --collections-path .ansible/collections .
+```
+
+`requirements.dev.yaml` is git-ignored and may point to local Git repos or file
+paths for in-development dependencies.
 
 ## Consumer Usage
 

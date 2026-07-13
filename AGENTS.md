@@ -9,26 +9,47 @@ task-specific automation. See `README.md` for consumer setup and role/module det
 ## Environment & Tooling - CRITICAL
 
 - **Python package manager:** `uv` (MUST NOT use pip or poetry).
-- **Task runner:** `just` (MUST NOT use make).
 - **Python version:** >= 3.11
 
 Install dev tooling and sync the venv:
 
-    just sync          # uv sync --group dev
+    uv sync --group dev
 
 Lint all the things (run before committing):
 
-    just lint          # ruff check --fix + ruff format on plugins/
+    uv run ruff check --fix plugins/
+    uv run ruff format plugins/
     ansible-lint       # production profile, lints playbooks/, roles/, etc.
     yamlfmt            # external Go tool; format YAML files per .yamlfmt.yaml
     pre-commit run --all-files
 
 Build the collection:
 
-    just build         # ansible-galaxy collection build --force --output-path dist/ .
+    mkdir -p ./.ansible/dist
+    ansible-galaxy collection build --force --output-path .ansible/dist/ .
 
 The collection has NO Python runtime dependencies. `pyproject.toml` exists
 solely for dev tooling and is not a Python package (`package = false`).
+
+## Path Conventions
+
+- `ansible.cfg` sets `collections_path=./.ansible/collections` and
+  `roles_path=./roles`. No user-level (`~/.ansible/collections`, etc.) paths are
+  included. All dependencies come from `requirements.yaml` (tracked) or
+  `requirements.dev.yaml` (git-ignored).
+- Install collection dependencies and the project's own collection before
+  running playbooks. Playbooks reference roles by FQCN
+  (`ak1ra_lab.general.<role>`), so the local collection must be installed:
+
+      cp --update=none requirements.yaml requirements.dev.yaml
+      ansible-galaxy collection install -r requirements.dev.yaml -p ./.ansible/collections
+      ansible-galaxy collection install --force --collections-path .ansible/collections .
+
+- `requirements.dev.yaml` is listed in `.gitignore` and may reference local
+  Git repos or file paths for in-development dependency collections.
+- `ansible-galaxy collection build --force --output-path .ansible/dist/ .` can
+  verify `galaxy.yml`'s `manifest.directives` produce a clean tarball (no
+  unintended files).
 
 ## Conventions
 
@@ -58,8 +79,9 @@ currently excluded from the build).
 
 ## Common Operations
 
-    just sync                         # install dev tooling into venv
-    just lint && ansible-lint         # lint everything
-    just build                        # build collection tarball in dist/
-    just clean                        # remove build artifacts and caches
-    pre-commit run --all-files        # run all git hooks
+    uv sync --group dev                                                  # install dev tooling
+    uv run ruff check --fix plugins/ && uv run ruff format plugins/      # lint Python
+    ansible-lint                                                         # lint playbooks & roles
+    ansible-galaxy collection install --force --collections-path .ansible/collections .  # install for testing
+    ansible-galaxy collection build --force --output-path .ansible/dist .        # build release tarball
+    pre-commit run --all-files                                           # run all git hooks
