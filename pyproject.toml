@@ -16,7 +16,12 @@ lint = [
     "ruff>=0.15.0",
     "ty>=0.0.40",
 ]
+docs = [
+    "mkdocs-material>=9.5.0",
+    "mkdocs-static-i18n>=1.2.0",
+]
 dev = [
     { include-group = "lint" },
+    { include-group = "docs" },
     "pre-commit>=4.2.0",
 ]

@@ -2,7 +2,10 @@
 default:
     @just --list --unsorted
 
-# Sync development dependencies for Python plugin work
+# Run all available recipes
+all: lint typecheck docs-build
+
+# Sync development dependencies (may update uv.lock if pyproject.toml changed)
 sync *ARGS:
     uv sync {{ARGS}} --group dev
 
@@ -10,6 +13,18 @@ sync *ARGS:
 lint:
     uv run ruff check --fix plugins/
     uv run ruff format plugins/
+
+# Run static type checks with Astral ty
+typecheck:
+    uv run ty check plugins/
+
+# Serve documentation locally
+docs-serve:
+    uv run --group docs mkdocs serve
+
+# Build documentation
+docs-build:
+    NO_MKDOCS_2_WARNING=1 uv run --group docs mkdocs build
 
 # Install project-local Ansible collection
 ansible-collection-install:
