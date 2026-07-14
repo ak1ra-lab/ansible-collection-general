@@ -1,87 +1,58 @@
 # AGENTS.md
 
-## What This Project Does
+This repo **is** the `ak1ra_lab.general` Ansible collection (`galaxy.yml`
+namespace/name), not a consumer of it. Content: reusable roles under `roles/`
+(`apt_install`, `debian_base`, `docker`, `go_build`, `go_install`,
+`pyproject_install`) plus one Python module `github_releases`
+(`plugins/modules/` + shared logic in `plugins/module_utils/`). No `src/` or
+pytest suite. See `README.md` for the consume/deploy workflow.
 
-`ak1ra_lab.general` is a shared Ansible collection of reusable roles and custom
-modules for Debian/Ubuntu bootstrap, package management, local build helpers, and
-task-specific automation. See `README.md` for consumer setup and role/module details.
+## Tooling - use these, not the defaults
 
-## Environment & Tooling - CRITICAL
+`just <recipe>` is a convenience wrapper for humans; each recipe is a thin
+`uv run ...` / `ansible-galaxy ...` (see `justfile`). Agents can call the
+underlying command directly - the two are equivalent.
 
-- **Python package manager:** `uv` (MUST NOT use pip or poetry).
-- **Python version:** >= 3.11
+- Env/deps: **uv** (`just sync` = `uv sync --group dev`). Never `pip`/`poetry`.
+  Dep groups: `lint` (ruff, ty), `docs` (mkdocs-material, i18n), both pulled into `dev`.
+- Lint+format: **ruff**, scoped to `plugins/` only (`just lint` =
+  `uv run ruff check --fix plugins/` then `uv run ruff format plugins/`). Never
+  `black`/`isort`/`flake8`.
+- Typecheck: **ty** (astral-sh/ty), `plugins/` only (`just typecheck` =
+  `uv run ty check plugins/`). Never `mypy`.
+- Docs: `just docs-build` / `docs-serve` = `uv run --group docs mkdocs ...`.
+- No tests: there is no `tests/` tree and no pytest recipe. Don't invent one.
 
-Install dev tooling and sync the venv:
+Python changes to `plugins/` MUST pass ruff lint+format (and ty) before commit.
 
-    uv sync --group dev
+## Ansible (self-contained layout)
 
-Lint all the things (run before committing):
+`ansible.cfg` pins `roles_path=./roles` and `collections_path=./.ansible/collections`
+and never reaches user-level/parent paths.
 
-    uv run ruff check --fix plugins/
-    uv run ruff format plugins/
-    ansible-lint       # production profile, lints playbooks/, roles/, etc.
-    yamlfmt            # external Go tool; format YAML files per .yamlfmt.yaml
-    pre-commit run --all-files
+Because the `github_releases` module imports its own `module_utils` via the
+absolute path `ansible_collections.ak1ra_lab.general.plugins.module_utils...`,
+the collection must be **installed into itself** for the module (and ansible-lint)
+to resolve. Install the collection before linting or running playbooks:
 
-Build the collection:
+```shell
+just ansible-collection-install   # = ansible-galaxy collection install --force -p .ansible/collections .
+```
 
-    mkdir -p ./.ansible/dist
-    ansible-galaxy collection build --force --output-path .ansible/dist/ .
+- `requirements.yaml` deps (`ansible.posix`, `community.general`) are usually
+  already present at user level, so installing the collection itself is enough.
+- `ansible-lint` runs with `profile: production` (`.ansible-lint`); in non-`offline`
+  mode it auto-installs `requirements.yaml` into a cache dir computed by
+  ansible-compat from the project dir, ignoring `ansible.cfg`'s `collections_path`.
+- `just ansible-collection-build` packages a tarball into `.ansible/dist/`.
+- The `roles/pyproject_install/molecule/` scenario is dormant - don't rely on it.
 
-The collection has NO Python runtime dependencies. `pyproject.toml` exists
-solely for dev tooling and is not a Python package (`package = false`).
+Ansible changes MUST pass `ansible-lint` before commit.
 
-## Path Conventions
+## Docs (bilingual)
 
-- `ansible.cfg` sets `collections_path=./.ansible/collections` and
-  `roles_path=./roles`. No user-level (`~/.ansible/collections`, etc.) paths are
-  included. All dependencies come from `requirements.yaml` (tracked) or
-  `requirements.dev.yaml` (git-ignored).
-- Install collection dependencies and the project's own collection before
-  running playbooks. Playbooks reference roles by FQCN
-  (`ak1ra_lab.general.<role>`), so the local collection must be installed:
-
-      cp --update=none requirements.yaml requirements.dev.yaml
-      ansible-galaxy collection install -r requirements.dev.yaml -p ./.ansible/collections
-      ansible-galaxy collection install --force --collections-path .ansible/collections .
-
-- `requirements.dev.yaml` is listed in `.gitignore` and may reference local
-  Git repos or file paths for in-development dependency collections.
-- `ansible-galaxy collection build --force --output-path .ansible/dist/ .` can
-  verify `galaxy.yml`'s `manifest.directives` produce a clean tarball (no
-  unintended files).
-
-## Conventions
-
-- Role variable names MUST be prefixed with the role name (e.g., `debian_base_*`,
-  `go_build_*`, `pyproject_install_*`). ansible-lint enforces this.
-- `import_role` calls MUST use the fully qualified collection name
-  (`ak1ra_lab.general.<role_name>`).
-- APT repositories MUST use DEB822 `.sources` format via
-  `ansible.builtin.deb822_repository`. Legacy `.list` files MUST be removed.
-- Roles that build/install on the controller (`go_build`, `go_install`,
-  `pyproject_install/local`) MUST set `delegate_to: localhost` and
-  `run_once: true` on every task.
-- Custom modules follow the standard Ansible split: `plugins/modules/` for entry
-  points, `plugins/module_utils/` for shared library code.
-- Playbook names use kebab-case: `<role>-<variant>.yaml`.
-
-## Testing Guidelines
-
-There are NO automated tests. Roles are vetted by running playbooks manually:
-
-    ansible-playbook playbooks/debian-base-defaults.yaml -e 'playbook_hosts=<target>'
-    ansible-playbook playbooks/docker-vps.yaml -e 'playbook_hosts=<target>'
-
-If tests are added, use Molecule for role integration testing. Update
-`galaxy.yml` `manifest.directives` if you add `molecule/` directories (they are
-currently excluded from the build).
-
-## Common Operations
-
-    uv sync --group dev                                                  # install dev tooling
-    uv run ruff check --fix plugins/ && uv run ruff format plugins/      # lint Python
-    ansible-lint                                                         # lint playbooks & roles
-    ansible-galaxy collection install --force --collections-path .ansible/collections .  # install for testing
-    ansible-galaxy collection build --force --output-path .ansible/dist .        # build release tarball
-    pre-commit run --all-files                                           # run all git hooks
+`docs/` is served by mkdocs-material with the i18n plugin
+(`docs_structure: suffix`): every page has an English `*.md` and a
+Simplified-Chinese `*.zh.md` sibling (`index`, `installation`, `roles`,
+`modules`). When adding or changing a page, update BOTH languages and add its
+title to the `nav` plus the `zh` `nav_translations` map in `mkdocs.yml`.
