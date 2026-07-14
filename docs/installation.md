@@ -30,17 +30,16 @@ Clone to any location:
 git clone https://github.com/ak1ra-lab/ansible-collection-general.git
 ```
 
-Install dependencies via `requirements.dev.yaml` (copy from `requirements.yaml`
-if absent), then install the collection itself:
+Install the collection itself (playbooks reference roles by FQCN, so the local
+collection must be installed):
 
 ```shell
-cp --update=none requirements.yaml requirements.dev.yaml
-ansible-galaxy collection install -r requirements.dev.yaml -p ./.ansible/collections
 ansible-galaxy collection install --force --collections-path .ansible/collections .
 ```
 
-`requirements.dev.yaml` is git-ignored and may point to local Git repos or file
-paths for in-development dependencies.
+The `requirements.yaml` deps (`ansible.posix`, `community.general`) are commonly
+already present at the user level, so installing the collection itself is
+usually enough for local development.
 
 ## Consumer Usage
 

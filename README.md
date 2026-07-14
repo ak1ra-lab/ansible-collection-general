@@ -37,18 +37,16 @@ the consumer repository's `ansible.cfg` including that path at the front of
 ## Local Development
 
 `ansible.cfg` sets `collections_path=./.ansible/collections` and
-`roles_path=./roles` — no user-level paths are included. Install dependencies
-and the collection itself before running playbooks (playbooks use FQCN roles,
-so the local collection must be installed):
+`roles_path=./roles` - no user-level paths are included. Playbooks use FQCN
+roles, so install the collection itself before running them:
 
 ```shell
-cp --update=none requirements.yaml requirements.dev.yaml
-ansible-galaxy collection install -r requirements.dev.yaml -p ./.ansible/collections
 ansible-galaxy collection install --force --collections-path .ansible/collections .
 ```
 
-`requirements.dev.yaml` is git-ignored and may point to local Git repos or file
-paths for in-development dependency collections.
+The `requirements.yaml` deps (`ansible.posix`, `community.general`) are commonly
+already present at the user level, so installing the collection itself is
+usually enough for local development.
 
 ## Roles
 
