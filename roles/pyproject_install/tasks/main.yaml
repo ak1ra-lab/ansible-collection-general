@@ -2,10 +2,9 @@
 - name: install required system packages
   when:
     - pyproject_install_system_packages | length > 0
-  ansible.builtin.apt:
+  ansible.builtin.package:
     name: "{{ pyproject_install_system_packages }}"
     state: present
-    update_cache: false
 
 - name: ensure venv parent directory exists
   ansible.builtin.file:

@@ -1,4 +1,27 @@
 ---
+# system packages required by ansible.builtin.pip, keyed by ansible_facts.os_family.
+# Internal data — callers should override pyproject_install_system_packages directly.
+_pyproject_install_system_packages_os_map:
+  Debian:
+    - python3-pip
+    - python3-packaging
+    - python3-venv
+  RedHat:
+    - python3-pip
+    - python3-packaging
+  Suse:
+    - python3-pip
+    - python3-packaging
+  Archlinux:
+    - python-pip
+    - python-packaging
+  Alpine:
+    - py3-pip
+    - py3-packaging
+  default:
+    - python3-pip
+    - python3-packaging
+
 # pip extra arguments by install source (internal; callers should not override)
 _pyproject_install_pip_extra_args:
   local: ""

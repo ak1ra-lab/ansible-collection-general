@@ -28,20 +28,17 @@ pyproject_install_venv_force: false
 # str: temporary directory on the remote host to hold the wheel during transfer
 pyproject_install_remote_tmp_dir: /tmp
 
-# list[str]: system packages installed via apt before creating the venv.
+# list[str]: system packages installed before creating the venv.
 #
 # ansible.builtin.pip requires pip + packaging (or setuptools) in the
-# ansible_python_interpreter environment. On Debian/Ubuntu the stdlib is
-# split: venv, pip, and packaging are separate packages.
+# ansible_python_interpreter environment. Package names are resolved from
+# vars/main.yaml based on ansible_facts.os_family.
 #
 # Set to [] when using a self-contained interpreter (python-build-standalone,
 # conda-forge, etc.) that has been bootstrapped with:
 #   python3.x -m ensurepip --upgrade
 #   python3.x -m pip install packaging
-pyproject_install_system_packages:
-  - python3-pip
-  - python3-packaging
-  - python3-venv
+pyproject_install_system_packages: "{{ _pyproject_install_system_packages_os_map[ansible_facts.os_family] | default(_pyproject_install_system_packages_os_map['default']) }}"
 
 # dict[str, str]: pip install state by install source (internal; override the
 # entire dict to change per-source behavior)
