@@ -1,0 +1,94 @@
+---
+# roles/acme_dns
+#
+# Deploy an acme-dns server: a limited DNS server with RESTful HTTP API
+# to handle ACME DNS-01 challenges easily and securely.
+#
+# Architecture:
+#   1) Build the acme-dns Go binary on localhost via go_build
+#   2) Create a system user, group, and directories on the target host
+#   3) Deploy the binary, config template, and systemd unit
+#   4) Start and enable the acme-dns service
+#
+# Required variables (no defaults, must be set by caller):
+#   acme_dns_server_ip   - public IP of the acme-dns server
+#   acme_dns_domain      - domain name served by this acme-dns instance
+#   acme_dns_nsadmin     - admin email (with @ replaced by .)
+#   acme_dns_api_tls     - TLS mode: none, letsencrypt, or letsencryptstaging
+
+# ── required variables ─────────────────────────────────────────────────────
+
+# public IPv4 of the acme-dns server, used in all A records below.
+acme_dns_server_ip: ""
+# domain served by this acme-dns instance, e.g. auth.acme-dns.example.com
+# A *.{{ acme_dns_domain }} lookup will follow the NS chain:
+#   NS: auth.acme-dns.example.com → ns1.acme-dns.example.com
+#    A: ns1.acme-dns.example.com → acme_dns_server_ip
+acme_dns_domain: ""
+# NS hostname used in the delegation, e.g. ns1.acme-dns.example.com
+# Must resolve to acme_dns_server_ip (glue A record).
+# When left empty it defaults to acme_dns_domain.
+acme_dns_nsname: "{{ acme_dns_domain }}"
+# admin email (with @ replaced by .), e.g. admin.example.com
+acme_dns_nsadmin: ""
+
+# ── [general] ────────────────────────────────────────────────────────────────
+
+# DNS listen address.  Use 127.0.0.1:53 to avoid conflicts with systemd-resolved.
+acme_dns_listen: "0.0.0.0:53"
+# DNS protocol: both, both4, both6, udp, udp4, udp6, tcp, tcp4, tcp6
+acme_dns_protocol: "both"
+acme_dns_debug: false
+
+# ── [api] ────────────────────────────────────────────────────────────────────
+
+# API listen IP.  Bind to 127.0.0.1 unless a reverse proxy handles TLS termination.
+acme_dns_api_ip: "0.0.0.0"
+acme_dns_api_port: "6443"
+# TLS mode (required): none, letsencrypt, letsencryptstaging
+acme_dns_api_tls: "letsencrypt"
+acme_dns_api_acme_cache_dir: "acme"
+# Let's Encrypt expiry notification email
+acme_dns_api_notification_email: ""
+acme_dns_api_disable_registration: false
+# CORS AllowOrigins; set to e.g. ["https://example.com"] to restrict
+acme_dns_api_corsorigins: []
+acme_dns_api_use_header: false
+acme_dns_api_header_name: "X-Forwarded-For"
+
+# ── [database] ───────────────────────────────────────────────────────────────
+
+# sqlite3 or postgres
+acme_dns_db_engine: "sqlite3"
+# filename for sqlite3, postgres://$user:$pass@$host/$db for postgres
+acme_dns_db_connection: "acme-dns.db"
+
+# ── [logconfig] ──────────────────────────────────────────────────────────────
+
+# error, warning, info, debug
+acme_dns_loglevel: "info"
+# stdout or file
+acme_dns_logtype: "stdout"
+acme_dns_logfile: "./acme-dns.log"
+# json or text
+acme_dns_logformat: "json"
+
+# ── system user / group / paths ──────────────────────────────────────────────
+
+acme_dns_user: "acme-dns"
+acme_dns_group: "acme-dns"
+acme_dns_home_dir: "/var/lib/acme-dns"
+acme_dns_config_dir: "/etc/acme-dns"
+acme_dns_install_dir: "/usr/local/bin"
+acme_dns_service_name: "acme-dns"
+acme_dns_systemd_unit_path: "/etc/systemd/system/acme-dns.service"
+
+# ── go_build parameters ──────────────────────────────────────────────────────
+
+acme_dns_go_build_repo_url: "https://github.com/acme-dns/acme-dns.git"
+acme_dns_go_build_repo_version: "master"
+acme_dns_go_build_package: "."
+acme_dns_go_build_static: true
+acme_dns_go_build_goos: "linux"
+acme_dns_go_build_goarch: "amd64"
+acme_dns_go_build_base_dir: "/tmp/acme-dns"

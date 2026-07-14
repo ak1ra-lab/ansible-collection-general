@@ -1,0 +1,71 @@
+#jinja2: lstrip_blocks: True, trim_blocks: True
+[general]
+# DNS interface. Note that systemd-resolved may reserve port 53 on 127.0.0.53
+# In this case acme-dns will error out and you will need to define the listening interface
+# for example: listen = "127.0.0.1:53"
+listen = "{{ acme_dns_listen }}"
+# protocol, "both", "both4", "both6", "udp", "udp4", "udp6" or "tcp", "tcp4", "tcp6"
+protocol = "{{ acme_dns_protocol }}"
+# domain name to serve the requests off of
+domain = "{{ acme_dns_domain }}"
+# zone name server
+nsname = "{{ acme_dns_nsname }}"
+# admin email address, where @ is substituted with .
+nsadmin = "{{ acme_dns_nsadmin }}"
+# predefined records served in addition to the TXT
+records = [
+    # 1) zone apex A: acme_dns_domain → acme_dns_server_ip
+    #    Makes the domain itself reachable (distinct from the glue
+    #    record when acme_dns_nsname != acme_dns_domain).
+    "{{ acme_dns_domain }}. A {{ acme_dns_server_ip }}",
+    # 2) NS delegation: acme_dns_domain → acme_dns_nsname
+    #    Tells resolvers that *.{{ acme_dns_domain }} is served by acme_dns_nsname.
+    "{{ acme_dns_domain }}. NS {{ acme_dns_nsname }}.",
+{% if acme_dns_nsname != acme_dns_domain %}
+    # 3) glue A for the nameserver: acme_dns_nsname → acme_dns_server_ip
+    #    Required so resolvers can reach the NS above.
+    "{{ acme_dns_nsname }}. A {{ acme_dns_server_ip }}",
+{% endif %}
+]
+# debug messages from CORS etc
+debug = {{ acme_dns_debug | lower }}
+
+[database]
+# Database engine to use, sqlite3 or postgres
+engine = "{{ acme_dns_db_engine }}"
+# Connection string, filename for sqlite3 and postgres://$username:$password@$host/$db_name for postgres
+connection = "{{ acme_dns_db_connection }}"
+
+[api]
+# listen ip eg. 127.0.0.1
+ip = "{{ acme_dns_api_ip }}"
+# disable registration endpoint
+disable_registration = {{ acme_dns_api_disable_registration | lower }}
+# listen port, eg. 443 for default HTTPS
+port = "{{ acme_dns_api_port }}"
+# possible values: "letsencrypt", "letsencryptstaging", "none"
+tls = "{{ acme_dns_api_tls }}"
+# only used if tls = "letsencrypt" or "letsencryptstaging"
+acme_cache_dir = "{{ acme_dns_api_acme_cache_dir }}"
+# optional e-mail address to which Let's Encrypt will send expiration notices for the API's cert
+notification_email = "{{ acme_dns_api_notification_email }}"
+# CORS AllowOrigins, wildcards can be used
+corsorigins = [
+{% for origin in acme_dns_api_corsorigins %}
+    "{{ origin }}"{% if not loop.last %},{% endif %}
+{% endfor %}
+]
+# use HTTP header to get the client ip
+use_header = {{ acme_dns_api_use_header | lower }}
+# header name to pull the ip address / list of ip addresses from
+header_name = "{{ acme_dns_api_header_name }}"
+
+[logconfig]
+# logging level: "error", "warning", "info" or "debug"
+loglevel = "{{ acme_dns_loglevel }}"
+# possible values: stdout, file
+logtype = "{{ acme_dns_logtype }}"
+# file path for logfile
+logfile = "{{ acme_dns_logfile }}"
+# format, either "json" or "text"
+logformat = "{{ acme_dns_logformat }}"
