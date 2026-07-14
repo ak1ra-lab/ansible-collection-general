@@ -38,7 +38,11 @@ pyproject_install_remote_tmp_dir: /tmp
 # conda-forge, etc.) that has been bootstrapped with:
 #   python3.x -m ensurepip --upgrade
 #   python3.x -m pip install packaging
-pyproject_install_system_packages: "{{ _pyproject_install_system_packages_os_map[ansible_facts.os_family] | default(_pyproject_install_system_packages_os_map['default']) }}"
+pyproject_install_system_packages: >-
+  {{-
+    _pyproject_install_system_packages_os_map[ansible_facts.os_family | lower]
+    | default(_pyproject_install_system_packages_os_map['default'])
+  }}
 
 # dict[str, str]: pip install state by install source (internal; override the
 # entire dict to change per-source behavior)
