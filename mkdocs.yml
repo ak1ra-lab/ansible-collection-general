@@ -1,0 +1,52 @@
+site_name: ak1ra_lab.general
+site_description: "Shared Ansible roles and custom modules for ak1ra-lab repositories"
+site_url: "https://ak1ra-lab.github.io/ansible-collection-general/"
+site_author: ak1ra
+copyright: "Copyright &copy; 2026 ak1ra"
+repo_url: "https://github.com/ak1ra-lab/ansible-collection-general"
+repo_name: "ak1ra-lab/ansible-collection-general"
+docs_dir: docs
+site_dir: site
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Roles: roles.md
+  - Modules: modules.md
+
+theme:
+  name: material
+  language: en
+  features:
+    - content.code.copy
+    - navigation.footer
+    - navigation.sections
+    - navigation.top
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - pymdownx.superfences
+  - md_in_html
+  - toc:
+      permalink: true
+
+plugins:
+  - i18n:
+      docs_structure: suffix
+      reconfigure_material: true
+      languages:
+        - locale: en
+          name: English
+          default: true
+          build: true
+        - locale: zh
+          name: 简体中文
+          build: true
+          theme:
+            language: zh
+          nav_translations:
+            Home: 首页
+            Installation: 安装
+            Roles: 角色
+            Modules: 模块
