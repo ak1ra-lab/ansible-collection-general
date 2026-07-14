@@ -1,5 +1,5 @@
 ---
-# str: install source — "local" | "pypi" | "testpypi"
+# str: install source - "local" | "pypi" | "testpypi"
 pyproject_install_source: local
 
 # str: PyPI package name (required); also used to derive the default venv path

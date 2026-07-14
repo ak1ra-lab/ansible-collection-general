@@ -13,10 +13,10 @@ go_build_ldflags: "-s -w"
 
 # Local build directories on localhost
 # Path conventions:
-#   go_build_base_dir  — absolute (default /tmp/go-build)
-#   go_build_repo_dir  — absolute (empty → derived from URL)
-#   go_build_chdir     — relative to go_build_repo_dir
-#   go_build_gopath, go_build_gomodcache, go_build_gocache  — absolute (derived from go_build_base_dir)
+#   go_build_base_dir  - absolute (default /tmp/go-build)
+#   go_build_repo_dir  - absolute (empty → derived from URL)
+#   go_build_chdir     - relative to go_build_repo_dir
+#   go_build_gopath, go_build_gomodcache, go_build_gocache  - absolute (derived from go_build_base_dir)
 go_build_base_dir: "/tmp/go-build"
 # Checkout directory on localhost. Leave empty to derive
 # "{{ go_build_base_dir }}/src/<git-server>/<org>/<project>"

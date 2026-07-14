@@ -23,7 +23,7 @@
 #
 # The download location is controlled by github_releases_remote_src in
 # host_vars/all/github_releases.yaml.  When false the asset is downloaded
-# on the controller and copied to the target — useful when the target
+# on the controller and copied to the target - useful when the target
 # cannot reach GitHub.  When true the target fetches the asset directly.
 - name: ak1ra_lab.general.github_releases - python-build-standalone
   hosts: "{{ playbook_hosts | default('localhost') }}"
