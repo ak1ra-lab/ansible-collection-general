@@ -5,5 +5,6 @@
   become: true
 
   tasks:
-    - ansible.builtin.import_role:
+    - name: deploy acme-dns role
+      ansible.builtin.import_role:
         name: ak1ra_lab.general.acme_dns
