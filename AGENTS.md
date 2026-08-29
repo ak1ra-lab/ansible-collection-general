@@ -3,8 +3,8 @@
 This repo **is** the `ak1ra_lab.general` Ansible collection (`galaxy.yml`
 namespace/name), not a consumer of it. Content: reusable roles under `roles/`
 (`apt_install`, `debian_base`, `docker`, `go_build`,
-`pyproject_install`) plus one Python module `github_releases`
-(`plugins/modules/` + shared logic in `plugins/module_utils/`). No `src/` or
+`pyproject_install`) plus Python modules `github_releases_info` and
+`cpu_info` (`plugins/modules/` + shared logic in `plugins/module_utils/`). No `src/` or
 pytest suite. See `README.md` for the consume/deploy workflow.
 
 ## Tooling - use these, not the defaults
@@ -14,12 +14,15 @@ pytest suite. See `README.md` for the consume/deploy workflow.
 underlying command directly - the two are equivalent.
 
 - Env/deps: **uv** (`just sync` = `uv sync --group dev`). Never `pip`/`poetry`.
-  Dep groups: `lint` (ruff, ty), `docs` (mkdocs-material, i18n), both pulled into `dev`.
+  Dep groups: `lint` (ruff, ty, ansible-core), `docs` (mkdocs-material, i18n), both pulled into `dev`.
 - Lint+format: **ruff**, scoped to `plugins/` only (`just lint` =
   `uv run ruff check --fix plugins/` then `uv run ruff format plugins/`). Never
   `black`/`isort`/`flake8`.
 - Typecheck: **ty** (astral-sh/ty), `plugins/` only (`just typecheck` =
-  `uv run ty check plugins/`). Never `mypy`.
+  `uv run ty check plugins/`). Never `mypy`. ty resolves the
+  `ansible_collections...` self-imports from `.ansible/collections` (`[tool.ty.environment]`
+  in `pyproject.toml`), and the recipe reinstalls the collection first so the
+  snapshot is fresh.
 - Docs: `just docs-build` / `docs-serve` = `uv run --group docs mkdocs ...`.
 - No tests: there is no `tests/` tree and no pytest recipe. Don't invent one.
 
@@ -30,10 +33,12 @@ Python changes to `plugins/` MUST pass ruff lint+format (and ty) before commit.
 `ansible.cfg` pins `roles_path=./roles` and `collections_path=./.ansible/collections`
 and never reaches user-level/parent paths.
 
-Because the `github_releases` module imports its own `module_utils` via the
-absolute path `ansible_collections.ak1ra_lab.general.plugins.module_utils...`,
-the collection must be **installed into itself** for the module (and ansible-lint)
-to resolve. Install the collection before linting or running playbooks:
+Because the modules (`github_releases_info`, `cpu_info`) import their own
+`module_utils` via the absolute path
+`ansible_collections.ak1ra_lab.general.plugins.module_utils...`,
+the collection must be **installed into itself** for the modules (ty and
+ansible-lint) to resolve. Install the collection before typechecking, linting,
+or running playbooks:
 
 ```shell
 just ansible-collection-install   # = ansible-galaxy collection install --force -p .ansible/collections .

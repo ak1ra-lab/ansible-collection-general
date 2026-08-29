@@ -15,7 +15,8 @@ lint:
     uv run ruff format plugins/
 
 # Run static type checks with Astral ty
-typecheck:
+# Resolving the collection-namespace imports requires a fresh install
+typecheck: ansible-collection-install
     uv run ty check plugins/
 
 # Serve documentation locally

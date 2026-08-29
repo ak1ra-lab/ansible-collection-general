@@ -11,8 +11,14 @@ package = false
 [tool.ruff]
 target-version = "py311"
 
+# The modules import their own module_utils via the installed collection
+# namespace (see `just ansible-collection-install`).
+[tool.ty.environment]
+root = [".ansible/collections"]
+
 [dependency-groups]
 lint = [
+    "ansible-core>=2.19.12",
     "ruff>=0.15.0",
     "ty>=0.0.40",
 ]
