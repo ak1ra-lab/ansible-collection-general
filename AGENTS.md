@@ -2,7 +2,7 @@
 
 This repo **is** the `ak1ra_lab.general` Ansible collection (`galaxy.yml`
 namespace/name), not a consumer of it. Content: reusable roles under `roles/`
-(`apt_install`, `debian_base`, `docker`, `go_build`, `go_install`,
+(`apt_install`, `debian_base`, `docker`, `go_build`,
 `pyproject_install`) plus one Python module `github_releases`
 (`plugins/modules/` + shared logic in `plugins/module_utils/`). No `src/` or
 pytest suite. See `README.md` for the consume/deploy workflow.
