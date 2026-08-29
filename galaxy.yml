@@ -1,7 +1,7 @@
 ---
 namespace: ak1ra_lab
 name: general
-version: 0.1.0
+version: 0.2.0
 readme: README.md
 authors:
   - ak1ra <ak1ra.komj@gmail.com>

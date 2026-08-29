@@ -12,7 +12,9 @@
 
 ## 模块
 
-- `github_releases`: 查询 GitHub release 元数据, 规范化资产名称, 为本地平台选择匹配的资产,
-  并可选地在受管主机上下载该资产.
+- `github_releases_info`: 查询 GitHub release 元数据, 规范化资产名称, 为本地平台选择匹配的资产.
+  实际下载交给后续 task, 例如 `ansible.builtin.get_url`.
+- `cpu_info`: 采集 CPU 能力 facts, 包含原始 CPU flags 以及探测到的 x86-64 微架构级别,
+  可以传给 `github_releases_info` 辅助资产选择.
 
 用法详见 [安装](installation.md), [角色](roles.md) 和 [模块](modules.md).

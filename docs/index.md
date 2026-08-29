@@ -14,9 +14,12 @@ modules consumed across multiple `ak1ra-lab` repositories.
 
 ## Modules
 
-- `github_releases`: query GitHub release metadata, normalize asset names, select
-  a matching asset for the local platform, and optionally download it on the
-  managed host.
+- `github_releases_info`: query GitHub release metadata, normalize asset names,
+  and select a matching asset for the local platform. Downloading is left to
+  follow-up tasks such as `ansible.builtin.get_url`.
+- `cpu_info`: collect CPU capability facts, including raw CPU flags and the
+  detected x86-64 microarchitecture level, which can be fed into
+  `github_releases_info` asset selection.
 
 See [Installation](installation.md), [Roles](roles.md), and
 [Modules](modules.md) for usage details.

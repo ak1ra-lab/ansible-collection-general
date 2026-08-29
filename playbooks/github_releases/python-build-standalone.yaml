@@ -50,7 +50,8 @@
 
     _pbs_remote_download: "{{ github_releases_remote_src | default(true) }}"
     _pbs_download_dir: /tmp/github-releases
-    _pbs_asset_path_remote: "/tmp/python-build-standalone-{{ python_build_standalone_version }}.tar.gz"
+    _pbs_asset_path_local: "{{ _pbs_download_dir }}/{{ _pbs_release.selected_asset.name }}"
+    _pbs_asset_path_remote: /tmp/python-build-standalone-{{ python_build_standalone_version }}.tar.gz
     _pbs_pip_packages: "{{ ['packaging'] + python_build_standalone_extra_packages }}"
 
   tasks:
@@ -73,14 +74,11 @@
             state: absent
           when: python_build_standalone_force and _pbs_version_check.rc == 0
 
-        - name: fetch python-build-standalone release
-          ak1ra_lab.general.github_releases:
+        - name: fetch python-build-standalone release metadata
+          ak1ra_lab.general.github_releases_info:
             repo: astral-sh/python-build-standalone
             release_tag: "{{ python_build_standalone_release_tag or omit }}"
             token: "{{ github_releases_token | default(lookup('ansible.builtin.env', 'GITHUB_TOKEN', default='')) }}"
-            download: true
-            download_dir: "{{ _pbs_download_dir }}"
-            force_download: false
             asset_name_regex: 'cpython-{{ python_build_standalone_version }}\.\d+\+\d+-{{ _python_build_standalone_arch }}-unknown-linux-gnu-install_only_stripped\.tar\.gz'  # noqa: yaml[line-length]
           delegate_to: "{{ 'localhost' if not _pbs_remote_download else omit }}"
           run_once: "{{ not _pbs_remote_download }}"
@@ -91,10 +89,29 @@
           ansible.builtin.debug:
             var: _pbs_release.selected_asset
 
+        - name: ensure download directory exists
+          ansible.builtin.file:
+            path: "{{ _pbs_download_dir }}"
+            state: directory
+            mode: "0755"
+          delegate_to: "{{ 'localhost' if not _pbs_remote_download else omit }}"
+          run_once: "{{ not _pbs_remote_download }}"
+          become: false
+
+        - name: download release asset
+          ansible.builtin.get_url:
+            url: "{{ _pbs_release.download_url }}"
+            dest: "{{ _pbs_asset_path_local }}"
+            checksum: "{{ _pbs_release.download_checksum or omit }}"
+            mode: "0644"
+          delegate_to: "{{ 'localhost' if not _pbs_remote_download else omit }}"
+          run_once: "{{ not _pbs_remote_download }}"
+          become: false
+
         - name: copy release asset to target
           when: not _pbs_remote_download
           ansible.builtin.copy:
-            src: "{{ _pbs_release.download_path }}"
+            src: "{{ _pbs_asset_path_local }}"
             dest: "{{ _pbs_asset_path_remote }}"
             mode: "0644"
 
@@ -109,7 +126,7 @@
         # the contents land directly under python_build_standalone_dir.
         - name: extract standalone Python
           ansible.builtin.unarchive:
-            src: "{{ _pbs_asset_path_remote if not _pbs_remote_download else _pbs_release.download_path }}"
+            src: "{{ _pbs_asset_path_remote if not _pbs_remote_download else _pbs_asset_path_local }}"
             dest: "{{ python_build_standalone_dir }}"
             remote_src: true
             extra_opts:

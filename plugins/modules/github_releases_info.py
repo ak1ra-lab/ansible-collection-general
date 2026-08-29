@@ -1,33 +1,31 @@
 import json
-import os
-import shutil
-import tempfile
-from typing import Any, Dict, Tuple
+from typing import Any, Dict
 from urllib.error import HTTPError, URLError
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.urls import open_url
 from ansible_collections.ak1ra_lab.general.plugins.module_utils.github_releases import (
+    MICROARCH_LEVEL_ALIASES,
     build_release_api_url,
     build_request_headers,
-    file_matches_checksum,
     normalize_asset,
     normalize_release,
     normalized_request_platform,
-    prepare_download_details,
+    prepare_download_hints,
     select_candidate_assets,
     split_repo,
 )
 
-DOWNLOAD_BLOCK_SIZE = 1024 * 1024
-
 DOCUMENTATION = r"""
 ---
-module: github_releases
-short_description: Discover, select, and optionally download GitHub release assets
+module: github_releases_info
+short_description: Discover and select GitHub release assets for the local platform
 description:
-  - Query the GitHub releases API for a repository, normalize release assets,
-    select a matching asset, and optionally download it on the managed host.
+  - Query the GitHub releases API for a repository, normalize the release
+    assets, and select the best matching asset for the current host.
+  - This is a read-only info module. Downloading the selected asset is left to
+    follow-up tasks such as M(ansible.builtin.get_url); see the returned
+    RV(download_url) and RV(download_checksum) values.
 options:
   repo:
     description:
@@ -46,7 +44,7 @@ options:
     no_log: true
   validate_certs:
     description:
-      - Validate TLS certificates for GitHub API and asset downloads.
+      - Validate TLS certificates for GitHub API requests.
     type: bool
     default: true
   timeout:
@@ -54,34 +52,18 @@ options:
       - HTTP timeout in seconds.
     type: int
     default: 30
-  download:
-    description:
-      - Download the selected asset on the managed host.
-    type: bool
-    default: true
-  download_dir:
-    description:
-      - Base directory for downloaded assets.
-    type: path
-    default: /tmp/github-releases
-  download_mode:
-    description:
-      - File mode for downloaded assets.
-    type: str
-    default: '0644'
-  force_download:
-    description:
-      - Force a fresh asset download even when the destination already exists.
-    type: bool
-    default: false
   require_digest:
     description:
-      - Require either an explicit checksum or a digest provided by GitHub.
+      - Fail when neither an explicit checksum nor a digest provided by GitHub
+        is available for the selected asset, so callers can always pass
+        RV(download_checksum) to M(ansible.builtin.get_url).
     type: bool
     default: true
   asset_checksum:
     description:
-      - Explicit checksum string for the selected asset.
+      - Explicit checksum string for the selected asset. Accepts
+        C(algorithm:value) or a hexadecimal digest whose length identifies the
+        algorithm. Returned normalized as C(algorithm:value).
     type: str
     default: ''
   asset_url:
@@ -125,6 +107,17 @@ options:
       - Override the requested Linux libc token.
     type: str
     default: ''
+  asset_microarch:
+    description:
+      - Requested CPU microarchitecture level, for example C(x86-64-v3).
+        Shorthands C(v3) and C(3) are accepted.
+      - Assets tagged with a different level (for example C(x86-64-v4)) are
+        filtered out; assets tagged with the requested level are preferred
+        over untagged (baseline) assets.
+      - Pair with the M(ak1ra_lab.general.cpu_info) module, whose detected
+        level can be passed here.
+    type: str
+    default: ''
   preferred_asset_families:
     description:
       - Asset family preference order used during automatic narrowing.
@@ -133,23 +126,57 @@ options:
     default:
       - deb
       - archive
+notes:
+  - Assets tagged with a microarchitecture level are only recognized by full
+    filename tokens such as C(x86-64-v3) or C(amd64_v3); pass feature tokens
+    like C(avx2) via O(asset_name_contains) instead.
+  - Supports check mode; the API query runs in check mode as usual for info
+    modules.
 author:
   - ak1ra
 """
 
 EXAMPLES = r"""
 - name: Inspect the latest release without downloading
-  ak1ra_lab.general.github_releases:
+  ak1ra_lab.general.github_releases_info:
     repo: sharkdp/bat
-    download: false
 
-- name: Download a selected release asset
-  ak1ra_lab.general.github_releases:
+- name: Select an asset and download it with get_url
+  ak1ra_lab.general.github_releases_info:
     repo: sharkdp/bat
-    asset_name_regex: 'linux.*amd64.*\.deb$'
+    asset_name_regex: 'linux.*x86_64.*\.tar\.gz$'
+  register: bat_release
+
+- name: Download the selected asset
+  ansible.builtin.get_url:
+    url: "{{ bat_release.download_url }}"
+    dest: /tmp/{{ bat_release.selected_asset.name }}
+    checksum: "{{ bat_release.download_checksum }}"
+    mode: "0644"
+
+- name: Select an asset matching the CPU microarchitecture level
+  ak1ra_lab.general.github_releases_info:
+    repo: example/tool
+    asset_microarch: "{{ ansible_facts['cpu']['microarch_level'] }}"
 """
 
 RETURN = r"""
+owner:
+  description: Repository owner.
+  returned: always
+  type: str
+name:
+  description: Repository name.
+  returned: always
+  type: str
+repo:
+  description: Repository in C(OWNER/REPO) format.
+  returned: always
+  type: str
+release_api_url:
+  description: GitHub releases API URL that was queried.
+  returned: always
+  type: str
 release:
   description: Normalized release metadata.
   returned: always
@@ -162,30 +189,59 @@ candidate_assets:
   description: Assets that remain after selection filtering.
   returned: always
   type: list
+selected_family:
+  description: Asset family chosen from O(preferred_asset_families).
+  returned: always
+  type: str
 selected_asset:
   description: Final selected asset.
   returned: always
   type: dict
-download_path:
-  description: Download destination path when download is enabled.
+download_url:
+  description:
+    - Browser download URL of the selected asset, ready for
+      M(ansible.builtin.get_url).
   returned: always
   type: str
 download_checksum:
-  description: Checksum used for verification when available.
+  description:
+    - Checksum for the selected asset in C(algorithm:value) form, ready for
+      M(ansible.builtin.get_url). Empty when no checksum is available.
   returned: always
   type: str
 download_verification:
-  description: Verification mode for the selected asset.
+  description:
+    - Checksum source for the selected asset. C(explicit) when
+      O(asset_checksum) was provided, C(github-digest) when the GitHub asset
+      digest field is available, C(none) otherwise.
   returned: always
   type: str
-download_result:
-  description: Download execution details when download is enabled.
+  sample: github-digest
+requested_os:
+  description: Operating system token used during selection.
   returned: always
-  type: dict
+  type: str
+requested_arch:
+  description: Architecture token used during selection.
+  returned: always
+  type: str
+requested_distro:
+  description: Distribution token used during selection.
+  returned: always
+  type: str
+requested_libc:
+  description: Linux libc token used during selection.
+  returned: always
+  type: str
+requested_microarch:
+  description: Microarchitecture level token used during selection.
+  returned: always
+  type: str
+  sample: x86-64-v3
 """
 
 
-def fail_http_error(module: AnsibleModule, exc: Exception, context: str) -> None:
+def fail_http_error(module: AnsibleModule, exc: Exception, context: str) -> Any:
     status = getattr(exc, "code", None)
     response = ""
     reader = getattr(exc, "read", None)
@@ -199,7 +255,7 @@ def fail_http_error(module: AnsibleModule, exc: Exception, context: str) -> None
         except Exception:
             response = ""
 
-    module.fail_json(
+    return module.fail_json(
         msg="{0}: {1}".format(context, exc),
         status=status,
         response=response,
@@ -224,95 +280,17 @@ def query_release_metadata(
         finally:
             response.close()
     except HTTPError as exc:
-        fail_http_error(module, exc, "failed to query GitHub release metadata")
+        return fail_http_error(module, exc, "failed to query GitHub release metadata")
     except URLError as exc:
-        module.fail_json(msg="failed to query GitHub release metadata: {0}".format(exc))
+        return module.fail_json(
+            msg="failed to query GitHub release metadata: {0}".format(exc)
+        )
     except ValueError as exc:
-        module.fail_json(
+        return module.fail_json(
             msg="failed to decode GitHub release metadata: {0}".format(exc)
         )
 
-    module.fail_json(msg="failed to query GitHub release metadata")
-
-
-def download_selected_asset(
-    module: AnsibleModule,
-    selected_asset: Dict[str, Any],
-    request_headers: Dict[str, str],
-    download_details: Dict[str, str],
-) -> Tuple[bool, Dict[str, Any]]:
-    download_path = download_details["download_path"]
-    download_checksum = download_details["download_checksum"]
-
-    os.makedirs(os.path.dirname(download_path), mode=0o755, exist_ok=True)
-
-    if os.path.exists(download_path) and not module.params["force_download"]:
-        if not download_checksum:
-            return False, {
-                "dest": download_path,
-                "skipped": True,
-                "reason": "destination exists and force_download is false",
-            }
-
-        try:
-            if file_matches_checksum(download_path, download_checksum):
-                return False, {
-                    "dest": download_path,
-                    "skipped": True,
-                    "reason": "destination already matches checksum",
-                }
-        except ValueError as exc:
-            module.fail_json(msg=str(exc))
-
-    temp_file = None
-    response = None
-    try:
-        response = open_url(
-            selected_asset["browser_download_url"],
-            headers=request_headers,
-            method="GET",
-            validate_certs=module.params["validate_certs"],
-            timeout=module.params["timeout"],
-        )
-
-        file_descriptor, temp_file = tempfile.mkstemp(
-            dir=os.path.dirname(download_path),
-            prefix=".github-release-",
-            suffix=".tmp",
-        )
-        with os.fdopen(file_descriptor, "wb") as handle:
-            shutil.copyfileobj(response, handle, length=DOWNLOAD_BLOCK_SIZE)
-
-        if download_checksum:
-            try:
-                if not file_matches_checksum(temp_file, download_checksum):
-                    module.fail_json(
-                        msg="downloaded asset checksum did not match expected value",
-                        dest=download_path,
-                        checksum=download_checksum,
-                    )
-            except ValueError as exc:
-                module.fail_json(msg=str(exc))
-
-        os.replace(temp_file, download_path)
-        temp_file = None
-        os.chmod(download_path, int(str(module.params["download_mode"]), 8))
-        return True, {
-            "dest": download_path,
-            "size": os.path.getsize(download_path),
-            "url": selected_asset["browser_download_url"],
-        }
-    except HTTPError as exc:
-        fail_http_error(module, exc, "failed to download GitHub release asset")
-    except URLError as exc:
-        module.fail_json(msg="failed to download GitHub release asset: {0}".format(exc))
-    finally:
-        if response is not None:
-            response.close()
-        if temp_file and os.path.exists(temp_file):
-            os.unlink(temp_file)
-
-    module.fail_json(msg="failed to download GitHub release asset")
+    return module.fail_json(msg="failed to query GitHub release metadata")
 
 
 def main() -> None:
@@ -323,10 +301,6 @@ def main() -> None:
             "token": {"type": "str", "default": "", "no_log": True},
             "validate_certs": {"type": "bool", "default": True},
             "timeout": {"type": "int", "default": 30},
-            "download": {"type": "bool", "default": True},
-            "download_dir": {"type": "path", "default": "/tmp/github-releases"},
-            "download_mode": {"type": "str", "default": "0644"},
-            "force_download": {"type": "bool", "default": False},
             "require_digest": {"type": "bool", "default": True},
             "asset_checksum": {"type": "str", "default": ""},
             "asset_url": {"type": "str", "default": ""},
@@ -337,13 +311,14 @@ def main() -> None:
             "asset_arch": {"type": "str", "default": ""},
             "asset_distro": {"type": "str", "default": ""},
             "asset_libc": {"type": "str", "default": ""},
+            "asset_microarch": {"type": "str", "default": ""},
             "preferred_asset_families": {
                 "type": "list",
                 "elements": "str",
                 "default": ["deb", "archive"],
             },
         },
-        supports_check_mode=False,
+        supports_check_mode=True,
     )
 
     params = module.params
@@ -361,6 +336,15 @@ def main() -> None:
     request_headers = build_request_headers(params["token"])
     requested_platform = normalized_request_platform(params)
 
+    requested_microarch = requested_platform["requested_microarch"]
+    if requested_microarch and requested_microarch not in MICROARCH_LEVEL_ALIASES:
+        module.fail_json(
+            msg=(
+                "asset_microarch must be empty or one of {0} (shorthands v1..v4 are"
+                " accepted)".format(", ".join(MICROARCH_LEVEL_ALIASES))
+            )
+        )
+
     release_raw = query_release_metadata(module, release_api_url, request_headers)
     release = normalize_release(release_raw, params["repo"], release_api_url)
     assets = [
@@ -374,11 +358,11 @@ def main() -> None:
             params,
             requested_platform,
         )
+        download_hints = prepare_download_hints(params, selected_asset)
     except (LookupError, RuntimeError, ValueError) as exc:
         module.fail_json(msg=str(exc), release=release, assets=assets)
 
     result: Dict[str, Any] = {
-        "changed": False,
         "owner": owner,
         "name": name,
         "repo": params["repo"],
@@ -388,36 +372,20 @@ def main() -> None:
         "candidate_assets": candidate_assets,
         "selected_family": selected_family,
         "selected_asset": selected_asset,
-        "download_path": "",
-        "download_checksum": "",
-        "download_verification": "not-requested",
-        "download_result": {},
+        "download_url": download_hints["download_url"],
+        "download_checksum": download_hints["download_checksum"],
+        "download_verification": download_hints["download_verification"],
     }
     result.update(requested_platform)
 
-    if params["download"]:
-        download_details = prepare_download_details(
-            params, owner, name, release, selected_asset
+    if params["require_digest"] and not result["download_checksum"]:
+        module.fail_json(
+            msg=(
+                "require_digest is true but neither asset_checksum nor the GitHub asset digest field "
+                "is available for {0}."
+            ).format(selected_asset["name"]),
+            **result,
         )
-        result.update(download_details)
-
-        if params["require_digest"] and not download_details["download_checksum"]:
-            module.fail_json(
-                msg=(
-                    "require_digest is true but neither asset_checksum nor the GitHub asset digest field "
-                    "is available for {0}."
-                ).format(selected_asset["name"]),
-                **result,
-            )
-
-        changed, download_result = download_selected_asset(
-            module,
-            selected_asset,
-            request_headers,
-            download_details,
-        )
-        result["changed"] = changed
-        result["download_result"] = download_result
 
     module.exit_json(**result)
 

@@ -11,7 +11,8 @@ Roles include:
 
 Modules include:
 
-- `ak1ra_lab.general.github_releases`
+- `ak1ra_lab.general.github_releases_info`
+- `ak1ra_lab.general.cpu_info`
 
 ## Install
 
@@ -56,9 +57,10 @@ usually enough for local development.
 
 ## Modules
 
-- `github_releases`: query GitHub release metadata, normalize asset names, select a matching asset for the local platform, and optionally download it on the managed host.
+- `github_releases_info`: query GitHub release metadata, normalize asset names, and select a matching asset for the local platform. Downloading is left to follow-up tasks such as `ansible.builtin.get_url`, using the returned `download_url` and `download_checksum`.
+- `cpu_info`: collect CPU capability facts, including raw CPU flags and the detected x86-64 microarchitecture level (`x86-64-v1`..`v4`), which can be fed into `github_releases_info` asset selection.
 
-For full module argument and return-value reference, use `ansible-doc ak1ra_lab.general.github_releases`
+For full module argument and return-value reference, use `ansible-doc ak1ra_lab.general.github_releases_info`
 against an installed copy of the collection.
 
 See [docs/installation.md](docs/installation.md), [docs/roles.md](docs/roles.md), and

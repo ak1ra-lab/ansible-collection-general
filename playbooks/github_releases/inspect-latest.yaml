@@ -6,11 +6,19 @@
   become: false
 
   tasks:
+    - name: collect cpu capability facts
+      ak1ra_lab.general.cpu_info:
+      register: cpu_facts
+
+    - name: print detected cpu microarchitecture level
+      ansible.builtin.debug:
+        var: cpu_facts.cpu.microarch_level
+
     - name: inspect github release assets
-      ak1ra_lab.general.github_releases:
+      ak1ra_lab.general.github_releases_info:
         repo: "{{ github_releases_repo }}"
         token: "{{ github_releases_token | default(lookup('ansible.builtin.env', 'GITHUB_TOKEN', default='')) }}"
-        download: false
+        asset_microarch: "{{ ansible_facts['cpu']['microarch_level'] }}"
       register: github_releases_result
 
     - name: print normalized github release metadata

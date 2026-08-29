@@ -1,5 +1,4 @@
 import ast
-import hashlib
 import os
 import platform
 import re
@@ -74,8 +73,19 @@ OS_ALIAS_MAP = {
     "netbsd": ["netbsd"],
 }
 
+# Asset filename tokens for x86-64 microarchitecture levels, covering common
+# naming styles: x86-64-v3, x86_64_v3 (GoReleaser), amd64-v3, x86_64v3, ...
+MICROARCH_LEVEL_ALIASES = {
+    "x86-64-v{0}".format(level): [
+        "{0}{1}v{2}".format(prefix, separator, level)
+        for prefix in ("x86-64", "x86_64", "amd64")
+        for separator in ("-", "_", "")
+    ]
+    for level in range(1, 5)
+}
+
 ARCH_ALIAS_MAP = {
-    "amd64": ["amd64", "x86_64", "x64", "64bit"],
+    "amd64": ["amd64", "x86_64", "x86-64", "x64", "64bit"],
     "386": ["386", "i386", "i686", "32bit"],
     "arm64": ["arm64", "aarch64", "armv8"],
     "armv7": ["armv7", "armv7l", "armhf"],
@@ -190,6 +200,15 @@ def detect_local_platform_facts() -> Dict[str, str]:
     }
 
 
+def normalize_microarch(value: Any) -> str:
+    microarch = lower_string(value)
+    shorthand = re.compile(r"^v?([1-4])$")
+    match = shorthand.match(microarch)
+    if match:
+        return "x86-64-v{0}".format(match.group(1))
+    return microarch
+
+
 def normalized_request_platform(
     params: Mapping[str, Any],
     facts: Optional[Mapping[str, Any]] = None,
@@ -222,11 +241,14 @@ def normalized_request_platform(
     if not requested_libc and system == "linux":
         requested_libc = LIBC_FACT_MAP.get(distribution, "gnu")
 
+    requested_microarch = normalize_microarch(params.get("asset_microarch"))
+
     return {
         "requested_os": requested_os,
         "requested_arch": requested_arch,
         "requested_distro": requested_distro,
         "requested_libc": requested_libc,
+        "requested_microarch": requested_microarch,
     }
 
 
@@ -273,16 +295,31 @@ def parse_digest(digest: str) -> Tuple[str, str, str]:
 
 
 def infer_alias_matches(
-    name_lower: str, alias_map: Mapping[str, Sequence[str]]
+    name_lower: str,
+    alias_map: Mapping[str, Sequence[str]],
+    pattern_template: str = r"(^|[._-]){0}([._-]|$)",
 ) -> List[str]:
     matches = []
     for canonical, aliases in alias_map.items():
         for alias in aliases:
-            pattern = r"(^|[._-]){0}([._-]|$)".format(re.escape(alias))
+            pattern = pattern_template.format(re.escape(alias))
             if re.search(pattern, name_lower):
                 matches.append(canonical)
                 break
     return matches
+
+
+# Microarch level tokens must not run into a version string: in
+# tool-amd64-v1.19.30.deb the "v1" belongs to version 1.19.30, so a
+# level tag is only recognized when the following separator is not directly
+# followed by a digit (the rare "level-1.2.3" spelling is left untagged).
+MICROARCH_ALIAS_PATTERN = r"(^|[._-]){0}(?:[._-](?!\d)|$)"
+
+
+def infer_microarch_matches(name_lower: str) -> List[str]:
+    return infer_alias_matches(
+        name_lower, MICROARCH_LEVEL_ALIASES, MICROARCH_ALIAS_PATTERN
+    )
 
 
 def normalize_release(
@@ -333,6 +370,7 @@ def normalize_asset(asset_raw: Mapping[str, Any]) -> Dict[str, Any]:
         "inferred_arch": infer_alias_matches(name_lower, ARCH_ALIAS_MAP),
         "inferred_distro": infer_alias_matches(name_lower, DISTRO_ALIAS_MAP),
         "inferred_libc": infer_alias_matches(name_lower, LIBC_ALIAS_MAP),
+        "inferred_microarch": infer_microarch_matches(name_lower),
     }
 
 
@@ -344,6 +382,7 @@ def asset_matches_platform(
         ("requested_arch", "inferred_arch"),
         ("requested_distro", "inferred_distro"),
         ("requested_libc", "inferred_libc"),
+        ("requested_microarch", "inferred_microarch"),
     ):
         requested_value = requested_platform.get(requested_key, "")
         inferred_values = asset.get(inferred_key) or []
@@ -457,6 +496,11 @@ def select_candidate_assets(
             requested_platform.get("requested_arch", ""),
             "inferred_arch",
         )
+        candidates = prefer_specific_candidates(
+            candidates,
+            requested_platform.get("requested_microarch", ""),
+            "inferred_microarch",
+        )
 
     if not candidates:
         raise LookupError(
@@ -470,8 +514,9 @@ def select_candidate_assets(
             str(asset.get("name") or "") for asset in candidates
         )
         raise RuntimeError(
-            "Multiple GitHub release assets matched for {0}: {1}. Refine selection inputs or inspect "
-            "candidates with playbooks/github_releases/inspect-latest.yaml.".format(
+            "Multiple GitHub release assets matched for {0}: {1}. Refine selection inputs "
+            "(e.g. asset_microarch, asset_name_regex) or inspect candidates with "
+            "playbooks/github_releases/inspect-latest.yaml.".format(
                 repo,
                 candidate_names,
             )
@@ -480,34 +525,26 @@ def select_candidate_assets(
     return candidates, selected_family, candidates[0]
 
 
-def prepare_download_details(
+def prepare_download_hints(
     params: Mapping[str, Any],
-    owner: str,
-    name: str,
-    release: Mapping[str, Any],
     selected_asset: Mapping[str, Any],
 ) -> Dict[str, str]:
-    explicit_checksum = str(params.get("asset_checksum") or "")
+    explicit_checksum = str(params.get("asset_checksum") or "").strip()
     selected_digest = str(selected_asset.get("digest") or "")
-    download_checksum = explicit_checksum or selected_digest
 
     if explicit_checksum:
         download_verification = "explicit"
+        algorithm, value = checksum_parts(explicit_checksum)
+        download_checksum = "{0}:{1}".format(algorithm, value)
     elif selected_digest:
         download_verification = "github-digest"
+        download_checksum = selected_digest
     else:
         download_verification = "none"
-
-    download_path = os.path.join(
-        str(params.get("download_dir") or "/tmp/github-releases"),
-        owner,
-        name,
-        str(release.get("tag_name") or ""),
-        str(selected_asset.get("name") or ""),
-    )
+        download_checksum = ""
 
     return {
-        "download_path": download_path,
+        "download_url": str(selected_asset.get("browser_download_url") or ""),
         "download_checksum": download_checksum,
         "download_verification": download_verification,
     }
@@ -530,15 +567,3 @@ def checksum_parts(checksum: str) -> Tuple[str, str]:
     raise ValueError(
         "checksum must be in algorithm:value format or be a recognizable hexadecimal digest"
     )
-
-
-def file_matches_checksum(path: str, checksum: str) -> bool:
-    algorithm, value = checksum_parts(checksum)
-    if not algorithm:
-        return False
-
-    digest = hashlib.new(algorithm)
-    with open(path, "rb") as handle:
-        for chunk in iter(lambda: handle.read(65536), b""):
-            digest.update(chunk)
-    return digest.hexdigest().lower() == value
