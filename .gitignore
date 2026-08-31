@@ -349,5 +349,4 @@ credentials.yaml
 examples/*
 
 ## LLM
-docs/sessions/*
-.agents/state/sessions/*
+.agents/sessions/*
