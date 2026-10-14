@@ -17,6 +17,9 @@ The format is based on Keep a Changelog, and this project does not currently gua
 - Renamed the Debian and Ubuntu bootstrap role from `common` to `debian_base`.
 - Renamed the companion playbooks to `debian-base-defaults.yaml` and `debian-base-vps.yaml`.
 - Normalized collection-internal role imports to fully qualified collection names.
+- Documented the `apt_install` and `docker` roles (per-role README and role metadata); the collection's APT-based roles now state Debian-only platform support.
+- Added role metadata (`meta/main.yaml`) and READMEs for every role.
+- `galaxy.yml` declares the runtime collection dependencies (`ansible.posix`, `community.general`) and drops the stale `roles/*/molecule` manifest directive.
 
 ### Removed
 
@@ -25,5 +28,9 @@ The format is based on Keep a Changelog, and this project does not currently gua
 ### Fixed
 
 - `github_releases_info` no longer reads version strings as x86-64 microarchitecture tags: `mihomo-linux-amd64-v1.19.30.deb` was previously inferred as `x86-64-v1` because of the `amd64-v1.19.30` prefix. Level tags are now only recognized when the following separator is not directly followed by a digit.
+- `apt_install` now installs `python3-debian` before using `ansible.builtin.deb822_repository`, so minimal Debian installations no longer fail on the missing library.
+- `apt_install` and `debian_base` repeat runs are idempotent: the APT cache refreshes are bounded by `cache_valid_time`.
+- `debian_base` fails fast on non-Debian hosts instead of rendering Debian archive and security repositories on Ubuntu.
+- `acme_dns_register` marks credential handling (`POST /register`, credential facts, credentials file) as `no_log` so passwords stay out of verbose output and diffs.
 - Updated Debian base role variables to use the `debian_base_` prefix expected by ansible-lint.
 - Aligned task includes, playbooks, and role internals with current `.yaml` filenames and ansible-lint requirements.

@@ -79,7 +79,7 @@
             repo: astral-sh/python-build-standalone
             release_tag: "{{ python_build_standalone_release_tag or omit }}"
             token: "{{ github_releases_token | default(lookup('ansible.builtin.env', 'GITHUB_TOKEN', default='')) }}"
-            asset_name_regex: 'cpython-{{ python_build_standalone_version }}\.\d+\+\d+-{{ _python_build_standalone_arch }}-unknown-linux-gnu-install_only_stripped\.tar\.gz'  # noqa: yaml[line-length]
+            asset_name_regex: 'cpython-{{ python_build_standalone_version }}\.\d+\+\d+-{{ _python_build_standalone_arch }}-unknown-linux-gnu-install_only_stripped\.tar\.gz' # noqa: yaml[line-length]
           delegate_to: "{{ 'localhost' if not _pbs_remote_download else omit }}"
           run_once: "{{ not _pbs_remote_download }}"
           become: false

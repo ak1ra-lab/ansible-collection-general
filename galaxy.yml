@@ -10,11 +10,15 @@ license_file: LICENSE
 tags:
   - automation
   - build
+  - debian
+  - docker
   - go
   - linux
   - python
   - tools
-dependencies: {}
+dependencies:
+  ansible.posix: ">=1.5.4"
+  community.general: ">=8.0.0"
 repository: https://github.com/ak1ra-lab/ansible-collection-general
 documentation: https://github.com/ak1ra-lab/ansible-collection-general
 homepage: https://github.com/ak1ra-lab/ansible-collection-general
@@ -30,6 +34,5 @@ manifest:
     - recursive-exclude playbooks/group_vars *
     - recursive-exclude playbooks/scripts *
     - recursive-exclude playbooks/templates *
-    - recursive-exclude roles/*/molecule *
     - global-exclude *~ *.py[cod] __pycache__ *.bak *.swp *.tmp *.retry
     - include requirements.yaml LICENSE README.md
