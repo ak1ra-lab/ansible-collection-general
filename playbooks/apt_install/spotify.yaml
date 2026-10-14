@@ -8,20 +8,20 @@
     # pub   rsa4096 2025-11-21 [SC] [expires: 2027-02-14]
     #       E1096BCBFF6D418796DE78515384CE82BA52C83A
     # uid           Spotify Public Repository Signing Key <tux@spotify.com>
-    apt_keyrings_url: https://download.spotify.com/debian/pubkey_5384CE82BA52C83A.asc
-    apt_keyrings_dest: /etc/apt/keyrings/spotify.asc
+    apt_install_keyrings_url: https://download.spotify.com/debian/pubkey_5384CE82BA52C83A.asc
+    apt_install_keyrings_dest: /etc/apt/keyrings/spotify.asc
 
-    apt_repo: spotify
-    apt_repo_uris:
+    apt_install_repo: spotify
+    apt_install_repo_uris:
       - https://repository.spotify.com
-    apt_repo_suites:
+    apt_install_repo_suites:
       - stable
-    apt_repo_components:
+    apt_install_repo_components:
       - non-free
 
-    apt_pinning: true
-    apt_unattended_upgrade: true
-    apt_mark_hold: false
+    apt_install_pinning: true
+    apt_install_unattended_upgrade: true
+    apt_install_mark_hold: false
 
     # Origin: Spotify LTD
     # Label: Spotify Public Repository
@@ -32,10 +32,10 @@
     # Architectures: amd64 i386
     # Components: non-free
     # Description: Spotify's repository for the desktop client
-    apt_pinning_pin_release: "o=Spotify LTD,l=Spotify Public Repository,c=non-free"
-    apt_unattended_upgrade_origins_pattern: "origin=Spotify LTD,label=Spotify Public Repository,component=non-free"
+    apt_install_pinning_pin_release: "o=Spotify LTD,l=Spotify Public Repository,c=non-free"
+    apt_install_unattended_upgrade_origins_pattern: "origin=Spotify LTD,label=Spotify Public Repository,component=non-free"
 
-    apt_repo_packages:
+    apt_install_repo_packages:
       - spotify-client
 
   tasks:

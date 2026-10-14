@@ -12,23 +12,23 @@
     #       798AEC654E5C15428C8E42EEAA16FCBCA621E701
     # uid           HashiCorp Security (HashiCorp Package Signing) <security+packaging@hashicorp.com>
     # sub   rsa4096 2023-01-10 [S] [expires: 2028-01-09]
-    apt_keyrings_url: https://apt.releases.hashicorp.com/gpg
-    apt_keyrings_dest: /etc/apt/keyrings/hashicorp-archive-keyring.asc
+    apt_install_keyrings_url: https://apt.releases.hashicorp.com/gpg
+    apt_install_keyrings_dest: /etc/apt/keyrings/hashicorp-archive-keyring.asc
 
-    apt_repo: hashicorp
-    apt_repo_uris:
+    apt_install_repo: hashicorp
+    apt_install_repo_uris:
       - https://apt.releases.hashicorp.com
-    apt_repo_suites:
+    apt_install_repo_suites:
       - "{{ ansible_facts['distribution_release'] }}"
-    apt_repo_components:
+    apt_install_repo_components:
       - main
 
-    apt_pinning: true
-    apt_unattended_upgrade: true
-    apt_mark_hold: false
+    apt_install_pinning: true
+    apt_install_unattended_upgrade: true
+    apt_install_mark_hold: false
 
     # consul, nomad, packer, sentinel, terraform, vagrant, vault, waypoint
-    apt_repo_packages:
+    apt_install_repo_packages:
       - packer
       - terraform
 

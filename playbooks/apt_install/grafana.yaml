@@ -9,25 +9,25 @@
     #       B53AE77BADB630A683046005963FA27710458545
     # uid           Grafana Labs <engineering@grafana.com>
     # sub   rsa3072 2023-08-24 [E] [expires: 2027-08-22]
-    apt_keyrings_url: https://apt.grafana.com/gpg.key
-    apt_keyrings_dest: /etc/apt/keyrings/grafana.asc
+    apt_install_keyrings_url: https://apt.grafana.com/gpg.key
+    apt_install_keyrings_dest: /etc/apt/keyrings/grafana.asc
 
-    apt_repo: grafana
-    apt_repo_uris:
+    apt_install_repo: grafana
+    apt_install_repo_uris:
       - https://apt.grafana.com
     # stable / beta
-    apt_repo_suites:
+    apt_install_repo_suites:
       - stable
-    apt_repo_components:
+    apt_install_repo_components:
       - main
 
-    apt_pinning: true
-    apt_unattended_upgrade: false
-    apt_mark_hold: false
+    apt_install_pinning: true
+    apt_install_unattended_upgrade: false
+    apt_install_mark_hold: false
 
     # Grafana OSS: grafana
     # Grafana Enterprise: grafana-enterprise
-    apt_repo_packages:
+    apt_install_repo_packages:
       - grafana
 
   tasks:

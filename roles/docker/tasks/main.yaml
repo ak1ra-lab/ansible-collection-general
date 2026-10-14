@@ -9,22 +9,22 @@
     #       9DC858229FC7DD38854AE2D88D81803C0EBFCD88
     # uid           Docker Release (CE deb) <docker@docker.com>
     # sub   rsa4096 2017-02-22 [S]
-    apt_keyrings_url: "{{ docker_apt_keyrings_url }}"
-    apt_keyrings_dest: "{{ docker_apt_keyrings_dest }}"
+    apt_install_keyrings_url: "{{ docker_apt_keyrings_url }}"
+    apt_install_keyrings_dest: "{{ docker_apt_keyrings_dest }}"
 
-    apt_repo: "{{ docker_apt_repo }}"
-    apt_repo_uris: "{{ docker_apt_repo_uris | list }}"
-    apt_repo_suites: "{{ docker_apt_repo_suites }}"
-    apt_repo_components: "{{ docker_apt_repo_components }}"
+    apt_install_repo: "{{ docker_apt_repo }}"
+    apt_install_repo_uris: "{{ docker_apt_repo_uris | list }}"
+    apt_install_repo_suites: "{{ docker_apt_repo_suites }}"
+    apt_install_repo_components: "{{ docker_apt_repo_components }}"
 
-    apt_pinning: "{{ docker_apt_pinning | ansible.builtin.bool }}"
-    apt_pinning_package: "{{ docker_apt_pinning_package }}"
-    apt_unattended_upgrade: "{{ docker_apt_unattended_upgrade | ansible.builtin.bool }}"
-    apt_mark_hold: "{{ docker_apt_mark_hold | ansible.builtin.bool }}"
-    apt_pinning_pin_release: "{{ docker_apt_pinning_pin_release }}"
-    apt_unattended_upgrade_origins_pattern: "{{ docker_apt_unattended_upgrade_origins_pattern }}"
+    apt_install_pinning: "{{ docker_apt_pinning | ansible.builtin.bool }}"
+    apt_install_pinning_package: "{{ docker_apt_pinning_package }}"
+    apt_install_unattended_upgrade: "{{ docker_apt_unattended_upgrade | ansible.builtin.bool }}"
+    apt_install_mark_hold: "{{ docker_apt_mark_hold | ansible.builtin.bool }}"
+    apt_install_pinning_pin_release: "{{ docker_apt_pinning_pin_release }}"
+    apt_install_unattended_upgrade_origins_pattern: "{{ docker_apt_unattended_upgrade_origins_pattern }}"
 
-    apt_repo_packages: "{{ docker_apt_repo_packages | list }}"
+    apt_install_repo_packages: "{{ docker_apt_repo_packages | list }}"
 
 - name: ensure /etc/docker directory exist
   ansible.builtin.file:

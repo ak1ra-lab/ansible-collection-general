@@ -1,27 +1,27 @@
 ---
-- name: add unattended-upgrades origins pattern by apt_repo_uri_hostname if apt_unattended_upgrade_origins_pattern is not set
+- name: add unattended-upgrades origins pattern by apt_install_repo_uri_hostname if apt_install_unattended_upgrade_origins_pattern is not set
   when:
-    - (apt_unattended_upgrade | ansible.builtin.bool)
-    - (apt_unattended_upgrade_origins_pattern | default('') | length == 0)
+    - (apt_install_unattended_upgrade | ansible.builtin.bool)
+    - (apt_install_unattended_upgrade_origins_pattern | default('') | length == 0)
   ansible.builtin.copy:
-    dest: "/etc/apt/apt.conf.d/90unattended-upgrades-{{ apt_repo }}"
+    dest: "/etc/apt/apt.conf.d/90unattended-upgrades-{{ apt_install_repo }}"
     content: |
-      Unattended-Upgrade::Origins-Pattern:: "site={{ apt_repo_uri_hostname }}";
+      Unattended-Upgrade::Origins-Pattern:: "site={{ apt_install_repo_uri_hostname }}";
     mode: "0644"
 
-- name: add unattended-upgrades origins pattern by Release file if apt_unattended_upgrade_origins_pattern is set
+- name: add unattended-upgrades origins pattern by Release file if apt_install_unattended_upgrade_origins_pattern is set
   when:
-    - (apt_unattended_upgrade | ansible.builtin.bool)
-    - (apt_unattended_upgrade_origins_pattern | default('') | length > 0)
+    - (apt_install_unattended_upgrade | ansible.builtin.bool)
+    - (apt_install_unattended_upgrade_origins_pattern | default('') | length > 0)
   ansible.builtin.copy:
-    dest: "/etc/apt/apt.conf.d/90unattended-upgrades-{{ apt_repo }}"
+    dest: "/etc/apt/apt.conf.d/90unattended-upgrades-{{ apt_install_repo }}"
     content: |
-      Unattended-Upgrade::Origins-Pattern:: "{{ apt_unattended_upgrade_origins_pattern }}";
+      Unattended-Upgrade::Origins-Pattern:: "{{ apt_install_unattended_upgrade_origins_pattern }}";
     mode: "0644"
 
-- name: revert unattended-upgrades origins pattern if apt_unattended_upgrade is not enabled
+- name: revert unattended-upgrades origins pattern if apt_install_unattended_upgrade is not enabled
   when:
-    - not (apt_unattended_upgrade | ansible.builtin.bool)
+    - not (apt_install_unattended_upgrade | ansible.builtin.bool)
   ansible.builtin.file:
-    path: "/etc/apt/apt.conf.d/90unattended-upgrades-{{ apt_repo }}"
+    path: "/etc/apt/apt.conf.d/90unattended-upgrades-{{ apt_install_repo }}"
     state: absent

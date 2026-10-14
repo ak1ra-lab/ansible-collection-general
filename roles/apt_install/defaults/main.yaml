@@ -1,49 +1,49 @@
 ---
 # roles/apt_install
 
-# /etc/apt/sources.list.d/{{ apt_repo }}.sources
-apt_repo: ""
+# /etc/apt/sources.list.d/{{ apt_install_repo }}.sources
+apt_install_repo: ""
 
 # Tells APT whether the source is enabled or not
-apt_repo_enabled: true
+apt_install_repo_enabled: true
 
 # list[str]: Which types of packages to look for from a given source; either binary deb or source code deb-src.
-apt_repo_types:
+apt_install_repo_types:
   - deb
 
 # Try to avoid using 'ansible_lsb', which depends on 'lsb_release',
 # which may be missing related fields in some distro like alpine.
-apt_repo_uris: []
-apt_repo_suites:
+apt_install_repo_uris: []
+apt_install_repo_suites:
   - "{{ ansible_facts['distribution_release'] }}"
-apt_repo_components:
+apt_install_repo_components:
   - main
-# apt_repo_uris can be string or list of string
-apt_repo_uri_hostname: >-
+# apt_install_repo_uris can be string or list of string
+apt_install_repo_uri_hostname: >-
   {{
     (
-      apt_repo_uris[0]
-      if apt_repo_uris is iterable
-      and apt_repo_uris is not string
-      and apt_repo_uris | length > 0
-      else apt_repo_uris
+      apt_install_repo_uris[0]
+      if apt_install_repo_uris is iterable
+      and apt_install_repo_uris is not string
+      and apt_install_repo_uris | length > 0
+      else apt_install_repo_uris
     ) | ansible.builtin.urlsplit('hostname')
   }}
 
-# Exactly one of [apt_keyrings_url, apt_keyrings_file, apt_keyrings_content] should be set
-apt_keyrings_url: ""
-apt_keyrings_file: ""
-apt_keyrings_content: ""
-apt_keyrings_package: ""
-apt_keyrings_package_checksum: ""
+# Exactly one of [apt_install_keyrings_url, apt_install_keyrings_file, apt_install_keyrings_content] should be set
+apt_install_keyrings_url: ""
+apt_install_keyrings_file: ""
+apt_install_keyrings_content: ""
+apt_install_keyrings_package: ""
+apt_install_keyrings_package_checksum: ""
 
 # armored keys should use .asc extension, binary should use .gpg
-apt_keyrings_dest: ""
+apt_install_keyrings_dest: ""
 
 # https://manpages.debian.org/bookworm/apt/apt_preferences.5.en.html#Determination_of_Package_Version_and_Distribution_Properties
-apt_pinning: true
+apt_install_pinning: true
 # The pattern "*" in a Package field is not considered a glob(7) expression in itself.
-apt_pinning_package: "*"
+apt_install_pinning_package: "*"
 # the Archive: or Suite: line
 #   Pin: release a=stable
 # the Codename: line
@@ -57,16 +57,16 @@ apt_pinning_package: "*"
 # the Label: line
 #   Pin: release: l=Debian
 # All of the Packages and Release files retrieved from locations listed in the sources.list(5) file are stored in the directory /var/lib/apt/lists
-# If `apt_pinning_pin_release` is not set or empty,
-# it will be `Pin: origin "{{ apt_repo_uri_hostname }}"` by default,
+# If `apt_install_pinning_pin_release` is not set or empty,
+# it will be `Pin: origin "{{ apt_install_repo_uri_hostname }}"` by default,
 #   Pin: origin "deb.debian.org"
 # This should not be confused with `Pin: release: o=Debian`, which originate from the Release file
 # Question: Can the full names of the keywords from the Release file in the `Pin: release:` line be used?
 # After all, the examples above only use single-letter abbreviations.
 # 看起来 `Pin: release:` 行中只能用 单字母缩写
 # https://salsa.debian.org/apt-team/apt/-/blob/95ff30f3976d73b3dcfd60ab7518130252efbb79/apt-pkg/versionmatch.cc#L95-114
-apt_pinning_pin_release: ""
-apt_pinning_pin_priority: 900
+apt_install_pinning_pin_release: ""
+apt_install_pinning_pin_priority: 900
 
 # https://wiki.debian.org/UnattendedUpgrades
 # Lines below have the format "keyword=value,...".
@@ -83,19 +83,19 @@ apt_pinning_pin_priority: 900
 # The available values on the system are printed by the command
 # "apt-cache policy", and can be debugged by running
 # "unattended-upgrades -d" and looking at the log file.
-apt_unattended_upgrade: true
-# If `apt_unattended_upgrade_origins_pattern` is not set or empty, it will be "site {{ apt_repo_uri_hostname }}" by default
-apt_unattended_upgrade_origins_pattern: ""
+apt_install_unattended_upgrade: true
+# If `apt_install_unattended_upgrade_origins_pattern` is not set or empty, it will be "site {{ apt_install_repo_uri_hostname }}" by default
+apt_install_unattended_upgrade_origins_pattern: ""
 
 # apt-mark hold package
-apt_mark_hold: false
+apt_install_mark_hold: false
 
 # list of packages to installed
-apt_repo_packages: []
+apt_install_repo_packages: []
 
 # ansible_facts['architecture'] return x86_64,
 # but $(dpkg --print-architecture) returns "amd64"
-dpkg_architectures:
+apt_install_dpkg_architectures:
   x86_64: amd64 # Common Intel/AMD 64-bit
   i386: i386 # Intel 32-bit
   i686: i386 # Older 32-bit

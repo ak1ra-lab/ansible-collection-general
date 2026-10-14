@@ -12,7 +12,7 @@
     # pub   rsa4096 2025-08-15 [SCEA]
     #       02182E60104FCDC26EAE1B8597A5D4CB8793F200
     # uid           Kitmaker (Debian 13 Trixie) <kitmaker@nvidia.com>
-    apt_keyrings:
+    apt_install_keyrings:
       bookworm:
         distro: debian12
         url: https://developer.download.nvidia.com/compute/cuda/repos/debian12/x86_64/3bf863cc.pub
@@ -22,34 +22,34 @@
         url: https://developer.download.nvidia.com/compute/cuda/repos/debian13/x86_64/8793F200.pub
         dest: /etc/apt/keyrings/cuda-archive-keyring-8793F200.asc
 
-    apt_keyrings_url: "{{ apt_keyrings[ansible_facts['distribution_release']].url }}"
-    apt_keyrings_dest: "{{ apt_keyrings[ansible_facts['distribution_release']].dest }}"
+    apt_install_keyrings_url: "{{ apt_install_keyrings[ansible_facts['distribution_release']].url }}"
+    apt_install_keyrings_dest: "{{ apt_install_keyrings[ansible_facts['distribution_release']].dest }}"
 
-    apt_repo: nvidia-driver
-    apt_repo_uris:
+    apt_install_repo: nvidia-driver
+    apt_install_repo_uris:
       - >-
         {{
           'https://developer.download.nvidia.com/compute/cuda/repos/'
-          ~ apt_keyrings[ansible_facts['distribution_release']].distro
+          ~ apt_install_keyrings[ansible_facts['distribution_release']].distro
           ~ '/'
           ~ ansible_facts['architecture']
           ~ '/'
         }}
-    apt_repo_suites:
+    apt_install_repo_suites:
       - /
-    apt_repo_components:
+    apt_install_repo_components:
       - ""
 
-    apt_pinning: true
-    apt_unattended_upgrade: false
-    apt_mark_hold: false
+    apt_install_pinning: true
+    apt_install_unattended_upgrade: false
+    apt_install_mark_hold: false
 
     # Origin: NVIDIA
     # Label: NVIDIA CUDA
     # Architecture: x86_64
     # Date: Wed, 14 Jan 2026 18:36:17 +0000
-    apt_pinning_pin_release: "o=NVIDIA,l=NVIDIA CUDA"
-    apt_unattended_upgrade_origins_pattern: "origin=NVIDIA,label=NVIDIA CUDA"
+    apt_install_pinning_pin_release: "o=NVIDIA,l=NVIDIA CUDA"
+    apt_install_unattended_upgrade_origins_pattern: "origin=NVIDIA,label=NVIDIA CUDA"
 
     # The following commands will install a full driver,
     #   which will include all desktop components as well as CUDA libraries and tools for computational workloads.
@@ -65,7 +65,7 @@
     # Desktop-only System / Open Kernel Modules
     #   apt -V install nvidia-driver nvidia-kernel-open-dkms
     #
-    # apt_repo_packages: []
+    # apt_install_repo_packages: []
     #  - nvidia-driver
     #  - nvidia-driver-cuda
     #  - nvidia-kernel-open-dkms
@@ -73,7 +73,7 @@
   tasks:
     - name: install linux-headers-generic
       ansible.builtin.apt:
-        name: "linux-headers-{{ dpkg_architectures[ansible_facts['architecture']] | default('generic', true) }}"
+        name: "linux-headers-{{ apt_install_dpkg_architectures[ansible_facts['architecture']] | default('generic', true) }}"
 
     - name: apply ak1ra_lab.general.apt_install role
       ansible.builtin.import_role:

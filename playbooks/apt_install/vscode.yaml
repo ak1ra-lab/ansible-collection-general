@@ -21,23 +21,23 @@
     # pub   rsa4096 2023-11-15 [SC]
     #       AA86F75E427A19DD33346403EE4D7792F748182B
     # uid           Microsoft Corporation - General GPG Signer <gpgsign@microsoft.com>
-    apt_keyrings_url: https://packages.microsoft.com/keys/microsoft.asc
-    apt_keyrings_dest: /etc/apt/keyrings/microsoft.asc
+    apt_install_keyrings_url: https://packages.microsoft.com/keys/microsoft.asc
+    apt_install_keyrings_dest: /etc/apt/keyrings/microsoft.asc
 
-    apt_repo: vscode
-    apt_repo_uris:
+    apt_install_repo: vscode
+    apt_install_repo_uris:
       - https://packages.microsoft.com/repos/code
-    apt_repo_suites:
+    apt_install_repo_suites:
       - stable
-    apt_repo_components:
+    apt_install_repo_components:
       - main
 
-    apt_pinning: true
-    apt_unattended_upgrade: true
-    apt_mark_hold: false
+    apt_install_pinning: true
+    apt_install_unattended_upgrade: true
+    apt_install_mark_hold: false
 
     # code or code-insiders
-    apt_repo_packages: []
+    apt_install_repo_packages: []
 
   tasks:
     - name: apply ak1ra_lab.general.apt_install role

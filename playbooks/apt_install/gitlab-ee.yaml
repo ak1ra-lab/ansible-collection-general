@@ -9,24 +9,25 @@
     #       F6403F6544A38863DAA0B6E03F01618A51312F3F
     # uid           GitLab B.V. (package repository signing key) <packages@gitlab.com>
     # sub   rsa4096 2020-03-02 [E] [expires: 2026-02-27]
-    apt_keyrings_url: https://packages.gitlab.com/gitlab/gitlab-ee/gpgkey
-    apt_keyrings_dest: /etc/apt/keyrings/gitlab_gitlab-ee-archive-keyring.asc
+    apt_install_keyrings_url: https://packages.gitlab.com/gitlab/gitlab-ee/gpgkey
+    apt_install_keyrings_dest: /etc/apt/keyrings/gitlab_gitlab-ee-archive-keyring.asc
 
-    apt_repo: gitlab-ee
-    apt_repo_uris:
+    apt_install_repo: gitlab-ee
+    apt_install_repo_uris:
       - "https://packages.gitlab.com/gitlab/gitlab-ee/{{ ansible_facts['distribution'] | lower }}"
-    apt_repo_suites:
+    apt_install_repo_suites:
       - "{{ ansible_facts['distribution_release'] }}"
-    apt_repo_components:
+    apt_install_repo_components:
       - main
 
-    apt_pinning: true
-    apt_unattended_upgrade: true
-    apt_mark_hold: false
-    apt_pinning_pin_release: "o=packages.gitlab.com/gitlab/gitlab-ee,n={{ ansible_facts['distribution_release'] }},c=main"
-    apt_unattended_upgrade_origins_pattern: "origin=packages.gitlab.com/gitlab/gitlab-ee,codename={{ ansible_facts['distribution_release'] }},component=main"
+    apt_install_pinning: true
+    apt_install_unattended_upgrade: true
+    apt_install_mark_hold: false
+    apt_install_pinning_pin_release: "o=packages.gitlab.com/gitlab/gitlab-ee,n={{ ansible_facts['distribution_release'] }},c=main"
+    apt_install_unattended_upgrade_origins_pattern: "origin=packages.gitlab.com/gitlab/gitlab-ee,\
+      codename={{ ansible_facts['distribution_release'] }},component=main"
 
-    apt_repo_packages:
+    apt_install_repo_packages:
       - gitlab-ee
 
   tasks:

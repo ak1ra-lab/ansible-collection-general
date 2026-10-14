@@ -9,20 +9,20 @@
     #       EA0F721D231FDD3A0A17B9AC7808B4DD62C41256
     # uid           Dario Griffo <dariogriffo@gmail.com>
     # sub   cv25519 2025-02-24 [E]
-    apt_keyrings_url: https://debian.griffo.io/EA0F721D231FDD3A0A17B9AC7808B4DD62C41256.asc
-    apt_keyrings_dest: /etc/apt/keyrings/debian.griffo.io.asc
+    apt_install_keyrings_url: https://debian.griffo.io/EA0F721D231FDD3A0A17B9AC7808B4DD62C41256.asc
+    apt_install_keyrings_dest: /etc/apt/keyrings/debian.griffo.io.asc
 
-    apt_repo: debian-griffo-io
-    apt_repo_uris:
+    apt_install_repo: debian-griffo-io
+    apt_install_repo_uris:
       - https://debian.griffo.io/apt
-    apt_repo_suites:
+    apt_install_repo_suites:
       - "{{ ansible_facts['distribution_release'] }}"
-    apt_repo_components:
+    apt_install_repo_components:
       - main
 
-    apt_pinning: true
-    apt_unattended_upgrade: true
-    apt_mark_hold: false
+    apt_install_pinning: true
+    apt_install_unattended_upgrade: true
+    apt_install_mark_hold: false
 
     # Suite: trixie
     # Codename: trixie
@@ -30,10 +30,10 @@
     # Architectures: amd64 arm64 i386 armel armhf ppc64el s390x riscv64
     # Components: main
     # Description: Apt repository for several unofficial packages
-    # apt_pinning_pin_release: ""
-    # apt_unattended_upgrade_origins_pattern: ""
+    # apt_install_pinning_pin_release: ""
+    # apt_install_unattended_upgrade_origins_pattern: ""
 
-    apt_repo_packages: []
+    apt_install_repo_packages: []
 
   tasks:
     - name: apply ak1ra_lab.general.apt_install role

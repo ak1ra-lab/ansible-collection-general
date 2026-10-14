@@ -18,23 +18,23 @@
     # pub   rsa4096 2024-11-10 [SCEA] [expires: 2034-11-10]
     #       24B30F06ECC1836A4E5EFECBA7BCD1420BFE778E
     # uid           Proxmox Trixie Release Key <proxmox-release@proxmox.com>
-    apt_keyrings_url: "https://enterprise.proxmox.com/debian/proxmox-release-{{ ansible_facts['distribution_release'] }}.gpg"
-    apt_keyrings_dest: "/etc/apt/keyrings/proxmox-release-{{ ansible_facts['distribution_release'] }}.gpg"
+    apt_install_keyrings_url: "https://enterprise.proxmox.com/debian/proxmox-release-{{ ansible_facts['distribution_release'] }}.gpg"
+    apt_install_keyrings_dest: "/etc/apt/keyrings/proxmox-release-{{ ansible_facts['distribution_release'] }}.gpg"
 
-    apt_repo: pve-ceph-squid-enterprise
-    apt_repo_enabled: false
-    apt_repo_uris:
+    apt_install_repo: pve-ceph-squid-enterprise
+    apt_install_repo_enabled: false
+    apt_install_repo_uris:
       - https://enterprise.proxmox.com/debian/ceph-squid
-    apt_repo_suites:
+    apt_install_repo_suites:
       - "{{ ansible_facts['distribution_release'] }}"
-    apt_repo_components:
+    apt_install_repo_components:
       - enterprise
 
-    apt_pinning: false
-    apt_unattended_upgrade: false
-    apt_mark_hold: false
+    apt_install_pinning: false
+    apt_install_unattended_upgrade: false
+    apt_install_mark_hold: false
 
-    apt_repo_packages: []
+    apt_install_repo_packages: []
 
   tasks:
     - name: apply ak1ra_lab.general.apt_install role

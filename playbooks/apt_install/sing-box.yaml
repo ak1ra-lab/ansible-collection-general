@@ -9,24 +9,24 @@
     #       2C317FBD5D886B4E89BAE8DA6D9152172A2B2F0C
     # uid           Project S <contact@sagernet.org>
     # sub   rsa4096 2024-03-12 [E]
-    apt_keyrings_url: https://sing-box.app/gpg.key
-    apt_keyrings_dest: /etc/apt/keyrings/sagernet.asc
+    apt_install_keyrings_url: https://sing-box.app/gpg.key
+    apt_install_keyrings_dest: /etc/apt/keyrings/sagernet.asc
 
-    apt_repo: sagernet
-    apt_repo_uris:
+    apt_install_repo: sagernet
+    apt_install_repo_uris:
       - https://deb.sagernet.org/
-    apt_repo_suites:
+    apt_install_repo_suites:
       - "*"
-    apt_repo_components:
+    apt_install_repo_components:
       - "*"
 
-    apt_pinning: true
-    apt_unattended_upgrade: false
-    apt_mark_hold: false
-    apt_pinning_pin_release: "l=sagernet_apt_fury_io"
-    apt_unattended_upgrade_origins_pattern: "label=sagernet_apt_fury_io"
+    apt_install_pinning: true
+    apt_install_unattended_upgrade: false
+    apt_install_mark_hold: false
+    apt_install_pinning_pin_release: "l=sagernet_apt_fury_io"
+    apt_install_unattended_upgrade_origins_pattern: "label=sagernet_apt_fury_io"
 
-    apt_repo_packages:
+    apt_install_repo_packages:
       - sing-box
 
   tasks:

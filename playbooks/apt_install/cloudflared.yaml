@@ -8,24 +8,24 @@
     # pub   rsa2048 2015-01-28 [SC]
     #       FBA8C0EE63617C5EED695C43254B391D8CACCBF8
     # uid           CloudFlare Software Packaging <help@cloudflare.com>
-    apt_keyrings_url: https://pkg.cloudflare.com/cloudflare-main.gpg
-    apt_keyrings_dest: /etc/apt/keyrings/cloudflare.gpg
+    apt_install_keyrings_url: https://pkg.cloudflare.com/cloudflare-main.gpg
+    apt_install_keyrings_dest: /etc/apt/keyrings/cloudflare.gpg
 
-    apt_repo: cloudflared
-    apt_repo_uris:
+    apt_install_repo: cloudflared
+    apt_install_repo_uris:
       - https://pkg.cloudflare.com/cloudflared
-    apt_repo_suites:
+    apt_install_repo_suites:
       - any
-    apt_repo_components:
+    apt_install_repo_components:
       - main
 
-    apt_pinning: true
-    apt_unattended_upgrade: true
-    apt_mark_hold: false
-    apt_pinning_pin_release: "o=cloudflared,n=any"
-    apt_unattended_upgrade_origins_pattern: "origin=cloudflared,codename=any"
+    apt_install_pinning: true
+    apt_install_unattended_upgrade: true
+    apt_install_mark_hold: false
+    apt_install_pinning_pin_release: "o=cloudflared,n=any"
+    apt_install_unattended_upgrade_origins_pattern: "origin=cloudflared,codename=any"
 
-    apt_repo_packages:
+    apt_install_repo_packages:
       - cloudflared
 
   tasks:

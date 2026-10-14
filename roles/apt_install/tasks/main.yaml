@@ -10,10 +10,10 @@
   ansible.builtin.assert:
     that:
       - >
-        (apt_repo | default('') | length > 0) and
-        (apt_repo_uris | default([]) | length > 0) and
-        (apt_keyrings_dest | default('') | length > 0)
-    fail_msg: "All of [apt_repo, apt_repo_uris, apt_keyrings_dest] must be set"
+        (apt_install_repo | default('') | length > 0) and
+        (apt_install_repo_uris | default([]) | length > 0) and
+        (apt_install_keyrings_dest | default('') | length > 0)
+    fail_msg: "All of [apt_install_repo, apt_install_repo_uris, apt_install_keyrings_dest] must be set"
 
 # ansible.builtin.deb822_repository requires the python3-debian library on the
 # managed host; minimal Debian installs (containers, LXC) do not ship it.
@@ -39,12 +39,12 @@
 - name: include_tasks apt_keyrings.yaml
   ansible.builtin.include_tasks: apt_keyrings.yaml
 
-- name: remove apt_repo in legacy format
+- name: remove apt_install_repo in legacy format
   ansible.builtin.file:
-    path: "/etc/apt/sources.list.d/{{ apt_repo }}.list"
+    path: "/etc/apt/sources.list.d/{{ apt_install_repo }}.list"
     state: absent
 
-- name: add apt_repo in DEB822 format
+- name: add apt_install_repo in DEB822 format
   vars:
     default_types:
       - deb
@@ -53,15 +53,15 @@
     default_components:
       - main
   ansible.builtin.deb822_repository:
-    name: "{{ apt_repo }}"
+    name: "{{ apt_install_repo }}"
     state: present
-    enabled: "{{ apt_repo_enabled | ansible.builtin.bool }}"
-    types: "{{ apt_repo_types | default(default_types) }}"
-    uris: "{{ apt_repo_uris }}"
-    suites: "{{ apt_repo_suites | default(default_suites) }}"
-    components: "{{ apt_repo_components | default(default_components) }}"
-    architectures: "{{ dpkg_architectures[ansible_facts['architecture']] | default(ansible_facts['architecture']) }}"
-    signed_by: "{{ apt_keyrings_dest }}"
+    enabled: "{{ apt_install_repo_enabled | ansible.builtin.bool }}"
+    types: "{{ apt_install_repo_types | default(default_types) }}"
+    uris: "{{ apt_install_repo_uris }}"
+    suites: "{{ apt_install_repo_suites | default(default_suites) }}"
+    components: "{{ apt_install_repo_components | default(default_components) }}"
+    architectures: "{{ apt_install_dpkg_architectures[ansible_facts['architecture']] | default(ansible_facts['architecture']) }}"
+    signed_by: "{{ apt_install_keyrings_dest }}"
 
 - name: include_tasks apt_pinning.yaml
   ansible.builtin.include_tasks: apt_pinning.yaml
@@ -69,22 +69,22 @@
 - name: include_tasks unattended_upgrades.yaml
   ansible.builtin.include_tasks: unattended_upgrades.yaml
 
-- name: apt_install packages from apt_repo
+- name: apt_install packages from apt_install_repo
   when:
-    - (apt_repo_packages | length) > 0
+    - (apt_install_repo_packages | length) > 0
   ansible.builtin.apt:
-    name: "{{ apt_repo_packages }}"
+    name: "{{ apt_install_repo_packages }}"
     update_cache: true
     cache_valid_time: 3600
     state: present
 
-- name: apt-mark hold on apt_repo_packages
+- name: apt-mark hold on apt_install_repo_packages
   when:
-    - (apt_repo_packages | length) > 0
-    - (apt_mark_hold | ansible.builtin.bool)
+    - (apt_install_repo_packages | length) > 0
+    - (apt_install_mark_hold | ansible.builtin.bool)
   ansible.builtin.dpkg_selections:
     name: "{{ package }}"
     selection: hold
-  loop: "{{ apt_repo_packages }}"
+  loop: "{{ apt_install_repo_packages }}"
   loop_control:
     loop_var: package
