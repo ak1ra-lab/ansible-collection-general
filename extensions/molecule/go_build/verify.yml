@@ -1,0 +1,53 @@
+---
+# go_build scenario - assert the built binary and its build stamp.  The
+# artifacts live on the controller, so the play runs there.
+
+- name: verify the converged go_build state
+  hosts: localhost
+  gather_facts: false
+  vars:
+    _go_build_binary: /tmp/molecule-ak1ra-general-go-build/bin/fixture
+    _go_build_stamp: /tmp/molecule-ak1ra-general-go-build/.fixture.build-meta
+  tasks:
+    - name: collect the built binary
+      ansible.builtin.stat:
+        path: "{{ _go_build_binary }}"
+      register: _go_build_binary_stat
+
+    - name: assert the binary exists and is executable
+      ansible.builtin.assert:
+        that:
+          - _go_build_binary_stat.stat.exists
+          - _go_build_binary_stat.stat.executable
+        fail_msg: "go_build did not produce an executable binary"
+        quiet: true
+
+    - name: run the built binary
+      ansible.builtin.command:
+        argv: ["{{ _go_build_binary }}"]
+      changed_when: false
+      register: _go_build_run
+
+    - name: assert the binary is the fixture module
+      ansible.builtin.assert:
+        that:
+          - "'molecule go_build fixture ok' in _go_build_run.stdout"
+        fail_msg: >-
+          unexpected binary output: {{ _go_build_run.stdout }}
+        quiet: true
+
+    - name: collect the build stamp
+      ansible.builtin.slurp:
+        src: "{{ _go_build_stamp }}"
+      register: _go_build_stamp_content
+
+    - name: assert the stamp records the build inputs
+      ansible.builtin.assert:
+        that:
+          - "'repo_url=file:///tmp/molecule-ak1ra-general-go-build/fixture' in (_go_build_stamp_content.content | b64decode)"
+          - "'output=fixture' in (_go_build_stamp_content.content | b64decode)"
+          - "'goos=linux' in (_go_build_stamp_content.content | b64decode)"
+        fail_msg: >-
+          unexpected build stamp:
+          {{ _go_build_stamp_content.content | b64decode }}
+        quiet: true

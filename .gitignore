@@ -328,6 +328,7 @@ __marimo__/
 
 # Ansible
 .ansible/*
+.molecule/
 requirements.*.yaml
 inventory/*.yaml
 playbooks/host_vars/**/*.yaml

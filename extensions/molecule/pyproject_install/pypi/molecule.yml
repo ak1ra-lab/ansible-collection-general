@@ -1,0 +1,5 @@
+---
+# pyproject_install/pypi scenario - install a small leaf package from the
+# public PyPI index into a target virtual environment.
+#
+# The scenario inherits the shared test sequence from extensions/molecule/config.yml.

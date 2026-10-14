@@ -1,0 +1,11 @@
+---
+# apt_install/variants scenario - the role's secondary branches, each on a
+# real repository:
+#
+#   * caddy: keyring from inline content (looked up on the controller),
+#     release-based pinning, an explicit unattended-upgrades origins pattern,
+#     `any-version`/`main` suite and components, and no packages installed.
+#   * deb-multimedia: keyring from a downloaded keyring package with a pinned
+#     checksum, and pinning/unattended-upgrades disabled.
+#
+# The scenario inherits the shared test sequence from extensions/molecule/config.yml.

@@ -1,0 +1,138 @@
+---
+# apt_install/basic scenario - assert the converged state an operator
+# observes: the DEB822 source, keyring, pinning and unattended-upgrades files,
+# a successful APT update against the new repository, the installed and held
+# package, and the removed legacy entry.
+
+- name: verify the converged apt_install state
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: collect the rendered sources file
+      ansible.builtin.slurp:
+        src: /etc/apt/sources.list.d/tailscale.sources
+      register: _apt_install_sources
+
+    - name: assert the sources file is enabled, signed, and carries the repo
+      ansible.builtin.assert:
+        that:
+          - "'Enabled: yes' in (_apt_install_sources.content | b64decode)"
+          - "'URIs: https://pkgs.tailscale.com/stable/debian' in (_apt_install_sources.content | b64decode)"
+          - "'Signed-By: /etc/apt/keyrings/tailscale-archive-keyring.gpg' in (_apt_install_sources.content | b64decode)"
+        fail_msg: >-
+          unexpected sources file:
+          {{ _apt_install_sources.content | b64decode }}
+        quiet: true
+
+    - name: collect the imported keyring
+      ansible.builtin.stat:
+        path: /etc/apt/keyrings/tailscale-archive-keyring.gpg
+      register: _apt_install_keyring
+
+    - name: assert the keyring was imported with the documented mode
+      ansible.builtin.assert:
+        that:
+          - _apt_install_keyring.stat.exists
+          - _apt_install_keyring.stat.mode == '0644'
+        fail_msg: "the keyring was not imported correctly"
+        quiet: true
+
+    - name: collect the pinning file
+      ansible.builtin.slurp:
+        src: /etc/apt/preferences.d/90tailscale
+      register: _apt_install_pinning
+
+    - name: assert the default origin pinning is in place
+      ansible.builtin.assert:
+        that:
+          - "'Pin: origin pkgs.tailscale.com' in (_apt_install_pinning.content | b64decode)"
+          - "'Pin-Priority: 900' in (_apt_install_pinning.content | b64decode)"
+        fail_msg: >-
+          unexpected pinning file:
+          {{ _apt_install_pinning.content | b64decode }}
+        quiet: true
+
+    - name: collect the unattended-upgrades file
+      ansible.builtin.slurp:
+        src: /etc/apt/apt.conf.d/90unattended-upgrades-tailscale
+      register: _apt_install_unattended
+
+    - name: assert the default site origins pattern is in place
+      ansible.builtin.assert:
+        that:
+          - "'site=pkgs.tailscale.com' in (_apt_install_unattended.content | b64decode)"
+        fail_msg: >-
+          unexpected unattended-upgrades file:
+          {{ _apt_install_unattended.content | b64decode }}
+        quiet: true
+
+    - name: assert the seeded legacy entry was removed
+      ansible.builtin.stat:
+        path: /etc/apt/sources.list.d/tailscale.list
+      register: _apt_install_legacy
+
+    - name: assert the legacy list is gone
+      ansible.builtin.assert:
+        that:
+          - not _apt_install_legacy.stat.exists
+        fail_msg: "the legacy sources.list.d entry must be removed"
+        quiet: true
+
+    - name: refresh the APT index against the new repository
+      ansible.builtin.command:
+        argv: [apt-get, update]
+      changed_when: false
+      register: _apt_install_update
+
+    - name: assert the APT update succeeds
+      ansible.builtin.assert:
+        that:
+          - _apt_install_update.rc == 0
+        fail_msg: >-
+          apt-get update failed:
+          {{ _apt_install_update.stderr }}
+        quiet: true
+
+    - name: collect the apt policy for the installed package
+      ansible.builtin.command:
+        argv: [apt-cache, policy, tailscale]
+      changed_when: false
+      register: _apt_install_policy
+
+    - name: assert the repository serves the package at the pinned priority
+      ansible.builtin.assert:
+        that:
+          - "'900 https://pkgs.tailscale.com/stable/debian' in _apt_install_policy.stdout"
+          - "'Installed:' in _apt_install_policy.stdout"
+        fail_msg: >-
+          unexpected apt policy:
+          {{ _apt_install_policy.stdout }}
+        quiet: true
+
+    - name: collect the installed package status
+      ansible.builtin.command:
+        argv: [dpkg-query, -W, "-f=${Status}", tailscale]
+      changed_when: false
+      register: _apt_install_status
+
+    - name: assert the package is installed from the new repository
+      ansible.builtin.assert:
+        that:
+          - _apt_install_status.stdout is search('ok installed')
+        fail_msg: >-
+          unexpected package status: {{ _apt_install_status.stdout }}
+        quiet: true
+
+    - name: collect the package hold state
+      ansible.builtin.command:
+        argv: [dpkg, --get-selections, tailscale]
+      changed_when: false
+      register: _apt_install_selection
+
+    - name: assert the package is held
+      ansible.builtin.assert:
+        that:
+          - _apt_install_selection.stdout is search('^tailscale\s+hold')
+        fail_msg: >-
+          the package must be held, got: {{ _apt_install_selection.stdout }}
+        quiet: true

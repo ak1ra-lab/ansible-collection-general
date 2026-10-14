@@ -1,0 +1,18 @@
+---
+# go_build scenario - assert the teardown removed the fixture build tree.
+
+- name: verify the go_build teardown
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: collect the fixture build tree
+      ansible.builtin.stat:
+        path: /tmp/molecule-ak1ra-general-go-build
+      register: _go_build_teardown
+
+    - name: assert the fixture build tree is gone
+      ansible.builtin.assert:
+        that:
+          - not _go_build_teardown.stat.exists
+        fail_msg: "/tmp/molecule-ak1ra-general-go-build must be removed"
+        quiet: true

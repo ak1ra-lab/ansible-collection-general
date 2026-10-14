@@ -1,0 +1,25 @@
+---
+# apt_install/basic scenario - the enabled happy path against a real
+# third-party repository (the same shape as
+# playbooks/apt_install/tailscale.yaml), followed by the role's revert
+# switches and the scenario teardown.
+#
+# The default sequence is extended with the revert exercise: a side effect
+# applies the role with `apt_install_pinning: false`, `apt_install_unattended_upgrade: false`
+# and `apt_install_repo_enabled: false`, and a dedicated verify asserts the removal.
+scenario:
+  test_sequence:
+    - cleanup
+    - prepare
+    - converge
+    - idempotence
+    - verify
+    - side_effect
+    - verify revert-verify.yml
+    - cleanup
+    - verify absent-verify.yml
+
+# The revert exercise is not named side_effect.yml; point the action at it.
+ansible:
+  playbooks:
+    side_effect: revert.yml

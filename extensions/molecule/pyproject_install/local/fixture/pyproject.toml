@@ -1,0 +1,9 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "molecule-fixture"
+version = "0.0.1"
+description = "Molecule fixture package for the pyproject_install role"
+requires-python = ">=3.9"

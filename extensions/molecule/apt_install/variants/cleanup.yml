@@ -1,0 +1,33 @@
+---
+# apt_install/variants scenario - remove the repository artifacts and the
+# keyring package; tolerates a fresh host and an unreachable container.
+
+- name: tear down the apt_install variants
+  hosts: all
+  gather_facts: false
+  ignore_unreachable: true
+  tasks:
+    - name: check whether the keyring package is installed
+      ansible.builtin.stat:
+        path: /var/lib/dpkg/info/deb-multimedia-keyring.list
+      register: _apt_install_variants_pkg
+
+    - name: remove the keyring package
+      when: _apt_install_variants_pkg.stat.exists
+      ansible.builtin.apt:
+        name: deb-multimedia-keyring
+        state: absent
+        purge: true
+
+    - name: remove the repository artifacts
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/apt/sources.list.d/caddy-stable.sources
+        - /etc/apt/keyrings/caddy-stable-archive-keyring.asc
+        - /etc/apt/preferences.d/90caddy-stable
+        - /etc/apt/apt.conf.d/90unattended-upgrades-caddy-stable
+        - /etc/apt/sources.list.d/deb-multimedia-org.sources
+        - /etc/apt/preferences.d/90deb-multimedia-org
+        - /etc/apt/apt.conf.d/90unattended-upgrades-deb-multimedia-org

@@ -1,0 +1,151 @@
+---
+# debian_base scenario - assert the baseline an operator observes: the
+# rendered DEB822 sources, the backports pin, the optional drop-ins, the
+# baseline package, the sudoers rule, and a working APT update.
+
+- name: verify the converged debian_base state
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: collect the sources.list placeholder
+      ansible.builtin.slurp:
+        src: /etc/apt/sources.list
+      register: _debian_base_placeholder
+
+    - name: assert the legacy sources.list is a placeholder
+      ansible.builtin.assert:
+        that:
+          - "'sources.list.d/debian.sources' in (_debian_base_placeholder.content | b64decode)"
+        fail_msg: >-
+          unexpected sources.list placeholder:
+          {{ _debian_base_placeholder.content | b64decode }}
+        quiet: true
+
+    - name: collect the Debian archive source
+      ansible.builtin.slurp:
+        src: /etc/apt/sources.list.d/debian.sources
+      register: _debian_base_sources
+
+    - name: assert the archive source carries the release suites and backports
+      ansible.builtin.assert:
+        that:
+          - "'URIs: https://deb.debian.org/debian/' in (_debian_base_sources.content | b64decode)"
+          - (ansible_facts['distribution_release'] ~ '-updates') in (_debian_base_sources.content | b64decode)
+          - (ansible_facts['distribution_release'] ~ '-backports') in (_debian_base_sources.content | b64decode)
+        fail_msg: >-
+          unexpected debian.sources:
+          {{ _debian_base_sources.content | b64decode }}
+        quiet: true
+
+    - name: collect the Debian security source
+      ansible.builtin.slurp:
+        src: /etc/apt/sources.list.d/debian-security.sources
+      register: _debian_base_security
+
+    - name: assert the security source is rendered
+      ansible.builtin.assert:
+        that:
+          - "'URIs: https://deb.debian.org/debian-security/' in (_debian_base_security.content | b64decode)"
+          - (ansible_facts['distribution_release'] ~ '-security') in (_debian_base_security.content | b64decode)
+        fail_msg: >-
+          unexpected debian-security.sources:
+          {{ _debian_base_security.content | b64decode }}
+        quiet: true
+
+    - name: collect the backports pinning file
+      ansible.builtin.slurp:
+        src: /etc/apt/preferences.d/90debian-backports
+      register: _debian_base_backports
+
+    - name: set the expected backports pin line
+      ansible.builtin.set_fact:
+        _debian_base_backports_pin: "{{ 'Pin: release n=' ~ ansible_facts['distribution_release'] ~ '-backports' }}"
+
+    - name: assert the backports pin is in place
+      ansible.builtin.assert:
+        that:
+          - _debian_base_backports_pin in (_debian_base_backports.content | b64decode)
+          - "'Pin-Priority: 500' in (_debian_base_backports.content | b64decode)"
+        fail_msg: >-
+          unexpected backports pin:
+          {{ _debian_base_backports.content | b64decode }}
+        quiet: true
+
+    - name: collect the unattended-upgrades drop-ins
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: _debian_base_unattended
+      loop:
+        - /etc/apt/apt.conf.d/90unattended-upgrades-updates
+        - /etc/apt/apt.conf.d/90unattended-upgrades-backports
+        - /etc/apt/apt.conf.d/90unattended-upgrades-automatic-reboot
+        - /etc/apt/apt.conf.d/99force-ipv4
+
+    - name: assert the enabled and disabled drop-ins match the switches
+      ansible.builtin.assert:
+        that:
+          - _debian_base_unattended.results[0].stat.exists
+          - not _debian_base_unattended.results[1].stat.exists
+          - not _debian_base_unattended.results[2].stat.exists
+          - _debian_base_unattended.results[3].stat.exists
+        fail_msg: "unexpected unattended-upgrades or force-ipv4 drop-in state"
+        quiet: true
+
+    - name: collect the baseline package status
+      ansible.builtin.command:
+        argv: [dpkg-query, -W, "-f=${Status}", hello]
+      changed_when: false
+      register: _debian_base_hello
+
+    - name: assert the baseline package is installed
+      ansible.builtin.assert:
+        that:
+          - _debian_base_hello.stdout is search('ok installed')
+        fail_msg: >-
+          unexpected package status: {{ _debian_base_hello.stdout }}
+        quiet: true
+
+    - name: collect the sudoers rule
+      ansible.builtin.slurp:
+        src: /etc/sudoers.d/sudo
+      register: _debian_base_sudoers
+
+    - name: assert passwordless sudo is granted to the sudo group
+      ansible.builtin.assert:
+        that:
+          - "'NOPASSWD' in (_debian_base_sudoers.content | b64decode)"
+          - "'%sudo' in (_debian_base_sudoers.content | b64decode)"
+        fail_msg: >-
+          unexpected sudoers rule:
+          {{ _debian_base_sudoers.content | b64decode }}
+        quiet: true
+
+    - name: collect the deb822 repository helper state
+      ansible.builtin.command:
+        argv: [dpkg-query, -W, "-f=${Status}", python3-debian]
+      changed_when: false
+      register: _debian_base_python3_debian
+
+    - name: assert the deb822 repository helper is installed
+      ansible.builtin.assert:
+        that:
+          - _debian_base_python3_debian.stdout is search('ok installed')
+        fail_msg: >-
+          unexpected python3-debian status:
+          {{ _debian_base_python3_debian.stdout }}
+        quiet: true
+
+    - name: refresh the APT index against the rendered sources
+      ansible.builtin.command:
+        argv: [apt-get, update]
+      changed_when: false
+      register: _debian_base_update
+
+    - name: assert the APT update succeeds
+      ansible.builtin.assert:
+        that:
+          - _debian_base_update.rc == 0
+        fail_msg: >-
+          apt-get update failed:
+          {{ _debian_base_update.stderr }}
+        quiet: true

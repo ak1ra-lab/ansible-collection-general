@@ -1,0 +1,17 @@
+---
+# go_build scenario - build the fixture module from its local git repository.
+# The role runs on the controller for the actual build, so the play targets
+# the managed hosts like a real playbook would.
+
+- name: build the fixture module with go_build
+  hosts: all
+  gather_facts: false
+  vars:
+    go_build_repo_url: file:///tmp/molecule-ak1ra-general-go-build/fixture
+    go_build_repo_dir: /tmp/molecule-ak1ra-general-go-build/src
+    go_build_base_dir: /tmp/molecule-ak1ra-general-go-build
+    go_build_output_name: fixture
+  tasks:
+    - name: build the fixture module
+      ansible.builtin.include_role:
+        name: ak1ra_lab.general.go_build

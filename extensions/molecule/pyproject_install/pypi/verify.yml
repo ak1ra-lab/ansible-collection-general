@@ -1,0 +1,62 @@
+---
+# pyproject_install/pypi scenario - assert the venv exists, the role's system
+# packages are installed, and the package imports from the venv.
+
+- name: verify the converged pyproject_install pypi state
+  hosts: all
+  gather_facts: false
+  vars:
+    _pyproject_install_venv: /tmp/molecule-ak1ra-general-pyproject-pypi/venv
+  tasks:
+    - name: collect the venv interpreter
+      ansible.builtin.stat:
+        path: "{{ _pyproject_install_venv }}/bin/python"
+      register: _pyproject_install_python
+
+    - name: assert the virtual environment exists
+      ansible.builtin.assert:
+        that:
+          - _pyproject_install_python.stat.exists
+          - _pyproject_install_python.stat.executable
+        fail_msg: "the virtual environment was not created"
+        quiet: true
+
+    - name: import the installed package from the venv
+      ansible.builtin.command:
+        argv:
+          - "{{ _pyproject_install_venv }}/bin/python"
+          - -c
+          - "import idna; print(idna.__version__)"
+      changed_when: false
+      register: _pyproject_install_import
+
+    - name: assert the installed package imports and reports a version
+      ansible.builtin.assert:
+        that:
+          - _pyproject_install_import.rc == 0
+          - _pyproject_install_import.stdout is search('^[0-9]+\.[0-9]+')
+        fail_msg: >-
+          unexpected import result: {{ _pyproject_install_import.stdout }}
+          {{ _pyproject_install_import.stderr }}
+        quiet: true
+
+    - name: collect the role's system packages
+      ansible.builtin.command:
+        argv: [dpkg-query, -W, "-f=${Status}", "{{ item }}"]
+      changed_when: false
+      register: _pyproject_install_system
+      loop:
+        - python3-pip
+        - python3-packaging
+        - python3-venv
+
+    - name: assert the role's system packages are installed
+      ansible.builtin.assert:
+        that:
+          - item.stdout is search('ok installed')
+        fail_msg: >-
+          {{ item.item }} is missing: {{ item.stdout }}
+        quiet: true
+      loop: "{{ _pyproject_install_system.results }}"
+      loop_control:
+        label: "{{ item.item }}"

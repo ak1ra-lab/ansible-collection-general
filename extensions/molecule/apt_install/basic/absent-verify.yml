@@ -1,0 +1,43 @@
+---
+# apt_install/basic scenario - assert the teardown the cleanup action
+# performed: every repository artifact and the installed package are gone.
+
+- name: verify the apt_install teardown
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: collect the teardown paths
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: _apt_install_absent
+      loop:
+        - /etc/apt/sources.list.d/tailscale.sources
+        - /etc/apt/keyrings/tailscale-archive-keyring.gpg
+        - /etc/apt/preferences.d/90tailscale
+        - /etc/apt/apt.conf.d/90unattended-upgrades-tailscale
+
+    - name: assert the repository artifacts are gone
+      ansible.builtin.assert:
+        that:
+          - not item.stat.exists
+        fail_msg: "{{ item.item }} must be gone after cleanup"
+        quiet: true
+      loop: "{{ _apt_install_absent.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: collect the test package state
+      ansible.builtin.command:
+        argv: [dpkg-query, -W, "-f=${Status}", tailscale]
+      changed_when: false
+      failed_when: false
+      register: _apt_install_absent_pkg
+
+    - name: assert the test package is gone
+      ansible.builtin.assert:
+        that:
+          - _apt_install_absent_pkg.rc != 0
+        fail_msg: >-
+          tailscale must be removed, got:
+          {{ _apt_install_absent_pkg.stdout }}
+        quiet: true

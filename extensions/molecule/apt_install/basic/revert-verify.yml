@@ -1,0 +1,67 @@
+---
+# apt_install/basic scenario - assert the revert outcome: the source is
+# disabled, the pinning and unattended-upgrades files are gone, the fixture
+# keyring was imported, and APT still works with the disabled source present.
+
+- name: verify the apt_install revert state
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: collect the rendered sources file
+      ansible.builtin.slurp:
+        src: /etc/apt/sources.list.d/tailscale.sources
+      register: _apt_install_revert_sources
+
+    - name: assert the source is rendered as disabled
+      ansible.builtin.assert:
+        that:
+          - "'Enabled: no' in (_apt_install_revert_sources.content | b64decode)"
+        fail_msg: >-
+          the source must be disabled, got:
+          {{ _apt_install_revert_sources.content | b64decode }}
+        quiet: true
+
+    - name: collect the reverted artifact paths
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: _apt_install_revert_artifacts
+      loop:
+        - /etc/apt/preferences.d/90tailscale
+        - /etc/apt/apt.conf.d/90unattended-upgrades-tailscale
+
+    - name: assert the pinning and unattended-upgrades files are gone
+      ansible.builtin.assert:
+        that:
+          - not item.stat.exists
+        fail_msg: "{{ item.item }} must be removed when disabled"
+        quiet: true
+      loop: "{{ _apt_install_revert_artifacts.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: assert the fixture keyring was imported
+      ansible.builtin.stat:
+        path: /etc/apt/keyrings/tailscale-archive-keyring.gpg
+      register: _apt_install_revert_keyring
+
+    - name: assert the keyring file exists
+      ansible.builtin.assert:
+        that:
+          - _apt_install_revert_keyring.stat.exists
+        fail_msg: "apt_install_keyrings_file must import the fixture keyring"
+        quiet: true
+
+    - name: refresh the APT index with the disabled source present
+      ansible.builtin.command:
+        argv: [apt-get, update]
+      changed_when: false
+      register: _apt_install_revert_update
+
+    - name: assert the APT update succeeds
+      ansible.builtin.assert:
+        that:
+          - _apt_install_revert_update.rc == 0
+        fail_msg: >-
+          apt-get update failed:
+          {{ _apt_install_revert_update.stderr }}
+        quiet: true

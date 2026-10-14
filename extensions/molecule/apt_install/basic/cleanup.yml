@@ -1,0 +1,40 @@
+---
+# apt_install/basic scenario - remove the test repository artifacts and the
+# installed package.  The role has no absent mode, so the teardown is
+# explicit; it tolerates a fresh host (nothing applied) and an unreachable
+# container (destroyed before cleanup).
+
+- name: tear down the apt_install test repository
+  hosts: all
+  gather_facts: false
+  ignore_unreachable: true
+  tasks:
+    - name: check whether the test package is installed
+      ansible.builtin.stat:
+        path: /var/lib/dpkg/info/tailscale.list
+      register: _apt_install_teardown_pkg
+
+    - name: unhold and remove the test package
+      when: _apt_install_teardown_pkg.stat.exists
+      block:
+        - name: unhold the test package
+          ansible.builtin.dpkg_selections:
+            name: tailscale
+            selection: install
+
+        - name: remove the test package
+          ansible.builtin.apt:
+            name: tailscale
+            state: absent
+            purge: true
+
+    - name: remove the repository artifacts
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/apt/sources.list.d/tailscale.sources
+        - /etc/apt/sources.list.d/tailscale.list
+        - /etc/apt/keyrings/tailscale-archive-keyring.gpg
+        - /etc/apt/preferences.d/90tailscale
+        - /etc/apt/apt.conf.d/90unattended-upgrades-tailscale

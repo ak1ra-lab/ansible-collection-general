@@ -1,0 +1,17 @@
+---
+# debian_base scenario - no-op teardown.
+#
+# The role has no absent contract: the baseline it applies is the desired
+# state of the host, and every artifact it writes is either shared with the
+# stock image (the DEB822 sources) or harmless to the other scenarios (the
+# backports pin and the unattended-upgrades drop-ins).  This play exists so
+# molecule's failure cleanup finds a playbook and stays quiet.
+
+- name: debian_base teardown (nothing to reset)
+  hosts: all
+  gather_facts: false
+  ignore_unreachable: true
+  tasks:
+    - name: note that the baseline persists
+      ansible.builtin.debug:
+        msg: "debian_base has no absent mode; the baseline is left in place"

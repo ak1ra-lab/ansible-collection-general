@@ -1,0 +1,73 @@
+---
+# go_build scenario - shared container preparation plus the fixture git
+# repository on the controller.  The role builds on the controller
+# (`delegate_to: localhost`), so the fixture lives there too.
+
+- name: run the shared container preparation
+  import_playbook: ../shared/prepare.yml
+
+- name: seed the go_build fixture repository on the controller
+  hosts: localhost
+  gather_facts: false
+  vars:
+    _go_build_fixture: /tmp/molecule-ak1ra-general-go-build/fixture
+  tasks:
+    - name: remove a leftover fixture checkout
+      ansible.builtin.file:
+        path: /tmp/molecule-ak1ra-general-go-build
+        state: absent
+
+    - name: create the fixture repository directory
+      ansible.builtin.file:
+        path: "{{ _go_build_fixture }}"
+        state: directory
+        mode: "0755"
+
+    - name: write the fixture Go module
+      ansible.builtin.copy:
+        dest: "{{ _go_build_fixture }}/main.go"
+        mode: "0644"
+        content: |
+          package main
+
+          import "fmt"
+
+          func main() {
+              fmt.Println("molecule go_build fixture ok")
+          }
+
+    - name: write the fixture go.mod
+      ansible.builtin.copy:
+        dest: "{{ _go_build_fixture }}/go.mod"
+        mode: "0644"
+        content: |
+          module molecule-fixture
+
+          go 1.21
+
+    - name: initialize the fixture git repository
+      ansible.builtin.command:
+        argv: [git, init, -q, -b, main]
+        chdir: "{{ _go_build_fixture }}"
+      changed_when: true
+
+    - name: stage the fixture files
+      ansible.builtin.command:
+        argv: [git, add, -A]
+        chdir: "{{ _go_build_fixture }}"
+      changed_when: true
+
+    - name: commit the fixture files
+      ansible.builtin.command:
+        argv:
+          - git
+          - -c
+          - user.name=molecule
+          - -c
+          - user.email=molecule@example.invalid
+          - commit
+          - -q
+          - -m
+          - fixture
+        chdir: "{{ _go_build_fixture }}"
+      changed_when: true

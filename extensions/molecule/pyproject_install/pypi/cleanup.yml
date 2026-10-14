@@ -1,0 +1,13 @@
+---
+# pyproject_install/pypi scenario - remove the test virtual environment;
+# tolerates a fresh host and an unreachable container.
+
+- name: tear down the pyproject_install pypi fixtures
+  hosts: all
+  gather_facts: false
+  ignore_unreachable: true
+  tasks:
+    - name: remove the test virtual environment
+      ansible.builtin.file:
+        path: /tmp/molecule-ak1ra-general-pyproject-pypi
+        state: absent

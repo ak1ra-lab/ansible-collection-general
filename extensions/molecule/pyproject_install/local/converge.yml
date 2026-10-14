@@ -1,0 +1,17 @@
+---
+# pyproject_install/local scenario - build the fixture wheel on the
+# controller and install it into a venv on the managed host.
+
+- name: build and install the fixture wheel
+  hosts: all
+  gather_facts: true
+  vars:
+    pyproject_install_source: local
+    pyproject_install_package_name: molecule-fixture
+    pyproject_install_local_project_root: /tmp/molecule-ak1ra-general-pyproject-local/fixture
+    pyproject_install_venv_dir: /tmp/molecule-ak1ra-general-pyproject-local/venv
+    pyproject_install_remote_tmp_dir: /tmp
+  tasks:
+    - name: build and install the fixture wheel
+      ansible.builtin.include_role:
+        name: ak1ra_lab.general.pyproject_install

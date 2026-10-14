@@ -1,0 +1,15 @@
+---
+# pyproject_install/local scenario - build a fixture wheel on the controller
+# with `uv build --wheel` and install it into a target virtual environment.
+#
+# The role is not idempotent on this path by design (`state: forcereinstall`
+# after a fresh wheel build), so the idempotence action is not part of the
+# sequence; the wheel build and the install are asserted by verify instead.
+scenario:
+  test_sequence:
+    - cleanup
+    - prepare
+    - converge
+    - verify
+    - cleanup
+    - verify absent-verify.yml

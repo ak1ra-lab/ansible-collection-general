@@ -1,0 +1,22 @@
+---
+# pyproject_install/local scenario - remove the venv on the managed host and
+# the fixture project on the controller; tolerates a fresh host.
+
+- name: tear down the pyproject_install local target fixtures
+  hosts: all
+  gather_facts: false
+  ignore_unreachable: true
+  tasks:
+    - name: remove the test virtual environment
+      ansible.builtin.file:
+        path: /tmp/molecule-ak1ra-general-pyproject-local
+        state: absent
+
+- name: tear down the pyproject_install local controller fixtures
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: remove the fixture project
+      ansible.builtin.file:
+        path: /tmp/molecule-ak1ra-general-pyproject-local
+        state: absent

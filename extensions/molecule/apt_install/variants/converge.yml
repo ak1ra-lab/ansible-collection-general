@@ -1,0 +1,57 @@
+---
+# apt_install/variants scenario - apply the caddy repository with inline
+# keyring content and release-based pinning, then the deb-multimedia
+# repository with a keyring package.
+
+- name: apply the caddy repository from inline keyring content
+  hosts: all
+  gather_facts: true
+  vars:
+    # The lookup runs on the controller; the armored key becomes keyrings
+    # content instead of a get_url download.
+    apt_install_keyrings_content: "{{ lookup('ansible.builtin.url', 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key', split_lines=False) }}"
+    apt_install_keyrings_dest: /etc/apt/keyrings/caddy-stable-archive-keyring.asc
+
+    apt_install_repo: caddy-stable
+    apt_install_repo_uris:
+      - https://dl.cloudsmith.io/public/caddy/stable/deb/debian
+    apt_install_repo_suites:
+      - any-version
+    apt_install_repo_components:
+      - main
+
+    apt_install_pinning: true
+    apt_install_pinning_pin_release: "o=cloudsmith/caddy/stable,c=main,n=any-version"
+    apt_install_unattended_upgrade: true
+    apt_install_unattended_upgrade_origins_pattern: "origin=cloudsmith/caddy/stable,component=main,codename=any-version"
+
+    apt_install_repo_packages: []
+  tasks:
+    - name: apply ak1ra_lab.general.apt_install
+      ansible.builtin.include_role:
+        name: ak1ra_lab.general.apt_install
+
+- name: apply the deb-multimedia repository from a keyring package
+  hosts: all
+  gather_facts: true
+  vars:
+    apt_install_keyrings_package: https://www.deb-multimedia.org/pool/main/d/deb-multimedia-keyring/deb-multimedia-keyring_2024.9.1_all.deb
+    apt_install_keyrings_package_checksum: "sha256:8dc6cbb266c701cfe58bd1d2eb9fe2245a1d6341c7110cfbfe3a5a975dcf97ca"
+    apt_install_keyrings_dest: /usr/share/keyrings/deb-multimedia-keyring.pgp
+
+    apt_install_repo: deb-multimedia-org
+    apt_install_repo_uris:
+      - https://www.deb-multimedia.org
+    apt_install_repo_suites:
+      - "{{ ansible_facts['distribution_release'] }}"
+    apt_install_repo_components:
+      - main
+      - non-free
+
+    apt_install_pinning: false
+    apt_install_unattended_upgrade: false
+    apt_install_repo_packages: []
+  tasks:
+    - name: apply ak1ra_lab.general.apt_install
+      ansible.builtin.include_role:
+        name: ak1ra_lab.general.apt_install

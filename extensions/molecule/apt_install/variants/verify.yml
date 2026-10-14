@@ -1,0 +1,144 @@
+---
+# apt_install/variants scenario - assert both secondary branch outcomes:
+# the caddy source/pin/unattended-upgrades files and its policy priority, and
+# the deb-multimedia keyring package import with the revert switches.
+
+- name: verify the converged apt_install variants
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: collect the caddy sources file
+      ansible.builtin.slurp:
+        src: /etc/apt/sources.list.d/caddy-stable.sources
+      register: _apt_install_caddy_sources
+
+    - name: assert the caddy sources file carries the unusual suite
+      ansible.builtin.assert:
+        that:
+          - "'URIs: https://dl.cloudsmith.io/public/caddy/stable/deb/debian' in (_apt_install_caddy_sources.content | b64decode)"
+          - "'Suites: any-version' in (_apt_install_caddy_sources.content | b64decode)"
+          - "'Signed-By: /etc/apt/keyrings/caddy-stable-archive-keyring.asc' in (_apt_install_caddy_sources.content | b64decode)"
+        fail_msg: >-
+          unexpected caddy sources file:
+          {{ _apt_install_caddy_sources.content | b64decode }}
+        quiet: true
+
+    - name: collect the caddy pinning file
+      ansible.builtin.slurp:
+        src: /etc/apt/preferences.d/90caddy-stable
+      register: _apt_install_caddy_pinning
+
+    - name: assert the release-based pinning is in place
+      ansible.builtin.assert:
+        that:
+          - "'Pin: release o=cloudsmith/caddy/stable,c=main,n=any-version' in (_apt_install_caddy_pinning.content | b64decode)"
+          - "'Pin-Priority: 900' in (_apt_install_caddy_pinning.content | b64decode)"
+        fail_msg: >-
+          unexpected caddy pinning file:
+          {{ _apt_install_caddy_pinning.content | b64decode }}
+        quiet: true
+
+    - name: collect the caddy unattended-upgrades file
+      ansible.builtin.slurp:
+        src: /etc/apt/apt.conf.d/90unattended-upgrades-caddy-stable
+      register: _apt_install_caddy_unattended
+
+    - name: assert the explicit origins pattern is in place
+      ansible.builtin.assert:
+        that:
+          - "'origin=cloudsmith/caddy/stable,component=main,codename=any-version' in (_apt_install_caddy_unattended.content | b64decode)"
+        fail_msg: >-
+          unexpected caddy unattended-upgrades file:
+          {{ _apt_install_caddy_unattended.content | b64decode }}
+        quiet: true
+
+    - name: refresh the APT index against both repositories
+      ansible.builtin.command:
+        argv: [apt-get, update]
+      changed_when: false
+      register: _apt_install_variants_update
+
+    - name: assert the APT update succeeds
+      ansible.builtin.assert:
+        that:
+          - _apt_install_variants_update.rc == 0
+        fail_msg: >-
+          apt-get update failed:
+          {{ _apt_install_variants_update.stderr }}
+        quiet: true
+
+    - name: collect the caddy policy
+      ansible.builtin.command:
+        argv: [apt-cache, policy, caddy]
+      changed_when: false
+      register: _apt_install_caddy_policy
+
+    - name: assert the release pin applies to the caddy repository
+      ansible.builtin.assert:
+        that:
+          - "'900 https://dl.cloudsmith.io/public/caddy/stable/deb/debian' in _apt_install_caddy_policy.stdout"
+          - "'Candidate:' in _apt_install_caddy_policy.stdout"
+        fail_msg: >-
+          unexpected caddy policy:
+          {{ _apt_install_caddy_policy.stdout }}
+        quiet: true
+
+    - name: collect the deb-multimedia keyring package status
+      ansible.builtin.command:
+        argv: [dpkg-query, -W, "-f=${Status}", deb-multimedia-keyring]
+      changed_when: false
+      register: _apt_install_dmo_package
+
+    - name: assert the keyring package is installed
+      ansible.builtin.assert:
+        that:
+          - _apt_install_dmo_package.stdout is search('ok installed')
+        fail_msg: >-
+          unexpected keyring package status:
+          {{ _apt_install_dmo_package.stdout }}
+        quiet: true
+
+    - name: collect the deb-multimedia keyring file
+      ansible.builtin.stat:
+        path: /usr/share/keyrings/deb-multimedia-keyring.pgp
+      register: _apt_install_dmo_keyring
+
+    - name: assert the keyring file was imported
+      ansible.builtin.assert:
+        that:
+          - _apt_install_dmo_keyring.stat.exists
+        fail_msg: "the deb-multimedia keyring file must exist"
+        quiet: true
+
+    - name: collect the deb-multimedia policy
+      ansible.builtin.command:
+        argv: [apt-cache, policy, libdvdcss2]
+      changed_when: false
+      register: _apt_install_dmo_policy
+
+    - name: assert the deb-multimedia repository serves its packages
+      ansible.builtin.assert:
+        that:
+          - "'https://www.deb-multimedia.org' in _apt_install_dmo_policy.stdout"
+        fail_msg: >-
+          unexpected deb-multimedia policy:
+          {{ _apt_install_dmo_policy.stdout }}
+        quiet: true
+
+    - name: collect the deb-multimedia reverted artifact paths
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: _apt_install_dmo_artifacts
+      loop:
+        - /etc/apt/preferences.d/90deb-multimedia-org
+        - /etc/apt/apt.conf.d/90unattended-upgrades-deb-multimedia-org
+
+    - name: assert the deb-multimedia revert switches wrote nothing
+      ansible.builtin.assert:
+        that:
+          - not item.stat.exists
+        fail_msg: "{{ item.item }} must not exist with the switches disabled"
+        quiet: true
+      loop: "{{ _apt_install_dmo_artifacts.results }}"
+      loop_control:
+        label: "{{ item.item }}"

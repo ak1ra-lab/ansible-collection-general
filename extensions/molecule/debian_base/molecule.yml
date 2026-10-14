@@ -1,0 +1,14 @@
+---
+# debian_base scenario - apply the baseline with the host-specific facets
+# disabled (qemu-guest-agent, TCP BBR, ip_forward, SSH, custom sysctl) and a
+# minimal package list, so the scenario stays a container test.
+#
+# The role has no absent contract: its changes are the baseline itself, so
+# the sequence stops after the idempotence and verify checks instead of
+# running the shared cleanup/absent-verify tail.
+scenario:
+  test_sequence:
+    - prepare
+    - converge
+    - idempotence
+    - verify

@@ -1,0 +1,30 @@
+---
+# pyproject_install/local scenario - shared container preparation plus the
+# fixture project staged on the controller (the role builds the wheel there).
+
+- name: run the shared container preparation
+  import_playbook: ../../shared/prepare.yml
+
+- name: stage the fixture project on the controller
+  hosts: localhost
+  gather_facts: false
+  vars:
+    _pyproject_install_root: /tmp/molecule-ak1ra-general-pyproject-local
+  tasks:
+    - name: remove a leftover fixture project
+      ansible.builtin.file:
+        path: "{{ _pyproject_install_root }}"
+        state: absent
+
+    - name: create the fixture project directory
+      ansible.builtin.file:
+        path: "{{ _pyproject_install_root }}/fixture"
+        state: directory
+        mode: "0755"
+
+    - name: copy the fixture project sources
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/fixture/"
+        dest: "{{ _pyproject_install_root }}/fixture/"
+        mode: "0644"
+        directory_mode: "0755"

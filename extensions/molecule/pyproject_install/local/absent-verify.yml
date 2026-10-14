@@ -1,0 +1,35 @@
+---
+# pyproject_install/local scenario - assert the teardown removed the venv
+# and the fixture project.
+
+- name: verify the pyproject_install local teardown on the target
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: collect the test virtual environment
+      ansible.builtin.stat:
+        path: /tmp/molecule-ak1ra-general-pyproject-local
+      register: _pyproject_install_local_absent
+
+    - name: assert the test virtual environment is gone
+      ansible.builtin.assert:
+        that:
+          - not _pyproject_install_local_absent.stat.exists
+        fail_msg: "/tmp/molecule-ak1ra-general-pyproject-local must be removed"
+        quiet: true
+
+- name: verify the pyproject_install local teardown on the controller
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: collect the fixture project
+      ansible.builtin.stat:
+        path: /tmp/molecule-ak1ra-general-pyproject-local
+      register: _pyproject_install_local_fixture_absent
+
+    - name: assert the fixture project is gone
+      ansible.builtin.assert:
+        that:
+          - not _pyproject_install_local_fixture_absent.stat.exists
+        fail_msg: "the fixture project must be removed"
+        quiet: true

@@ -1,0 +1,12 @@
+---
+# go_build scenario - remove the fixture and the build tree from the
+# controller.  Tolerates a fresh host where nothing was built.
+
+- name: tear down the go_build fixtures
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: remove the fixture build tree
+      ansible.builtin.file:
+        path: /tmp/molecule-ak1ra-general-go-build
+        state: absent

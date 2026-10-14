@@ -1,0 +1,29 @@
+---
+# debian_base scenario - apply the baseline with the host-only facets
+# disabled and a one-package baseline list.  The backports suite and the
+# unattended-upgrades updates drop-in stay enabled so the optional branches
+# are exercised.
+
+- name: apply the Debian baseline
+  hosts: all
+  gather_facts: true
+  vars:
+    debian_base_apt_packages:
+      - hello
+
+    debian_base_apt_repo_debian_backports_enabled: true
+
+    debian_base_unattended_upgrade_updates_enabled: true
+    debian_base_unattended_upgrade_backports_enabled: false
+    debian_base_unattended_upgrade_automatic_reboot_enabled: false
+
+    debian_base_apt_force_ipv4_enabled: true
+    debian_base_tcp_bbr_enabled: false
+    debian_base_ip_forward_enabled: false
+    debian_base_qemu_guest_agent_enabled: false
+    debian_base_custom_sshd_config_enabled: false
+    debian_base_custom_sysctl_conf_enabled: false
+  tasks:
+    - name: apply ak1ra_lab.general.debian_base
+      ansible.builtin.include_role:
+        name: ak1ra_lab.general.debian_base

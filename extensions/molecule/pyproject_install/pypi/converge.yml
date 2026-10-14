@@ -1,0 +1,16 @@
+---
+# pyproject_install/pypi scenario - install a small package from PyPI into a
+# fresh virtual environment on the managed host.
+
+- name: install the PyPI test package
+  hosts: all
+  gather_facts: true
+  vars:
+    pyproject_install_source: pypi
+    pyproject_install_package_name: idna
+    pyproject_install_venv_dir: /tmp/molecule-ak1ra-general-pyproject-pypi/venv
+    pyproject_install_remote_tmp_dir: /tmp
+  tasks:
+    - name: install the PyPI test package
+      ansible.builtin.include_role:
+        name: ak1ra_lab.general.pyproject_install

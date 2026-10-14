@@ -1,0 +1,45 @@
+---
+# apt_install/variants scenario - assert the teardown: every artifact and
+# the keyring package are gone.
+
+- name: verify the apt_install variants teardown
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: collect the teardown paths
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: _apt_install_variants_absent
+      loop:
+        - /etc/apt/sources.list.d/caddy-stable.sources
+        - /etc/apt/keyrings/caddy-stable-archive-keyring.asc
+        - /etc/apt/preferences.d/90caddy-stable
+        - /etc/apt/apt.conf.d/90unattended-upgrades-caddy-stable
+        - /etc/apt/sources.list.d/deb-multimedia-org.sources
+        - /usr/share/keyrings/deb-multimedia-keyring.pgp
+
+    - name: assert the repository artifacts are gone
+      ansible.builtin.assert:
+        that:
+          - not item.stat.exists
+        fail_msg: "{{ item.item }} must be gone after cleanup"
+        quiet: true
+      loop: "{{ _apt_install_variants_absent.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: collect the keyring package state
+      ansible.builtin.command:
+        argv: [dpkg-query, -W, "-f=${Status}", deb-multimedia-keyring]
+      changed_when: false
+      failed_when: false
+      register: _apt_install_variants_absent_pkg
+
+    - name: assert the keyring package is gone
+      ansible.builtin.assert:
+        that:
+          - _apt_install_variants_absent_pkg.rc != 0
+        fail_msg: >-
+          deb-multimedia-keyring must be removed, got:
+          {{ _apt_install_variants_absent_pkg.stdout }}
+        quiet: true

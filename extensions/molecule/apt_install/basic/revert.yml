@@ -1,0 +1,31 @@
+---
+# apt_install/basic scenario - exercise the role's revert switches: the
+# repository is disabled, pinning and unattended-upgrades are turned off, and
+# no packages are managed.  The keyring is imported from a local fixture file
+# (also covering apt_install_keyrings_file); the disabled source is never validated
+# against it.
+
+- name: exercise the apt_install revert switches
+  hosts: all
+  gather_facts: true
+  vars:
+    apt_install_repo: tailscale
+    apt_install_repo_uris:
+      - https://pkgs.tailscale.com/stable/debian
+    apt_install_repo_suites:
+      - "{{ ansible_facts['distribution_release'] }}"
+    apt_install_repo_components:
+      - main
+
+    apt_install_keyrings_file: "{{ playbook_dir }}/files/dummy-key.asc"
+    apt_install_keyrings_dest: /etc/apt/keyrings/tailscale-archive-keyring.gpg
+
+    apt_install_repo_enabled: false
+    apt_install_pinning: false
+    apt_install_unattended_upgrade: false
+    apt_install_mark_hold: false
+    apt_install_repo_packages: []
+  tasks:
+    - name: apply ak1ra_lab.general.apt_install with the revert switches
+      ansible.builtin.include_role:
+        name: ak1ra_lab.general.apt_install

@@ -52,9 +52,14 @@
       {{ apt_install_keyrings_content }}
 
 # https://deb-multimedia.org/
+# Temp-file download/install/remove cannot be idempotent; the branch is
+# skipped during `molecule idempotence` only (the tags the test harness
+# additionally skips for that action).
 - name: import apt keyrings from apt_install_keyrings_package
   when:
     - (apt_install_keyrings_package | default('') | length > 0)
+  tags:
+    - molecule-idempotence-notest
   block:
     - name: create tempfile for apt_install_keyrings_package
       ansible.builtin.tempfile:

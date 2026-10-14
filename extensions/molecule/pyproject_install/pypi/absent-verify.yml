@@ -1,0 +1,18 @@
+---
+# pyproject_install/pypi scenario - assert the teardown removed the venv.
+
+- name: verify the pyproject_install pypi teardown
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: collect the test virtual environment
+      ansible.builtin.stat:
+        path: /tmp/molecule-ak1ra-general-pyproject-pypi
+      register: _pyproject_install_pypi_absent
+
+    - name: assert the test virtual environment is gone
+      ansible.builtin.assert:
+        that:
+          - not _pyproject_install_pypi_absent.stat.exists
+        fail_msg: "/tmp/molecule-ak1ra-general-pyproject-pypi must be removed"
+        quiet: true

@@ -1,0 +1,20 @@
+---
+# apt_install/basic scenario - shared preparation plus the legacy-source
+# fixture: a pre-DEB822 `.list` entry that the role must remove.  The entry is
+# commented out so the APT update that runs early in the role never tries to
+# fetch an unsigned third-party source.
+
+- name: run the shared container preparation
+  import_playbook: ../../shared/prepare.yml
+
+- name: seed the legacy apt_install drift
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: seed a legacy sources.list.d entry (removed by the role)
+      ansible.builtin.copy:
+        content: |
+          # Molecule fixture: a legacy pre-DEB822 entry removed by apt_install.
+          # deb https://pkgs.tailscale.com/stable/debian trixie main
+        dest: /etc/apt/sources.list.d/tailscale.list
+        mode: "0644"

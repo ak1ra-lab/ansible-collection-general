@@ -1,0 +1,5 @@
+---
+# go_build scenario - build a fixture Go module from a local git repository
+# on the controller; the role never needs network access.
+#
+# The scenario inherits the shared test sequence from extensions/molecule/config.yml.

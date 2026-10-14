@@ -62,6 +62,17 @@
     components: "{{ apt_install_repo_components | default(default_components) }}"
     architectures: "{{ apt_install_dpkg_architectures[ansible_facts['architecture']] | default(ansible_facts['architecture']) }}"
     signed_by: "{{ apt_install_keyrings_dest }}"
+  register: apt_install_deb822_repository
+
+# A fresh-but-stale cache must not hide the repository that was just added;
+# refresh once whenever the source configuration changed in this run.  The
+# refresh must complete before the package install below, so it cannot be a
+# handler (handlers run at the end of the play).
+- name: refresh the apt index after the repository configuration changed # noqa: no-handler
+  when:
+    - apt_install_deb822_repository.changed
+  ansible.builtin.apt:
+    update_cache: true
 
 - name: include_tasks apt_pinning.yaml
   ansible.builtin.include_tasks: apt_pinning.yaml

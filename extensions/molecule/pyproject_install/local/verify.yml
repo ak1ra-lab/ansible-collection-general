@@ -1,0 +1,72 @@
+---
+# pyproject_install/local scenario - assert the wheel was built on the
+# controller, installed into the venv, and cleaned from the remote tmp.
+
+- name: verify the converged pyproject_install local state
+  hosts: all
+  gather_facts: false
+  vars:
+    _pyproject_install_venv: /tmp/molecule-ak1ra-general-pyproject-local/venv
+  tasks:
+    - name: collect the venv interpreter
+      ansible.builtin.stat:
+        path: "{{ _pyproject_install_venv }}/bin/python"
+      register: _pyproject_install_python
+
+    - name: assert the virtual environment exists
+      ansible.builtin.assert:
+        that:
+          - _pyproject_install_python.stat.exists
+          - _pyproject_install_python.stat.executable
+        fail_msg: "the virtual environment was not created"
+        quiet: true
+
+    - name: import the fixture package from the venv
+      ansible.builtin.command:
+        argv:
+          - "{{ _pyproject_install_venv }}/bin/python"
+          - -c
+          - "import molecule_fixture; print(molecule_fixture.__version__)"
+      changed_when: false
+      register: _pyproject_install_import
+
+    - name: assert the fixture package imports and reports its version
+      ansible.builtin.assert:
+        that:
+          - _pyproject_install_import.stdout | trim == '0.0.1'
+        fail_msg: >-
+          unexpected import result: {{ _pyproject_install_import.stdout }}
+          {{ _pyproject_install_import.stderr }}
+        quiet: true
+
+    - name: collect the leftover wheels in the remote tmp
+      ansible.builtin.find:
+        paths: /tmp
+        patterns: "molecule_fixture-*.whl"
+      register: _pyproject_install_leftovers
+
+    - name: assert the role removed the wheel from the remote tmp
+      ansible.builtin.assert:
+        that:
+          - _pyproject_install_leftovers.matched == 0
+        fail_msg: >-
+          the wheel must be removed from the remote tmp, got:
+          {{ _pyproject_install_leftovers.files | map(attribute='path') | list }}
+        quiet: true
+
+- name: verify the fixture wheel on the controller
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: collect the built wheel
+      ansible.builtin.find:
+        paths: /tmp/molecule-ak1ra-general-pyproject-local/fixture/dist
+        patterns: "*.whl"
+      register: _pyproject_install_wheels
+
+    - name: assert the wheel was built on the controller
+      ansible.builtin.assert:
+        that:
+          - _pyproject_install_wheels.matched > 0
+        fail_msg: "uv build did not produce a wheel in the fixture dist/"
+        quiet: true
