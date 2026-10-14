@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import platform
-from typing import Any, Dict, List, Mapping, Sequence, Tuple
+from collections.abc import Mapping, Sequence
+from typing import Any
 
 PROC_CPUINFO_PATH = "/proc/cpuinfo"
 
@@ -12,7 +15,7 @@ X86_64_MODEL_KEY = "model name"
 # Each level requires at least one flag from every group: kernels report the
 # same CPUID feature under different names (e.g. Linux displays SSE3 as "pni"
 # and LZCNT as "abm", older kernels also reported "osxsave").
-X86_64_LEVEL_REQUIREMENTS: Dict[str, Tuple[Tuple[str, ...], ...]] = {
+X86_64_LEVEL_REQUIREMENTS: dict[str, tuple[tuple[str, ...], ...]] = {
     "x86-64-v2": (
         ("pni", "sse3"),
         ("ssse3",),
@@ -48,9 +51,9 @@ X86_64_LEVEL_REQUIREMENTS: Dict[str, Tuple[Tuple[str, ...], ...]] = {
 X86_64_LEVEL_ORDER = ("x86-64-v1", "x86-64-v2", "x86-64-v3", "x86-64-v4")
 
 
-def parse_proc_cpuinfo(path: str = PROC_CPUINFO_PATH) -> List[Dict[str, str]]:
-    entries: List[Dict[str, str]] = []
-    entry: Dict[str, str] = {}
+def parse_proc_cpuinfo(path: str = PROC_CPUINFO_PATH) -> list[dict[str, str]]:
+    entries: list[dict[str, str]] = []
+    entry: dict[str, str] = {}
     try:
         with open(path, "r", encoding="utf-8") as handle:
             for line in handle:
@@ -74,8 +77,8 @@ def parse_proc_cpuinfo(path: str = PROC_CPUINFO_PATH) -> List[Dict[str, str]]:
     return entries
 
 
-def detect_cpu_flags(entries: Sequence[Mapping[str, str]]) -> List[str]:
-    per_cpu: List[set] = []
+def detect_cpu_flags(entries: Sequence[Mapping[str, str]]) -> list[str]:
+    per_cpu: list[set] = []
     for entry in entries:
         for key in CPU_FLAG_KEYS:
             value = entry.get(key) or ""
@@ -92,23 +95,20 @@ def detect_cpu_flags(entries: Sequence[Mapping[str, str]]) -> List[str]:
     return sorted(common)
 
 
-def compute_x86_64_levels(flags: Sequence[str]) -> Dict[str, bool]:
+def compute_x86_64_levels(flags: Sequence[str]) -> dict[str, bool]:
     flag_set = set(flags)
-    levels: Dict[str, bool] = {}
+    levels: dict[str, bool] = {}
     supported = bool(flag_set)
     for level in X86_64_LEVEL_ORDER:
         if level != "x86-64-v1":
             supported = supported and all(
-                any(feature in flag_set for feature in group)
-                for group in X86_64_LEVEL_REQUIREMENTS[level]
+                any(feature in flag_set for feature in group) for group in X86_64_LEVEL_REQUIREMENTS[level]
             )
         levels[level] = supported
     return levels
 
 
-def compute_microarch_levels(
-    architecture: str, flags: Sequence[str]
-) -> Dict[str, bool]:
+def compute_microarch_levels(architecture: str, flags: Sequence[str]) -> dict[str, bool]:
     if architecture in X86_64_ARCHITECTURES:
         return compute_x86_64_levels(flags)
     return {}
@@ -121,7 +121,7 @@ def highest_microarch_level(levels: Mapping[str, bool]) -> str:
     return ""
 
 
-def collect_cpu_facts() -> Dict[str, Any]:
+def collect_cpu_facts() -> dict[str, Any]:
     architecture = platform.machine().lower()
     entries = parse_proc_cpuinfo()
     flags = detect_cpu_flags(entries)

@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import ast
 import os
 import platform
 import re
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
+from collections.abc import Mapping, Sequence
+from typing import Any
 
 API_BASE_URL = "https://api.github.com"
 API_ACCEPT = "application/vnd.github+json"
@@ -76,10 +79,8 @@ OS_ALIAS_MAP = {
 # Asset filename tokens for x86-64 microarchitecture levels, covering common
 # naming styles: x86-64-v3, x86_64_v3 (GoReleaser), amd64-v3, x86_64v3, ...
 MICROARCH_LEVEL_ALIASES = {
-    "x86-64-v{0}".format(level): [
-        "{0}{1}v{2}".format(prefix, separator, level)
-        for prefix in ("x86-64", "x86_64", "amd64")
-        for separator in ("-", "_", "")
+    f"x86-64-v{level}": [
+        f"{prefix}{separator}v{level}" for prefix in ("x86-64", "x86_64", "amd64") for separator in ("-", "_", "")
     ]
     for level in range(1, 5)
 }
@@ -132,7 +133,7 @@ def lower_string(value: Any) -> str:
     return str(value or "").lower()
 
 
-def ensure_string_list(value: Any) -> List[str]:
+def ensure_string_list(value: Any) -> list[str]:
     if value is None:
         return []
     if isinstance(value, str):
@@ -150,7 +151,7 @@ def ensure_string_list(value: Any) -> List[str]:
     return [str(item) for item in value]
 
 
-def split_repo(repo: str) -> Tuple[str, str]:
+def split_repo(repo: str) -> tuple[str, str]:
     parts = [part for part in str(repo).strip("/").split("/") if part]
     if len(parts) != 2:
         raise ValueError("repo must be in OWNER/REPO format")
@@ -158,21 +159,21 @@ def split_repo(repo: str) -> Tuple[str, str]:
 
 
 def build_release_api_url(repo: str, release_tag: str) -> str:
-    suffix = "tags/{0}".format(release_tag) if release_tag else "latest"
-    return "{0}/repos/{1}/releases/{2}".format(API_BASE_URL, repo, suffix)
+    suffix = f"tags/{release_tag}" if release_tag else "latest"
+    return f"{API_BASE_URL}/repos/{repo}/releases/{suffix}"
 
 
-def build_request_headers(token: str) -> Dict[str, str]:
+def build_request_headers(token: str) -> dict[str, str]:
     headers = {
         "Accept": API_ACCEPT,
         "X-GitHub-Api-Version": API_VERSION,
     }
     if token:
-        headers["Authorization"] = "Bearer {0}".format(token)
+        headers["Authorization"] = f"Bearer {token}"
     return headers
 
 
-def parse_os_release() -> Dict[str, str]:
+def parse_os_release() -> dict[str, str]:
     for path in ("/etc/os-release", "/usr/lib/os-release"):
         if not os.path.exists(path):
             continue
@@ -191,7 +192,7 @@ def parse_os_release() -> Dict[str, str]:
     return {}
 
 
-def detect_local_platform_facts() -> Dict[str, str]:
+def detect_local_platform_facts() -> dict[str, str]:
     os_release = parse_os_release()
     return {
         "system": lower_string(platform.system()),
@@ -205,23 +206,21 @@ def normalize_microarch(value: Any) -> str:
     shorthand = re.compile(r"^v?([1-4])$")
     match = shorthand.match(microarch)
     if match:
-        return "x86-64-v{0}".format(match.group(1))
+        return f"x86-64-v{match.group(1)}"
     return microarch
 
 
 def normalized_request_platform(
     params: Mapping[str, Any],
-    facts: Optional[Mapping[str, Any]] = None,
-) -> Dict[str, str]:
+    facts: Mapping[str, Any] | None = None,
+) -> dict[str, str]:
     detected_facts = detect_local_platform_facts()
     if facts:
         detected_facts.update(
             {
                 "system": lower_string(facts.get("system")) or detected_facts["system"],
-                "architecture": lower_string(facts.get("architecture"))
-                or detected_facts["architecture"],
-                "distribution": lower_string(facts.get("distribution"))
-                or detected_facts["distribution"],
+                "architecture": lower_string(facts.get("architecture")) or detected_facts["architecture"],
+                "distribution": lower_string(facts.get("distribution")) or detected_facts["distribution"],
             }
         )
 
@@ -230,12 +229,8 @@ def normalized_request_platform(
     distribution = detected_facts["distribution"]
 
     requested_os = lower_string(params.get("asset_os")) or OS_FACT_MAP.get(system, "")
-    requested_arch = lower_string(params.get("asset_arch")) or ARCH_FACT_MAP.get(
-        architecture, ""
-    )
-    requested_distro = lower_string(params.get("asset_distro")) or DISTRO_FACT_MAP.get(
-        distribution, ""
-    )
+    requested_arch = lower_string(params.get("asset_arch")) or ARCH_FACT_MAP.get(architecture, "")
+    requested_distro = lower_string(params.get("asset_distro")) or DISTRO_FACT_MAP.get(distribution, "")
 
     requested_libc = lower_string(params.get("asset_libc"))
     if not requested_libc and system == "linux":
@@ -268,24 +263,24 @@ def detect_package_type(name_lower: str) -> str:
         return "rpm"
     if name_lower.endswith(".apk"):
         return "apk"
-    if name_lower.endswith(".pkg.tar.zst") or name_lower.endswith(".pkg.tar.xz"):
+    if name_lower.endswith((".pkg.tar.zst", ".pkg.tar.xz")):
         return "pkg"
     return ""
 
 
 def detect_archive_type(name_lower: str) -> str:
-    if name_lower.endswith(".tar.gz") or name_lower.endswith(".tgz"):
+    if name_lower.endswith((".tar.gz", ".tgz")):
         return "tar.gz"
-    if name_lower.endswith(".tar.xz") or name_lower.endswith(".txz"):
+    if name_lower.endswith((".tar.xz", ".txz")):
         return "tar.xz"
-    if name_lower.endswith(".tar.bz2") or name_lower.endswith(".tbz2"):
+    if name_lower.endswith((".tar.bz2", ".tbz2")):
         return "tar.bz2"
     if name_lower.endswith(".zip"):
         return "zip"
     return ""
 
 
-def parse_digest(digest: str) -> Tuple[str, str, str]:
+def parse_digest(digest: str) -> tuple[str, str, str]:
     digest = str(digest or "")
     if ":" not in digest:
         return digest, "", ""
@@ -298,7 +293,7 @@ def infer_alias_matches(
     name_lower: str,
     alias_map: Mapping[str, Sequence[str]],
     pattern_template: str = r"(^|[._-]){0}([._-]|$)",
-) -> List[str]:
+) -> list[str]:
     matches = []
     for canonical, aliases in alias_map.items():
         for alias in aliases:
@@ -316,15 +311,11 @@ def infer_alias_matches(
 MICROARCH_ALIAS_PATTERN = r"(^|[._-]){0}(?:[._-](?!\d)|$)"
 
 
-def infer_microarch_matches(name_lower: str) -> List[str]:
-    return infer_alias_matches(
-        name_lower, MICROARCH_LEVEL_ALIASES, MICROARCH_ALIAS_PATTERN
-    )
+def infer_microarch_matches(name_lower: str) -> list[str]:
+    return infer_alias_matches(name_lower, MICROARCH_LEVEL_ALIASES, MICROARCH_ALIAS_PATTERN)
 
 
-def normalize_release(
-    release_raw: Mapping[str, Any], repo: str, api_url: str
-) -> Dict[str, Any]:
+def normalize_release(release_raw: Mapping[str, Any], repo: str, api_url: str) -> dict[str, Any]:
     assets_raw = release_raw.get("assets") or []
     return {
         "repo": repo,
@@ -341,7 +332,7 @@ def normalize_release(
     }
 
 
-def normalize_asset(asset_raw: Mapping[str, Any]) -> Dict[str, Any]:
+def normalize_asset(asset_raw: Mapping[str, Any]) -> dict[str, Any]:
     name = str(asset_raw.get("name") or "")
     name_lower = name.lower()
     digest, digest_algorithm, digest_value = parse_digest(asset_raw.get("digest") or "")
@@ -374,9 +365,7 @@ def normalize_asset(asset_raw: Mapping[str, Any]) -> Dict[str, Any]:
     }
 
 
-def asset_matches_platform(
-    asset: Mapping[str, Any], requested_platform: Mapping[str, str]
-) -> bool:
+def asset_matches_platform(asset: Mapping[str, Any], requested_platform: Mapping[str, str]) -> bool:
     for requested_key, inferred_key in (
         ("requested_os", "inferred_os"),
         ("requested_arch", "inferred_arch"),
@@ -386,53 +375,41 @@ def asset_matches_platform(
     ):
         requested_value = requested_platform.get(requested_key, "")
         inferred_values = asset.get(inferred_key) or []
-        if (
-            requested_value
-            and inferred_values
-            and requested_value not in inferred_values
-        ):
+        if requested_value and inferred_values and requested_value not in inferred_values:
             return False
     return True
 
 
 def prefer_specific_candidates(
-    candidates: Sequence[Dict[str, Any]],
+    candidates: Sequence[dict[str, Any]],
     requested_value: str,
     inferred_key: str,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     if len(candidates) <= 1 or not requested_value:
         return list(candidates)
 
     specific_candidates = [
-        asset
-        for asset in candidates
-        if asset.get(inferred_key) and requested_value in asset[inferred_key]
+        asset for asset in candidates if asset.get(inferred_key) and requested_value in asset[inferred_key]
     ]
     return specific_candidates or list(candidates)
 
 
 def select_candidate_assets(
     repo: str,
-    assets: Sequence[Dict[str, Any]],
+    assets: Sequence[dict[str, Any]],
     params: Mapping[str, Any],
     requested_platform: Mapping[str, str],
-) -> Tuple[List[Dict[str, Any]], str, Dict[str, Any]]:
+) -> tuple[list[dict[str, Any]], str, dict[str, Any]]:
     asset_url = str(params.get("asset_url") or "")
     asset_name = str(params.get("asset_name") or "")
     asset_name_regex = str(params.get("asset_name_regex") or "")
-    asset_name_contains = [
-        value.lower()
-        for value in ensure_string_list(params.get("asset_name_contains"))
-        if value
-    ]
+    asset_name_contains = [value.lower() for value in ensure_string_list(params.get("asset_name_contains")) if value]
 
     candidates = list(assets)
     selected_family = ""
 
     if asset_url:
-        candidates = [
-            asset for asset in assets if asset.get("browser_download_url") == asset_url
-        ]
+        candidates = [asset for asset in assets if asset.get("browser_download_url") == asset_url]
     elif asset_name:
         candidates = [asset for asset in assets if asset.get("name") == asset_name]
     else:
@@ -440,36 +417,23 @@ def select_candidate_assets(
             try:
                 pattern = re.compile(asset_name_regex)
             except re.error as exc:
-                raise ValueError("asset_name_regex is invalid: {0}".format(exc))
+                raise ValueError(f"asset_name_regex is invalid: {exc}")
 
-            candidates = [
-                asset
-                for asset in candidates
-                if pattern.search(str(asset.get("name") or ""))
-            ]
+            candidates = [asset for asset in candidates if pattern.search(str(asset.get("name") or ""))]
 
         if asset_name_contains:
             candidates = [
                 asset
                 for asset in candidates
-                if all(
-                    token in lower_string(asset.get("name"))
-                    for token in asset_name_contains
-                )
+                if all(token in lower_string(asset.get("name")) for token in asset_name_contains)
             ]
 
-        candidates = [
-            asset
-            for asset in candidates
-            if asset_matches_platform(asset, requested_platform)
-        ]
+        candidates = [asset for asset in candidates if asset_matches_platform(asset, requested_platform)]
 
         for asset_family in ensure_string_list(params.get("preferred_asset_families")):
             asset_family = asset_family.lower()
             matching_family_assets = [
-                asset
-                for asset in candidates
-                if lower_string(asset.get("asset_family")) == asset_family
+                asset for asset in candidates if lower_string(asset.get("asset_family")) == asset_family
             ]
             if matching_family_assets:
                 selected_family = asset_family
@@ -504,22 +468,17 @@ def select_candidate_assets(
 
     if not candidates:
         raise LookupError(
-            "No GitHub release assets matched for {0}. Use playbooks/github_releases/inspect-latest.yaml "
+            f"No GitHub release assets matched for {repo}. Use playbooks/github_releases/inspect-latest.yaml "
             "to inspect normalized assets or provide asset_name, asset_url, asset_name_regex, "
-            "or asset_name_contains.".format(repo)
+            "or asset_name_contains."
         )
 
     if len(candidates) != 1:
-        candidate_names = ", ".join(
-            str(asset.get("name") or "") for asset in candidates
-        )
+        candidate_names = ", ".join(str(asset.get("name") or "") for asset in candidates)
         raise RuntimeError(
-            "Multiple GitHub release assets matched for {0}: {1}. Refine selection inputs "
+            f"Multiple GitHub release assets matched for {repo}: {candidate_names}. Refine selection inputs "
             "(e.g. asset_microarch, asset_name_regex) or inspect candidates with "
-            "playbooks/github_releases/inspect-latest.yaml.".format(
-                repo,
-                candidate_names,
-            )
+            "playbooks/github_releases/inspect-latest.yaml."
         )
 
     return candidates, selected_family, candidates[0]
@@ -528,14 +487,14 @@ def select_candidate_assets(
 def prepare_download_hints(
     params: Mapping[str, Any],
     selected_asset: Mapping[str, Any],
-) -> Dict[str, str]:
+) -> dict[str, str]:
     explicit_checksum = str(params.get("asset_checksum") or "").strip()
     selected_digest = str(selected_asset.get("digest") or "")
 
     if explicit_checksum:
         download_verification = "explicit"
         algorithm, value = checksum_parts(explicit_checksum)
-        download_checksum = "{0}:{1}".format(algorithm, value)
+        download_checksum = f"{algorithm}:{value}"
     elif selected_digest:
         download_verification = "github-digest"
         download_checksum = selected_digest
@@ -550,7 +509,7 @@ def prepare_download_hints(
     }
 
 
-def checksum_parts(checksum: str) -> Tuple[str, str]:
+def checksum_parts(checksum: str) -> tuple[str, str]:
     checksum = str(checksum or "").strip()
     if not checksum:
         return "", ""
@@ -564,6 +523,4 @@ def checksum_parts(checksum: str) -> Tuple[str, str]:
         if algorithm:
             return algorithm, checksum.lower()
 
-    raise ValueError(
-        "checksum must be in algorithm:value format or be a recognizable hexadecimal digest"
-    )
+    raise ValueError("checksum must be in algorithm:value format or be a recognizable hexadecimal digest")

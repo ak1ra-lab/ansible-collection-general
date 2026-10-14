@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import json
-from typing import Any, Dict
+from typing import Any
 from urllib.error import HTTPError, URLError
 
 from ansible.module_utils.basic import AnsibleModule
@@ -252,11 +254,11 @@ def fail_http_error(module: AnsibleModule, exc: Exception, context: str) -> Any:
                 response = raw_response.decode("utf-8", errors="replace")
             else:
                 response = str(raw_response)
-        except Exception:
+        except Exception:  # noqa: BLE001 - best-effort error body read
             response = ""
 
     return module.fail_json(
-        msg="{0}: {1}".format(context, exc),
+        msg=f"{context}: {exc}",
         status=status,
         response=response,
     )
@@ -265,8 +267,8 @@ def fail_http_error(module: AnsibleModule, exc: Exception, context: str) -> Any:
 def query_release_metadata(
     module: AnsibleModule,
     release_api_url: str,
-    request_headers: Dict[str, str],
-) -> Dict[str, Any]:
+    request_headers: dict[str, str],
+) -> dict[str, Any]:
     try:
         response = open_url(
             release_api_url,
@@ -282,13 +284,9 @@ def query_release_metadata(
     except HTTPError as exc:
         return fail_http_error(module, exc, "failed to query GitHub release metadata")
     except URLError as exc:
-        return module.fail_json(
-            msg="failed to query GitHub release metadata: {0}".format(exc)
-        )
+        return module.fail_json(msg=f"failed to query GitHub release metadata: {exc}")
     except ValueError as exc:
-        return module.fail_json(
-            msg="failed to decode GitHub release metadata: {0}".format(exc)
-        )
+        return module.fail_json(msg=f"failed to decode GitHub release metadata: {exc}")
 
     return module.fail_json(msg="failed to query GitHub release metadata")
 
@@ -323,9 +321,7 @@ def main() -> None:
 
     params = module.params
     if params["asset_url"] and params["asset_name"]:
-        module.fail_json(
-            msg="asset_url and asset_name are mutually exclusive exact selectors"
-        )
+        module.fail_json(msg="asset_url and asset_name are mutually exclusive exact selectors")
 
     try:
         owner, name = split_repo(params["repo"])
@@ -340,16 +336,14 @@ def main() -> None:
     if requested_microarch and requested_microarch not in MICROARCH_LEVEL_ALIASES:
         module.fail_json(
             msg=(
-                "asset_microarch must be empty or one of {0} (shorthands v1..v4 are"
-                " accepted)".format(", ".join(MICROARCH_LEVEL_ALIASES))
+                f"asset_microarch must be empty or one of {', '.join(MICROARCH_LEVEL_ALIASES)}"
+                " (shorthands v1..v4 are accepted)"
             )
         )
 
     release_raw = query_release_metadata(module, release_api_url, request_headers)
     release = normalize_release(release_raw, params["repo"], release_api_url)
-    assets = [
-        normalize_asset(asset_raw) for asset_raw in release_raw.get("assets") or []
-    ]
+    assets = [normalize_asset(asset_raw) for asset_raw in release_raw.get("assets") or []]
 
     try:
         candidate_assets, selected_family, selected_asset = select_candidate_assets(
@@ -362,7 +356,7 @@ def main() -> None:
     except (LookupError, RuntimeError, ValueError) as exc:
         module.fail_json(msg=str(exc), release=release, assets=assets)
 
-    result: Dict[str, Any] = {
+    result: dict[str, Any] = {
         "owner": owner,
         "name": name,
         "repo": params["repo"],
@@ -382,8 +376,8 @@ def main() -> None:
         module.fail_json(
             msg=(
                 "require_digest is true but neither asset_checksum nor the GitHub asset digest field "
-                "is available for {0}."
-            ).format(selected_asset["name"]),
+                f"is available for {selected_asset['name']}."
+            ),
             **result,
         )
 
