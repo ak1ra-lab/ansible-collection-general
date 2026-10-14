@@ -1,4 +1,11 @@
 ---
+- name: assert ansible_facts['distribution'] is debian
+  ansible.builtin.assert:
+    that:
+      - (ansible_facts['distribution'] | lower) == 'debian'
+      - (ansible_facts['distribution_major_version'] | int) >= 12
+    fail_msg: "roles/debian_base currently only support Debian Linux"
+
 - name: include_tasks if os_family is debian
   when:
     - (ansible_facts['os_family'] | lower) == 'debian'
