@@ -15,6 +15,15 @@
         (apt_keyrings_dest | default('') | length > 0)
     fail_msg: "All of [apt_repo, apt_repo_uris, apt_keyrings_dest] must be set"
 
+# ansible.builtin.deb822_repository requires the python3-debian library on the
+# managed host; minimal Debian installs (containers, LXC) do not ship it.
+- name: ensure python3-debian is installed for deb822_repository
+  ansible.builtin.apt:
+    name: python3-debian
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
 - name: ensure apt directories exists
   ansible.builtin.file:
     path: "{{ directory }}"
@@ -66,6 +75,7 @@
   ansible.builtin.apt:
     name: "{{ apt_repo_packages }}"
     update_cache: true
+    cache_valid_time: 3600
     state: present
 
 - name: apt-mark hold on apt_repo_packages
