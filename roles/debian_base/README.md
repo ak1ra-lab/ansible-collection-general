@@ -1,0 +1,55 @@
+# debian_base
+
+Applies a Debian baseline to freshly provisioned hosts: curated packages, DEB822
+archive and security sources, unattended-upgrades wiring, and common bootstrap
+settings.
+
+Targets Debian 12/13 only (`ansible_facts['distribution'] == 'debian'`).
+
+## What It Does
+
+- Renders `/etc/apt/sources.list.d/debian.sources` and `debian-security.sources`
+  in DEB822 format and replaces `/etc/apt/sources.list` with a placeholder.
+- Installs `python3-debian` (needed by `ansible.builtin.deb822_repository`),
+  runs an `apt upgrade`, and installs the baseline package list.
+- Manages unattended-upgrades for stable updates and, optionally, backports and
+  automatic reboots.
+- Forcibly uses IPv4 for APT when enabled, and optionally adds a
+  `debian-backports` pinning file.
+- Grants the `sudo` group passwordless sudo via `community.general.sudoers`.
+- Optionally enables TCP BBR (`community.general.modprobe` + `ansible.posix.sysctl`),
+  `net.ipv4.ip_forward`, custom `sshd_config` entries, custom sysctl entries,
+  and the `qemu-guest-agent` service.
+
+## Variables
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `debian_base_apt_repo_debian_uris` | `[https://deb.debian.org/debian/]` | Debian archive mirrors |
+| `debian_base_apt_repo_debian_suites` | release + `-updates` | Archive suites |
+| `debian_base_apt_repo_debian_components` | main/contrib/non-free/non-free-firmware | Archive components |
+| `debian_base_apt_repo_debian_security_uris` | `[https://deb.debian.org/debian-security/]` | Security mirrors |
+| `debian_base_apt_repo_debian_security_suites` | release + `-security` | Security suites |
+| `debian_base_apt_repo_debian_backports_enabled` | `false` | Add the backports suite and pinning file |
+| `debian_base_apt_repo_debian_backports_preferences_package` | `linux-* initramfs-tools` | Backports pinning `Package:` glob |
+| `debian_base_apt_repo_debian_backports_preferences_pin_priority` | `500` | Backports pin priority |
+| `debian_base_unattended_upgrade_updates_enabled` | `false` | Unattended-upgrades for `<release>-updates` |
+| `debian_base_unattended_upgrade_backports_enabled` | `false` | Unattended-upgrades for backports |
+| `debian_base_unattended_upgrade_automatic_reboot_enabled` | `false` | Unattended-upgrades automatic reboot |
+| `debian_base_unattended_upgrade_automatic_reboot_time` | `02:00` | Automatic reboot time |
+| `debian_base_apt_force_ipv4_enabled` | `true` | Write `/etc/apt/apt.conf.d/99force-ipv4` |
+| `debian_base_tcp_bbr_enabled` | `false` | Load `tcp_bbr` and set the BBR sysctls |
+| `debian_base_ip_forward_enabled` | `false` | Set `net.ipv4.ip_forward=1` |
+| `debian_base_qemu_guest_agent_enabled` | `true` | Install and enable `qemu-guest-agent` |
+| `debian_base_custom_sshd_config_enabled` | `false` | Apply `debian_base_custom_sshd_config_entries` |
+| `debian_base_custom_sysctl_conf_enabled` | `false` | Apply `debian_base_custom_sysctl_conf_entries` |
+| `debian_base_apt_packages` | curated list | Packages installed as the baseline |
+
+## Notes
+
+- The `qemu-guest-agent` task notifies a handler that enables the service; on
+  hardware without the virtio device the package still installs, but the service
+  stays inactive.
+- The role is not idempotent on the first run by design: the `apt upgrade` may
+  upgrade packages. Repeat runs are cache-bounded (`cache_valid_time: 3600`) and
+  report no change once the system is up to date.

@@ -1,0 +1,23 @@
+---
+# Role metadata for ak1ra_lab.general.pyproject_install
+
+galaxy_info:
+  author: ak1ra
+  description: Build or install a Python package into a target virtual environment
+  license: MIT
+  min_ansible_version: "2.18"
+
+  platforms:
+    - name: Debian
+      versions:
+        - trixie
+        - bookworm
+
+  galaxy_tags:
+    - python
+    - pip
+    - virtualenv
+
+dependencies: []
+
+allow_duplicates: false

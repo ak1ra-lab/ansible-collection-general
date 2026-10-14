@@ -1,0 +1,23 @@
+---
+# Role metadata for ak1ra_lab.general.docker
+
+galaxy_info:
+  author: ak1ra
+  description: Install Docker CE from the official repository and manage the daemon configuration
+  license: MIT
+  min_ansible_version: "2.18"
+
+  platforms:
+    - name: Debian
+      versions:
+        - trixie
+        - bookworm
+
+  galaxy_tags:
+    - debian
+    - docker
+    - containers
+
+dependencies: []
+
+allow_duplicates: false

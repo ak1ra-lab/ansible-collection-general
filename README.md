@@ -5,7 +5,11 @@ modules consumed across multiple `ak1ra-lab` repositories.
 
 Roles include:
 
+- `ak1ra_lab.general.acme_dns`
+- `ak1ra_lab.general.acme_dns_register`
+- `ak1ra_lab.general.apt_install`
 - `ak1ra_lab.general.debian_base`
+- `ak1ra_lab.general.docker`
 - `ak1ra_lab.general.go_build`
 - `ak1ra_lab.general.pyproject_install`
 
@@ -51,7 +55,11 @@ usually enough for local development.
 
 ## Roles
 
-- `debian_base`: apply a Debian or Ubuntu baseline with curated packages, apt repository defaults, unattended upgrades, and common host bootstrap settings.
+- `apt_install`: add a third-party APT repository in DEB822 format with a managed keyring, optional pinning and unattended-upgrades wiring, and optional package installation. Debian only.
+- `acme_dns`: deploy an acme-dns server: Go binary built on `localhost`, systemd unit, and DNS config.
+- `acme_dns_register`: register a client with an acme-dns server, persist credentials, and create `_acme-challenge` CNAME records (Cloudflare API or a manual prompt).
+- `debian_base`: apply a Debian baseline with curated packages, apt repository defaults, unattended upgrades, and common host bootstrap settings. Debian only.
+- `docker`: install Docker CE from the official repository and manage `/etc/docker/daemon.json` and the `docker` group. Debian only.
 - `go_build`: clone and build a Go project on `localhost`, then expose the built binary path for follow-up tasks.
 - `pyproject_install`: build or install a Python package into a target virtual environment from a local wheel, PyPI, or TestPyPI.
 

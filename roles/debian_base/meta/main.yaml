@@ -1,0 +1,24 @@
+---
+# Role metadata for ak1ra_lab.general.debian_base
+
+galaxy_info:
+  author: ak1ra
+  description: Debian baseline for freshly provisioned hosts (packages, apt repos, unattended upgrades)
+  license: MIT
+  min_ansible_version: "2.18"
+
+  platforms:
+    - name: Debian
+      versions:
+        - trixie
+        - bookworm
+
+  galaxy_tags:
+    - debian
+    - baseline
+    - apt
+    - upgrades
+
+dependencies: []
+
+allow_duplicates: false
