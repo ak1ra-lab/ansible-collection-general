@@ -3,7 +3,7 @@ default:
     @just --list --unsorted
 
 # Run all available recipes
-all: lint typecheck ansible-lint docs-build
+all: lint typecheck ansible-lint
 
 # Sync development dependencies (may update uv.lock if pyproject.toml changed)
 sync *ARGS:
@@ -18,14 +18,6 @@ lint:
 # Resolving the collection-namespace imports requires a fresh install
 typecheck: ansible-collection-install
     uv run ty check plugins/
-
-# Serve documentation locally
-docs-serve:
-    uv run --group docs mkdocs serve
-
-# Build documentation
-docs-build:
-    NO_MKDOCS_2_WARNING=1 uv run --group docs mkdocs build
 
 # Install project-local Ansible collection
 ansible-collection-install:
@@ -61,13 +53,8 @@ molecule-create: ansible-collection-install ansible-requirements-install
 molecule-destroy:
     molecule destroy
 
-# Build project-local Ansible collection
-ansible-collection-build:
-    mkdir -p .ansible/dist/
-    ansible-galaxy collection build --force --output-path .ansible/dist/ .
-
 # Remove build artifacts
 clean:
-    rm -rf .ansible/ .molecule/ site/ .cache/ .ruff_cache/
+    rm -rf .ansible/ .molecule/ .cache/ .ruff_cache/
     find plugins/ -type f -name "*.pyc" -delete
     find plugins/ -type d -name "__pycache__" -delete
