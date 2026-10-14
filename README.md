@@ -69,7 +69,11 @@ usually enough for local development.
 - `cpu_info`: collect CPU capability facts, including raw CPU flags and the detected x86-64 microarchitecture level (`x86-64-v1`..`v4`), which can be fed into `github_releases_info` asset selection.
 
 For full module argument and return-value reference, use `ansible-doc ak1ra_lab.general.github_releases_info`
-against an installed copy of the collection.
+against an installed copy of the collection; `playbooks/github_releases/inspect-latest.yaml` inspects a
+release (and the selected asset) without downloading.
 
-See [docs/installation.md](docs/installation.md), [docs/roles.md](docs/roles.md), and
-[docs/modules.md](docs/modules.md) for usage details.
+Facts from third-party collections are not part of `ansible.builtin.setup`: run
+`ak1ra_lab.general.cpu_info` explicitly in the play and feed
+`ansible_facts['cpu']['microarch_level']` into `asset_microarch` when a repository publishes
+per-level builds. Each role's variables and outcomes are documented in its
+`roles/<role>/README.md`.

@@ -14,7 +14,8 @@ pytest suite. See `README.md` for the consume/deploy workflow.
 underlying command directly - the two are equivalent.
 
 - Env/deps: **uv** (`just sync` = `uv sync --group dev`). Never `pip`/`poetry`.
-  Dep groups: `lint` (ruff, ty, ansible-core), `docs` (mkdocs-material, i18n), both pulled into `dev`.
+  Dep group: `lint` (ruff, ty, ansible-core), pulled into `dev` together with
+  `pre-commit`.
 - Lint+format: **ruff**, scoped to `plugins/` only (`just lint` =
   `uv run ruff check --fix plugins/` then `uv run ruff format plugins/`). Never
   `black`/`isort`/`flake8`.
@@ -23,7 +24,6 @@ underlying command directly - the two are equivalent.
   `ansible_collections...` self-imports from `.ansible/collections` (`[tool.ty.environment]`
   in `pyproject.toml`), and the recipe reinstalls the collection first so the
   snapshot is fresh.
-- Docs: `just docs-build` / `docs-serve` = `uv run --group docs mkdocs ...`.
 - No tests: there is no `tests/` tree and no pytest recipe. Don't invent one.
 
 Python changes to `plugins/` MUST pass ruff lint+format (and ty) before commit.
@@ -49,15 +49,11 @@ just ansible-collection-install   # = ansible-galaxy collection install --force 
 - `ansible-lint` runs with `profile: production` (`.ansible-lint`); in non-`offline`
   mode it auto-installs `requirements.yaml` into a cache dir computed by
   ansible-compat from the project dir, ignoring `ansible.cfg`'s `collections_path`.
-- `just ansible-collection-build` packages a tarball into `.ansible/dist/`.
+- `.ansible-lint` intentionally has no `kinds:` mapping: remapping role
+  `defaults/` (or `vars/`) files out of the default "vars" kind silently
+  disables `var-naming[no-role-prefix]` for the role. Role variables use the
+  `<role>_*` prefix (see `roles/apt_install/README.md`).
 - The `roles/pyproject_install/molecule/` scenario is dormant - don't rely on it.
 
 Ansible changes MUST pass `ansible-lint` before commit.
 
-## Docs (bilingual)
-
-`docs/` is served by mkdocs-material with the i18n plugin
-(`docs_structure: suffix`): every page has an English `*.md` and a
-Simplified-Chinese `*.zh.md` sibling (`index`, `installation`, `roles`,
-`modules`). When adding or changing a page, update BOTH languages and add its
-title to the `nav` plus the `zh` `nav_translations` map in `mkdocs.yml`.

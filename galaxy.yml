@@ -23,7 +23,6 @@ issues: https://github.com/ak1ra-lab/ansible-collection-general/issues
 manifest:
   omit_default_directives: true
   directives:
-    - graft docs
     - graft playbooks
     - graft plugins
     - graft roles

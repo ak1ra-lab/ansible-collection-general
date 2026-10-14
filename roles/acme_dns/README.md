@@ -38,9 +38,29 @@ server with a RESTful HTTP API for handling ACME DNS-01 challenges.
 
 ## DNS Delegation
 
-Upstream delegation records must be added after deployment; the required A/NS
-records for both the separate-nameserver and self-delegating layouts are
-documented in [`docs/roles.md`](../../docs/roles.md#acme_dns).
+Upstream delegation records must be added after deployment so that DNS-01
+challenge lookups for `*.auth.acme-dns.example.com` reach the acme-dns
+instance. The number of A records depends on whether `acme_dns_nsname` differs
+from `acme_dns_domain`.
+
+**When `acme_dns_nsname != acme_dns_domain`** (separate nameserver name),
+three records are needed - example with `acme_dns_server_ip: xx.xx.xx.xx`,
+`acme_dns_domain: auth.acme-dns.example.com`, and
+`acme_dns_nsname: ns1.acme-dns.example.com`:
+
+| Type | Name                        | Value                      | Purpose                 |
+| ---- | --------------------------- | -------------------------- | ----------------------- |
+| A    | `auth.acme-dns.example.com` | `xx.xx.xx.xx`              | zone apex reachable     |
+| NS   | `auth.acme-dns.example.com` | `ns1.acme-dns.example.com` | delegate the zone       |
+| A    | `ns1.acme-dns.example.com`  | `xx.xx.xx.xx`              | glue for the nameserver |
+
+**When `acme_dns_nsname == acme_dns_domain`** (default), the NS delegates to
+itself and a single A record serves as both glue and zone apex:
+
+| Type | Name                        | Value                       | Purpose                    |
+| ---- | --------------------------- | --------------------------- | -------------------------- |
+| A    | `auth.acme-dns.example.com` | `xx.xx.xx.xx`               | both glue and zone apex    |
+| NS   | `auth.acme-dns.example.com` | `auth.acme-dns.example.com` | delegate the zone          |
 
 ## Requirements
 
