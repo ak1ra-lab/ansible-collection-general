@@ -53,6 +53,46 @@ The `requirements.yaml` deps (`ansible.posix`, `community.general`) are commonly
 already present at the user level, so installing the collection itself is
 usually enough for local development.
 
+## Testing
+
+Molecule scenarios live under `extensions/molecule/` (collection-testing
+layout). The `default` scenario owns the shared container lifecycle
+(`shared_state: true`); the component scenarios reuse the same containers and
+each run prepare, converge, idempotence, verify, the scenario teardown and a
+teardown verification.
+
+| Scenario | Coverage |
+| --- | --- |
+| `apt_install/basic` | Third-party repository keyring URL, DEB822 source, origin pinning, unattended-upgrades, package install and hold, the revert switches, legacy `.list` removal |
+| `apt_install/variants` | Inline keyring content, release-based pinning, `any-version` suites, a keyring package with a pinned checksum |
+| `debian_base` | DEB822 archive/security sources, backports pinning, unattended-upgrades drop-ins, force-IPv4, baseline package, sudoers |
+| `go_build` | Fixture git repository, binary build and stamp-based rebuild skip |
+| `pyproject_install/local` | `uv build --wheel` on the controller, wheel install into the target venv, remote wheel cleanup |
+| `pyproject_install/pypi` | PyPI install into a target venv, role-provided system packages |
+
+The managed nodes are the Debian 12/13 systemd images from
+[ak1ra-lab/docker-systemd](https://github.com/ak1ra-lab/docker-systemd); the
+APT-based roles are Debian-only by contract.
+
+```shell
+# First run only: the scenarios search the project-local collections path
+# (ANSIBLE_COLLECTIONS_PATH in extensions/molecule/config.yml), and the
+# default scenario creates the shared containers before Molecule installs
+# anything itself.
+just ansible-collection-install
+just ansible-requirements-install
+
+just molecule-test                   # every scenario (recursive glob)
+just molecule-test-one apt_install/basic
+just molecule-list
+```
+
+Podman is required. Run it rootful (as the CI does): every container runs
+privileged because systemd needs the capabilities. A rootful Docker daemon is
+supported as an alternative - set `MOLECULE_CONTAINER_RUNTIME=docker` for
+every molecule invocation. The controller additionally needs `go` (the
+`go_build` scenario) and `uv` (the `pyproject_install` local scenario).
+
 ## Roles
 
 - `apt_install`: add a third-party APT repository in DEB822 format with a managed keyring, optional pinning and unattended-upgrades wiring, and optional package installation. Debian only.

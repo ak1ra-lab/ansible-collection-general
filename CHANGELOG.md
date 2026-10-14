@@ -10,6 +10,7 @@ The format is based on Keep a Changelog, and this project does not currently gua
 
 - Added the `cpu_info` facts module, exposing CPU capability facts (`architecture`, `vendor`, `model`, `logical_cpus`, `flags`) plus the detected x86-64 microarchitecture level (`microarch_levels`, `microarch_level`).
 - Added the `asset_microarch` option to `github_releases_info`, which filters out assets tagged with a different x86-64 microarchitecture level and prefers assets matching the requested level.
+- Added Molecule scenarios under `extensions/molecule/` (`apt_install/basic`, `apt_install/variants`, `debian_base`, `go_build`, `pyproject_install/local`, `pyproject_install/pypi`) with a shared, runtime-selectable container lifecycle (Debian 12/13), justfile recipes, and a GitHub Actions lint + Molecule workflow with Dependabot updates for the pinned actions.
 
 ### Changed
 
@@ -29,7 +30,7 @@ The format is based on Keep a Changelog, and this project does not currently gua
 
 - `github_releases_info` no longer reads version strings as x86-64 microarchitecture tags: `mihomo-linux-amd64-v1.19.30.deb` was previously inferred as `x86-64-v1` because of the `amd64-v1.19.30` prefix. Level tags are now only recognized when the following separator is not directly followed by a digit.
 - `apt_install` now installs `python3-debian` before using `ansible.builtin.deb822_repository`, so minimal Debian installations no longer fail on the missing library.
-- `apt_install` and `debian_base` repeat runs are idempotent: the APT cache refreshes are bounded by `cache_valid_time`.
+- `apt_install` refreshes the APT index whenever the source configuration changes, so a fresh-but-stale cache can no longer hide the repository that was just added; repeat runs stay idempotent.
 - `debian_base` fails fast on non-Debian hosts instead of rendering Debian archive and security repositories on Ubuntu.
 - `acme_dns_register` marks credential handling (`POST /register`, credential facts, credentials file) as `no_log` so passwords stay out of verbose output and diffs.
 - Updated Debian base role variables to use the `debian_base_` prefix expected by ansible-lint.
