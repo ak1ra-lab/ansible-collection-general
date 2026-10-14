@@ -18,6 +18,7 @@
   delegate_to: localhost
   block:
     - name: POST /register to acme-dns server
+      no_log: true
       ansible.builtin.uri:
         url: "{{ acme_dns_register_server_url }}/register"
         method: POST
@@ -26,6 +27,7 @@
       register: _acme_dns_register_response
 
     - name: set acme-dns credential facts from registration response
+      no_log: true
       ansible.builtin.set_fact:
         acme_dns_register_username: "{{ _acme_dns_register_response.json.username }}"
         acme_dns_register_password: "{{ _acme_dns_register_response.json.password }}"
@@ -47,6 +49,7 @@
         mode: "0755"
 
     - name: write acme-dns credentials to host_vars
+      no_log: true
       ansible.builtin.template:
         src: acme_dns_credentials.yaml.j2
         dest: "{{ _acme_dns_register_output_dir }}/acme_dns_credentials.yaml"
