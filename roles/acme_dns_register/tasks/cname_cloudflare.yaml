@@ -26,8 +26,9 @@
     # Strip the zone suffix to produce a name relative to the zone, e.g.:
     #   _acme-challenge.server.example.com  (zone: example.com)
     #   → record: _acme-challenge.server
+    # Wildcard names use the same _acme-challenge record as the base name.
     record: >-
-      {{ ('_acme-challenge.' + acme_domain)
+      {{ ('_acme-challenge.' + (acme_domain | ansible.builtin.regex_replace('^\*\.', '')))
          | ansible.builtin.regex_replace('\.' + acme_dns_register_cf_zone + '$', '') }}
     type: CNAME
     value: "{{ acme_dns_register_fulldomain }}"
@@ -45,5 +46,5 @@
     msg: |-
       Cloudflare CNAME records added for {{ inventory_hostname }}:
       {% for domain in acme_dns_register_acme_domains %}
-        _acme-challenge.{{ domain }}.  CNAME  {{ acme_dns_register_fulldomain | default('') }}.
+        _acme-challenge.{{ domain | regex_replace('^\*\.', '') }}.  CNAME  {{ acme_dns_register_fulldomain | default('') }}.
       {% endfor %}

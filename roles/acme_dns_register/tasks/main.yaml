@@ -7,10 +7,10 @@
 # If the credentials are already present in host_vars the registration step is
 # skipped (idempotent).
 #
-# After a fresh registration the role adds the required _acme-challenge CNAME
-# record(s) automatically when a Cloudflare API token is available.  For all
-# other DNS providers the role pauses and prompts the operator to add the
-# record(s) manually before continuing.
+# When a Cloudflare API token and the acme-dns fulldomain are available, the
+# required _acme-challenge CNAME record(s) are reconciled on every run
+# (idempotent).  For all other DNS providers the role pauses and prompts the
+# operator to add the record(s) manually after a fresh registration.
 #
 # All tasks run on the Ansible controller (delegate_to: localhost).
 #
@@ -19,6 +19,7 @@
 #   acme_dns_register_username               - existing username (omit to register)
 #   acme_dns_register_password               - existing password
 #   acme_dns_register_subdomain              - existing subdomain
+#   acme_dns_register_fulldomain             - existing fulldomain (optional)
 #   acme_dns_register_cloudflare_api_token   - CF account token (optional)
 #   acme_dns_register_cloudflare_zone_token  - CF zone token (optional, preferred)
 #   acme_dns_register_cloudflare_zone        - explicit CF zone (optional)
@@ -31,6 +32,7 @@
 #   acme_dns_register_username          - registered (or pre-existing) username
 #   acme_dns_register_password          - registered (or pre-existing) password
 #   acme_dns_register_subdomain         - registered (or pre-existing) subdomain
+#   acme_dns_register_fulldomain        - acme-dns CNAME target
 
 - name: include_tasks validate.yaml
   ansible.builtin.include_tasks: validate.yaml
@@ -40,7 +42,7 @@
 
 - name: include_tasks cname_cloudflare.yaml
   when:
-    - acme_dns_register_newly_registered | ansible.builtin.bool
+    - acme_dns_register_fulldomain | length > 0
     - >-
       acme_dns_register_cloudflare_api_token | length > 0
       or acme_dns_register_cloudflare_zone_token | length > 0

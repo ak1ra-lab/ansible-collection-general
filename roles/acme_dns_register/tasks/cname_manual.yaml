@@ -14,7 +14,7 @@
       {{ inventory_hostname }} before continuing.
 
       {% for domain in acme_dns_register_acme_domains %}
-        _acme-challenge.{{ domain }}.  CNAME  {{ acme_dns_register_fulldomain | default('') }}.
+        _acme-challenge.{{ domain | regex_replace('^\*\.', '') }}.  CNAME  {{ acme_dns_register_fulldomain | default('') }}.
       {% endfor %}
 
       These records delegate the ACME DNS-01 challenge to the

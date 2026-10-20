@@ -60,5 +60,15 @@
   become: false
   delegate_to: localhost
   ansible.builtin.set_fact:
-    acme_dns_register_fulldomain: ""
     acme_dns_register_newly_registered: false
+
+- name: derive the acme-dns fulldomain from the server URL
+  when:
+    - not (_acme_dns_register_needed | ansible.builtin.bool)
+    - acme_dns_register_fulldomain | length == 0
+  become: false
+  delegate_to: localhost
+  ansible.builtin.set_fact:
+    acme_dns_register_fulldomain: >-
+      {{ acme_dns_register_subdomain ~ '.'
+         ~ (acme_dns_register_server_url | ansible.builtin.urlsplit('hostname')) }}

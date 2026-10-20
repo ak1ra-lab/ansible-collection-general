@@ -15,6 +15,10 @@ acme_dns_register_server_url: ""
 acme_dns_register_username: ""
 acme_dns_register_password: ""
 acme_dns_register_subdomain: ""
+# Server-reported subdomain FQDN.  Persisted with the credentials so the
+# _acme-challenge CNAME records can be reconciled on later runs.  When it is
+# empty and credentials exist, it is derived from the server URL.
+acme_dns_register_fulldomain: ""
 
 # ── Cloudflare CNAME automation ──────────────────────────────────────────────
 
