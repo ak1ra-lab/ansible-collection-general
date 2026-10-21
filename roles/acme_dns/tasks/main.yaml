@@ -2,14 +2,19 @@
 - name: assert required acme_dns variables are set
   ansible.builtin.assert:
     that:
-      - acme_dns_domain | length > 0
+      - acme_dns_zone_fqdn | length > 0
+      - acme_dns_nsname_fqdn | length > 0
       - acme_dns_server_ip | length > 0
       - acme_dns_nsadmin | length > 0
+      - "'..' not in acme_dns_zone_fqdn"
+      - "'..' not in acme_dns_nsname_fqdn"
+      - not acme_dns_zone_fqdn.startswith('.')
+      - not acme_dns_nsname_fqdn.startswith('.')
       - acme_dns_api_tls in ['none', 'letsencrypt', 'letsencryptstaging']
     fail_msg: >-
-      acme_dns_server_ip, acme_dns_domain, acme_dns_nsadmin, and
-      acme_dns_api_tls (one of: none, letsencrypt, letsencryptstaging)
-      must be set
+      acme_dns_zone, acme_dns_nsname, acme_dns_server_ip, and
+      acme_dns_nsadmin must be non-empty valid names/addresses, and
+      acme_dns_api_tls must be one of: none, letsencrypt, letsencryptstaging
 
 - name: build acme-dns binary on localhost
   become: false

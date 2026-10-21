@@ -1,4 +1,7 @@
 #jinja2: lstrip_blocks: True, trim_blocks: True
+{% set zone = acme_dns_zone_fqdn %}
+{% set nsname = acme_dns_nsname_fqdn %}
+{% set nsname_in_zone = nsname == zone or nsname.endswith('.' ~ zone) %}
 [general]
 # DNS interface. Note that systemd-resolved may reserve port 53 on 127.0.0.53
 # In this case acme-dns will error out and you will need to define the listening interface
@@ -7,33 +10,30 @@ listen = "{{ acme_dns_listen }}"
 # protocol, "both", "both4", "both6", "udp", "udp4", "udp6" or "tcp", "tcp4", "tcp6"
 protocol = "{{ acme_dns_protocol }}"
 # domain name to serve the requests off of
-domain = "{{ acme_dns_domain }}"
+domain = "{{ zone }}"
 # zone name server
-nsname = "{{ acme_dns_nsname }}"
+nsname = "{{ nsname }}"
 # admin email address, where @ is substituted with .
 nsadmin = "{{ acme_dns_nsadmin }}"
 # predefined records served in addition to the TXT
 records = [
-    # 1) zone apex A: acme_dns_domain → acme_dns_server_ip
-    #    Makes the domain itself reachable (distinct from the glue
-    #    record when acme_dns_nsname != acme_dns_domain).
-    "{{ acme_dns_domain }}. A {{ acme_dns_server_ip }}",
-    # 2) NS delegation: acme_dns_domain → acme_dns_nsname
-    #    Tells resolvers that *.{{ acme_dns_domain }} is served by acme_dns_nsname.
-    "{{ acme_dns_domain }}. NS {{ acme_dns_nsname }}.",
-{% if acme_dns_nsname != acme_dns_domain %}
-    # 3) glue A for the nameserver: acme_dns_nsname → acme_dns_server_ip
-    #    Required so resolvers can reach the NS above.
-    "{{ acme_dns_nsname }}. A {{ acme_dns_server_ip }}",
+    # zone apex A: makes the API hostname resolvable through the delegation
+    "{{ zone }}. A {{ acme_dns_server_ip }}",
+    # apex NS: keeps the zone consistent with the parent delegation. This is
+    # not needed for ACME TXT lookups, which are answered from the database.
+    "{{ zone }}. NS {{ nsname }}.",
+{% if nsname_in_zone and nsname != zone %}
+    # in-zone nameserver address; out-of-zone addresses belong in the parent
+    "{{ nsname }}. A {{ acme_dns_server_ip }}",
 {% endif %}
 ]
 # debug messages from CORS etc
 debug = {{ acme_dns_debug | lower }}
 
 [database]
-# Database engine to use, sqlite3 or postgres
+# Database engine to use, sqlite or postgres
 engine = "{{ acme_dns_db_engine }}"
-# Connection string, filename for sqlite3 and postgres://$username:$password@$host/$db_name for postgres
+# Connection string, filename for sqlite and postgres://$username:$password@$host/$db_name for postgres
 connection = "{{ acme_dns_db_connection }}"
 
 [api]

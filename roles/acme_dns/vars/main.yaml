@@ -1,0 +1,23 @@
+---
+# Internal constants and derived values. Callers should override the
+# acme_dns_* keys in defaults/, not the entries below.
+
+# Upstream build identity. The role deploys the acme-dns project itself, so
+# the repository, package, static mode, and target OS are fixed.
+acme_dns_go_build_repo_url: "https://github.com/acme-dns/acme-dns.git"
+acme_dns_go_build_package: "."
+acme_dns_go_build_static: true
+acme_dns_go_build_goos: "linux"
+
+# systemd service identity. The unit is installed under /etc/systemd/system.
+acme_dns_service_name: "acme-dns"
+acme_dns_systemd_unit_path: "/etc/systemd/system/{{ acme_dns_service_name }}.service"
+
+# Derived, normalized names. acme-dns builds the SOA and static records by
+# appending the root label itself, so a trailing dot in the input would
+# produce an invalid name such as "auth.example.com..". Normalize once here
+# and use these variables in templates/tasks.
+acme_dns_zone_fqdn: >-
+  {{ acme_dns_zone | trim | lower | ansible.builtin.regex_replace('\.+$', '') }}
+acme_dns_nsname_fqdn: >-
+  {{ acme_dns_nsname | trim | lower | ansible.builtin.regex_replace('\.+$', '') }}
