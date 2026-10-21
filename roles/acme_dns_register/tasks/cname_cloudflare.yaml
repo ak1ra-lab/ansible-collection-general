@@ -46,5 +46,5 @@
     msg: |-
       Cloudflare CNAME records added for {{ inventory_hostname }}:
       {% for domain in acme_dns_register_acme_domains %}
-        _acme-challenge.{{ domain | regex_replace('^\*\.', '') }}.  CNAME  {{ acme_dns_register_fulldomain | default('') }}.
+        _acme-challenge.{{ domain | ansible.builtin.regex_replace('^\*\.', '') }}.  CNAME  {{ acme_dns_register_fulldomain | default('') }}.
       {% endfor %}
