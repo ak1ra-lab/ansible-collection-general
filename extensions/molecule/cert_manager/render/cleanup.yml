@@ -1,0 +1,11 @@
+---
+# cert_manager/render scenario - remove the rendered manifests.
+
+- name: tear down the cert_manager render fixtures
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: remove the render directory
+      ansible.builtin.file:
+        path: /tmp/molecule-ak1ra-general-cert-manager
+        state: absent

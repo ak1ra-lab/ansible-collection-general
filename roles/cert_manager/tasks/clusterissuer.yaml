@@ -1,0 +1,10 @@
+---
+- name: build the ClusterIssuer definition
+  ansible.builtin.set_fact:
+    _cert_manager_manifest: >-
+      {{ lookup('ansible.builtin.template', 'clusterissuer.yaml.j2')
+         | ansible.builtin.from_yaml }}
+    _cert_manager_manifest_filename: "clusterissuer-{{ issuer.name }}.yaml"
+
+- name: render and apply the ClusterIssuer
+  ansible.builtin.include_tasks: manifest.yaml

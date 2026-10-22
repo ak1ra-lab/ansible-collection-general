@@ -1,0 +1,26 @@
+---
+- name: write the rendered manifest
+  when: cert_manager_manifest_dir | length > 0
+  no_log: "{{ _cert_manager_manifest.kind == 'Secret' }}"
+  ansible.builtin.copy:
+    content: "{{ _cert_manager_manifest | ansible.builtin.to_nice_yaml(indent=2, sort_keys=false) }}"
+    dest: "{{ cert_manager_manifest_dir }}/{{ _cert_manager_manifest_filename }}"
+    mode: "{{ '0600' if _cert_manager_manifest.kind == 'Secret' else '0644' }}"
+  delegate_to: "{{ cert_manager_delegate_to }}"
+  become: false
+  run_once: true
+
+- name: apply the manifest
+  when: cert_manager_apply | ansible.builtin.bool
+  no_log: "{{ _cert_manager_manifest.kind == 'Secret' }}"
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ _cert_manager_manifest }}"
+    apply: true
+    server_side_apply:
+      field_manager: ansible
+    kubeconfig: "{{ cert_manager_kubeconfig | default(omit, true) }}"
+    context: "{{ cert_manager_context | default(omit, true) }}"
+  delegate_to: "{{ cert_manager_delegate_to }}"
+  become: false
+  run_once: true

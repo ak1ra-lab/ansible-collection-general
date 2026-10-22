@@ -1,0 +1,24 @@
+---
+- name: ensure the manifest output directory exists
+  when: cert_manager_manifest_dir | length > 0
+  ansible.builtin.file:
+    path: "{{ cert_manager_manifest_dir }}"
+    state: directory
+    mode: "0700"
+  delegate_to: "{{ cert_manager_delegate_to }}"
+  become: false
+  run_once: true
+
+- name: render and apply the managed secrets
+  ansible.builtin.include_tasks: secret.yaml
+  loop: "{{ (_cert_manager_secret_entries | default({})).values() | list }}"
+  loop_control:
+    loop_var: secret
+    label: "{{ secret.name }}"
+
+- name: render and apply the ClusterIssuers
+  ansible.builtin.include_tasks: clusterissuer.yaml
+  loop: "{{ cert_manager_cluster_issuers }}"
+  loop_control:
+    loop_var: issuer
+    label: "{{ issuer.name }}"

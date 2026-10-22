@@ -1,0 +1,12 @@
+---
+# cert_manager/render scenario - the role renders on the controller, so the
+# scenario only needs a clean output directory.
+
+- name: prepare the cert_manager render scenario
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: remove a leftover render directory
+      ansible.builtin.file:
+        path: /tmp/molecule-ak1ra-general-cert-manager
+        state: absent

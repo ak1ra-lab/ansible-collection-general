@@ -10,15 +10,22 @@ license_file: LICENSE
 tags:
   - automation
   - build
+  - certificates
+  - certbot
+  - certmanager
   - debian
   - docker
   - go
+  - kubernetes
+  - letsencrypt
   - linux
   - python
+  - tls
   - tools
 dependencies:
   ansible.posix: ">=1.5.4"
   community.general: ">=8.0.0"
+  kubernetes.core: ">=6.0.0"
 repository: https://github.com/ak1ra-lab/ansible-collection-general
 documentation: https://github.com/ak1ra-lab/ansible-collection-general
 homepage: https://github.com/ak1ra-lab/ansible-collection-general

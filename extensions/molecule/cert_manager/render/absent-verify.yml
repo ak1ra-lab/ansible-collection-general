@@ -1,0 +1,19 @@
+---
+# cert_manager/render scenario - assert the teardown removed the render
+# directory.
+
+- name: verify the cert_manager render teardown
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: collect the render directory
+      ansible.builtin.stat:
+        path: /tmp/molecule-ak1ra-general-cert-manager
+      register: _cert_manager_teardown
+
+    - name: assert the render directory is gone
+      ansible.builtin.assert:
+        that:
+          - not _cert_manager_teardown.stat.exists
+        fail_msg: "/tmp/molecule-ak1ra-general-cert-manager must be removed"
+        quiet: true

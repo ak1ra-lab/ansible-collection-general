@@ -1,0 +1,7 @@
+---
+# cert_manager/render scenario - exercise the role's manifest rendering
+# without a Kubernetes cluster.  The scenario verifies the generated
+# Secrets and ClusterIssuers; applying them is left to a real cluster.
+#
+# The scenario inherits the shared test sequence from
+# extensions/molecule/config.yml.

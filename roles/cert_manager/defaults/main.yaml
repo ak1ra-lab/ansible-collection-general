@@ -1,0 +1,111 @@
+---
+# ak1ra_lab.general.cert_manager
+#
+# Manage cert-manager in a Kubernetes cluster: optionally install/upgrade the
+# controller from the official release manifest, then declare ACME
+# ClusterIssuers and their solver credentials.
+#
+# The role deliberately does not create Ingress or Certificate resources.
+# Applications (or their Helm charts/GitOps controllers) own those, usually
+# through the cert-manager.io/cluster-issuer annotation on an Ingress.
+
+# ── cluster access ───────────────────────────────────────────────────────────
+
+# The k8s tasks are delegated here; the kubeconfig must be readable on this
+# host.  Defaults to the controller.
+cert_manager_delegate_to: localhost
+# Optional explicit kubeconfig/context; empty uses KUBECONFIG or ~/.kube/config.
+cert_manager_kubeconfig: ""
+cert_manager_context: ""
+
+# ── controller installation ──────────────────────────────────────────────────
+
+# The official release manifest remains the simplest non-Helm install path.
+# When Helm, Flux or Argo CD owns cert-manager, leave this false and let that
+# tool manage the controller and its CRDs; do not apply the same objects from
+# two owners.
+cert_manager_install: false
+# Release to install, e.g. v1.18.2 (required when cert_manager_install=true).
+cert_manager_version: ""
+cert_manager_manifest_url: "https://github.com/cert-manager/cert-manager/releases/download/{{ cert_manager_version }}/cert-manager.yaml"
+# Optional checksum for get_url, e.g. "sha256:0123...".
+cert_manager_manifest_checksum: ""
+# Cache directory on the delegate host.
+cert_manager_manifest_cache_dir: "{{ lookup('ansible.builtin.env', 'HOME') }}/.cache/cert-manager"
+cert_manager_install_wait: true
+
+# Namespace the controller runs in, and the namespace cert-manager resolves
+# ClusterIssuer secret references in.
+cert_manager_namespace: cert-manager
+cert_manager_cluster_resource_namespace: "{{ cert_manager_namespace }}"
+
+# ── resource management ──────────────────────────────────────────────────────
+
+# Apply the solver secrets and ClusterIssuers to the cluster.
+cert_manager_apply: true
+
+# Optional directory on the delegate host for rendered manifests (review or
+# GitOps hand-off).  The directory is 0700 because Secret manifests are
+# written there as base64, and Secret files are 0600.
+cert_manager_manifest_dir: ""
+
+# ── ACME account / solvers ───────────────────────────────────────────────────
+
+# Default ACME contact email; an issuer can override it with `email`.
+cert_manager_acme_email: ""
+
+# ── ClusterIssuers ───────────────────────────────────────────────────────────
+
+# Each entry supports:
+#   name:                   required, ClusterIssuer name
+#   server:                 required, ACME directory URL
+#   email:                  optional, overrides cert_manager_acme_email
+#   profile:                optional ACME profile (cert-manager >= 1.18)
+#   private_key_secret_name: optional account key secret name
+#   solver:                 required, exactly one of cloudflare or http01
+#     cloudflare:
+#       api_token:            when set, the role creates/updates the secret
+#       secret_name:          optional; defaults to <name>-cloudflare when
+#                             api_token is set.  Required when only referencing
+#                             an existing secret (ESO, Sealed Secrets, ...).
+#       dns_zones:            optional selector.dnsZones; empty means all zones
+#     http01:
+#       ingress_class:        optional ingressClassName
+#   eab:                    optional external account binding
+#     key_id:               required
+#     hmac_key:             CA-provided base64url key; when set the role
+#                           creates/updates the secret
+#     secret_name:          optional; defaults to <name>-eab when hmac_key is
+#                           set.  Required when only referencing an existing
+#                           secret.
+#
+# cloudflare is the only DNS-01 provider implemented by this role; use
+# solver.http01 for a provider-neutral challenge, or manage another dns01
+# issuer yourself.
+cert_manager_cluster_issuers: []
+# - name: letsencrypt-prod
+#   server: https://acme-v02.api.letsencrypt.org/directory
+#   solver:
+#     cloudflare:
+#       api_token: "{{ vault_cloudflare_api_token }}"
+#       secret_name: cloudflare-main
+#       dns_zones:
+#         - example.com
+# - name: letsencrypt-staging
+#   server: https://acme-staging-v02.api.letsencrypt.org/directory
+#   solver:
+#     cloudflare:
+#       secret_name: cloudflare-main
+# - name: letsencrypt-http01
+#   server: https://acme-v02.api.letsencrypt.org/directory
+#   solver:
+#     http01:
+#       ingress_class: traefik
+# - name: zerossl
+#   server: https://acme.zerossl.com/v2/DV90
+#   solver:
+#     cloudflare:
+#       secret_name: cloudflare-main
+#   eab:
+#     key_id: "..."
+#     hmac_key: "{{ vault_eab_hmac }}"

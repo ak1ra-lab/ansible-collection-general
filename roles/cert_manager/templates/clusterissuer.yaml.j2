@@ -1,0 +1,44 @@
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: {{ issuer.name | ansible.builtin.to_json }}
+spec:
+  acme:
+    server: {{ issuer.server | ansible.builtin.to_json }}
+    email: {{ (issuer.email | default(cert_manager_acme_email, true)) | trim | ansible.builtin.to_json }}
+    privateKeySecretRef:
+      name: {{ (issuer.private_key_secret_name | default(issuer.name ~ '-account-key', true)) | ansible.builtin.to_json }}
+{% if issuer.profile | default('') | length > 0 %}
+    profile: {{ issuer.profile | trim | ansible.builtin.to_json }}
+{% endif %}
+{% if issuer.eab is defined %}
+    externalAccountBinding:
+      keyID: {{ issuer.eab.key_id | trim | ansible.builtin.to_json }}
+      keySecretRef:
+        name: {{ (issuer.eab.secret_name | default(issuer.name ~ '-eab', true)) | ansible.builtin.to_json }}
+        key: secret
+{% endif %}
+    solvers:
+{% if issuer.solver.cloudflare is defined %}
+      - dns01:
+          cloudflare:
+            apiTokenSecretRef:
+              name: {{ (issuer.solver.cloudflare.secret_name | default(issuer.name ~ '-cloudflare', true)) | ansible.builtin.to_json }}
+              key: api-token
+{% if issuer.solver.cloudflare.dns_zones | default([]) | length > 0 %}
+        selector:
+          dnsZones:
+{% for zone in issuer.solver.cloudflare.dns_zones %}
+            - {{ zone | ansible.builtin.to_json }}
+{% endfor %}
+{% endif %}
+{% else %}
+      - http01:
+          ingress:
+{% if issuer.solver.http01.ingress_class | default('', true) | length > 0 %}
+            ingressClassName: {{ issuer.solver.http01.ingress_class | trim | ansible.builtin.to_json }}
+{% else %}
+            {}
+{% endif %}
+{% endif %}

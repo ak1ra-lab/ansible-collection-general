@@ -1,0 +1,11 @@
+---
+- name: validate the role inputs
+  ansible.builtin.import_tasks: validate.yaml
+
+- name: install or upgrade cert-manager
+  when: cert_manager_install | ansible.builtin.bool
+  ansible.builtin.import_tasks: install.yaml
+
+- name: manage the ClusterIssuers
+  when: cert_manager_cluster_issuers | length > 0
+  ansible.builtin.import_tasks: issuers.yaml

@@ -1,0 +1,178 @@
+---
+# cert_manager/render scenario - verify the rendered Secrets and
+# ClusterIssuers, their solver configuration and their file permissions.
+
+- name: verify the rendered cert_manager manifests
+  hosts: localhost
+  gather_facts: false
+  vars:
+    _cert_manager_dir: /tmp/molecule-ak1ra-general-cert-manager/manifests
+    _cert_manager_files:
+      - secret-cloudflare-main.yaml
+      - secret-zerossl-eab.yaml
+      - clusterissuer-letsencrypt-prod.yaml
+      - clusterissuer-letsencrypt-staging.yaml
+      - clusterissuer-letsencrypt-http01.yaml
+      - clusterissuer-zerossl.yaml
+      - clusterissuer-zerossl-existing-eab.yaml
+  tasks:
+    - name: find the rendered manifests
+      ansible.builtin.find:
+        paths: "{{ _cert_manager_dir }}"
+        patterns: "*.yaml"
+        file_type: file
+      register: _cert_manager_found
+
+    - name: assert every expected manifest was rendered
+      ansible.builtin.assert:
+        that:
+          - _cert_manager_found.matched == _cert_manager_files | length
+        fail_msg: >-
+          expected {{ _cert_manager_files | length }} manifests, found
+          {{ _cert_manager_found.matched }}
+        quiet: true
+
+    - name: collect the render directory
+      ansible.builtin.stat:
+        path: "{{ _cert_manager_dir }}"
+      register: _cert_manager_dir_stat
+
+    - name: assert the render directory is private
+      ansible.builtin.assert:
+        that:
+          - _cert_manager_dir_stat.stat.mode == '0700'
+        fail_msg: "the manifest directory must be mode 0700"
+        quiet: true
+
+    - name: read the rendered manifests
+      ansible.builtin.slurp:
+        src: "{{ _cert_manager_dir }}/{{ item }}"
+      register: _cert_manager_read
+      loop: "{{ _cert_manager_files }}"
+
+    - name: index the rendered manifests by file name
+      ansible.builtin.set_fact:
+        _cert_manager_by_name: >-
+          {{ _cert_manager_by_name | default({})
+             | combine({item.item: (item.content | b64decode | from_yaml)}) }}
+      loop: "{{ _cert_manager_read.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: assert the shared Cloudflare secret is rendered once
+      ansible.builtin.assert:
+        that:
+          - "'secret-cloudflare-main.yaml' in _cert_manager_by_name"
+          - _cert_manager_by_name['secret-cloudflare-main.yaml'].kind == 'Secret'
+          - _cert_manager_by_name['secret-cloudflare-main.yaml'].metadata.namespace == 'cert-manager'
+          - >-
+            _cert_manager_by_name['secret-cloudflare-main.yaml'].data['api-token']
+            == ('molecule-cloudflare-token' | b64encode)
+        fail_msg: "the shared Cloudflare API token secret is wrong"
+        quiet: true
+
+    - name: assert the external account binding secret is rendered
+      ansible.builtin.assert:
+        that:
+          - _cert_manager_by_name['secret-zerossl-eab.yaml'].kind == 'Secret'
+          - >-
+            _cert_manager_by_name['secret-zerossl-eab.yaml'].data['secret']
+            == ('bW9sZWN1bGUtZWFiLWhtYWMta2V5LTAxMjM0NTY3ODk' | b64encode)
+        fail_msg: "the external account binding secret is wrong"
+        quiet: true
+
+    - name: assert the reference-only EAB secret was not created
+      ansible.builtin.assert:
+        that:
+          - "'secret-externally-managed-eab.yaml' not in _cert_manager_by_name"
+        fail_msg: "the role created a secret for a reference-only EAB configuration"
+        quiet: true
+
+    - name: assert the Cloudflare ClusterIssuer is rendered
+      ansible.builtin.assert:
+        that:
+          - >-
+            _cert_manager_by_name['clusterissuer-letsencrypt-prod.yaml'].spec.acme.server
+            == 'https://acme-v02.api.letsencrypt.org/directory'
+          - >-
+            _cert_manager_by_name['clusterissuer-letsencrypt-prod.yaml'].spec.acme.email
+            == 'molecule@example.invalid'
+          - >-
+            _cert_manager_by_name['clusterissuer-letsencrypt-prod.yaml'].spec.acme.solvers[0].dns01.cloudflare.apiTokenSecretRef.name
+            == 'cloudflare-main'
+          - >-
+            _cert_manager_by_name['clusterissuer-letsencrypt-prod.yaml'].spec.acme.solvers[0].selector.dnsZones
+            == ['example.com']
+        fail_msg: "the Cloudflare ClusterIssuer is wrong"
+        quiet: true
+
+    - name: assert the staging ClusterIssuer reuses the shared secret
+      ansible.builtin.assert:
+        that:
+          - >-
+            _cert_manager_by_name['clusterissuer-letsencrypt-staging.yaml'].spec.acme.server
+            == 'https://acme-staging-v02.api.letsencrypt.org/directory'
+          - >-
+            _cert_manager_by_name['clusterissuer-letsencrypt-staging.yaml'].spec.acme.solvers[0].dns01.cloudflare.apiTokenSecretRef.name
+            == 'cloudflare-main'
+          - >-
+            'selector' not in _cert_manager_by_name['clusterissuer-letsencrypt-staging.yaml'].spec.acme.solvers[0]
+        fail_msg: "the staging ClusterIssuer is wrong"
+        quiet: true
+
+    - name: assert the HTTP-01 ClusterIssuer is rendered
+      ansible.builtin.assert:
+        that:
+          - >-
+            _cert_manager_by_name['clusterissuer-letsencrypt-http01.yaml'].spec.acme.solvers[0].http01.ingress.ingressClassName
+            == 'traefik'
+        fail_msg: "the HTTP-01 ClusterIssuer is wrong"
+        quiet: true
+
+    - name: assert the ZeroSSL ClusterIssuer is rendered
+      ansible.builtin.assert:
+        that:
+          - >-
+            _cert_manager_by_name['clusterissuer-zerossl.yaml'].spec.acme.server
+            == 'https://acme.zerossl.com/v2/DV90'
+          - >-
+            _cert_manager_by_name['clusterissuer-zerossl.yaml'].spec.acme.externalAccountBinding.keyID
+            == 'molecule-eab-key-id'
+          - >-
+            _cert_manager_by_name['clusterissuer-zerossl.yaml'].spec.acme.externalAccountBinding.keySecretRef.name
+            == 'zerossl-eab'
+          - >-
+            _cert_manager_by_name['clusterissuer-zerossl.yaml'].spec.acme.solvers[0].dns01.cloudflare.apiTokenSecretRef.name
+            == 'cloudflare-main'
+        fail_msg: "the ZeroSSL ClusterIssuer is wrong"
+        quiet: true
+
+    - name: assert the reference-only EAB ClusterIssuer is rendered
+      ansible.builtin.assert:
+        that:
+          - >-
+            _cert_manager_by_name['clusterissuer-zerossl-existing-eab.yaml'].spec.acme.externalAccountBinding.keyID
+            == 'molecule-eab-key-id-2'
+          - >-
+            _cert_manager_by_name['clusterissuer-zerossl-existing-eab.yaml'].spec.acme.externalAccountBinding.keySecretRef.name
+            == 'externally-managed-eab'
+        fail_msg: "the reference-only EAB ClusterIssuer is wrong"
+        quiet: true
+
+    - name: collect the secret manifest permissions
+      ansible.builtin.stat:
+        path: "{{ _cert_manager_dir }}/{{ item }}"
+      register: _cert_manager_secret_stats
+      loop:
+        - secret-cloudflare-main.yaml
+        - secret-zerossl-eab.yaml
+
+    - name: assert the secret manifests are private
+      ansible.builtin.assert:
+        that:
+          - item.stat.mode == '0600'
+        fail_msg: "{{ item.item }} must be mode 0600"
+        quiet: true
+      loop: "{{ _cert_manager_secret_stats.results }}"
+      loop_control:
+        label: "{{ item.item }}"

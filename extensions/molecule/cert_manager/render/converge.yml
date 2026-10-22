@@ -1,0 +1,53 @@
+---
+# cert_manager/render scenario - render the solver secrets and ClusterIssuers
+# to a local directory without contacting a cluster.
+
+- name: render the cert_manager manifests
+  hosts: localhost
+  gather_facts: false
+  vars:
+    cert_manager_apply: false
+    cert_manager_manifest_dir: /tmp/molecule-ak1ra-general-cert-manager/manifests
+    cert_manager_acme_email: molecule@example.invalid
+    cert_manager_cluster_issuers:
+      - name: letsencrypt-prod
+        server: https://acme-v02.api.letsencrypt.org/directory
+        solver:
+          cloudflare:
+            api_token: molecule-cloudflare-token
+            secret_name: cloudflare-main
+            dns_zones:
+              - example.com
+      - name: letsencrypt-staging
+        server: https://acme-staging-v02.api.letsencrypt.org/directory
+        solver:
+          cloudflare:
+            secret_name: cloudflare-main
+      - name: letsencrypt-http01
+        server: https://acme-v02.api.letsencrypt.org/directory
+        solver:
+          http01:
+            ingress_class: traefik
+      - name: zerossl
+        server: https://acme.zerossl.com/v2/DV90
+        solver:
+          cloudflare:
+            secret_name: cloudflare-main
+            dns_zones:
+              - example.com
+        eab:
+          key_id: molecule-eab-key-id
+          hmac_key: bW9sZWN1bGUtZWFiLWhtYWMta2V5LTAxMjM0NTY3ODk
+          secret_name: zerossl-eab
+      - name: zerossl-existing-eab
+        server: https://acme.zerossl.com/v2/DV90
+        solver:
+          http01:
+            ingress_class: traefik
+        eab:
+          key_id: molecule-eab-key-id-2
+          secret_name: externally-managed-eab
+  tasks:
+    - name: include the cert_manager role
+      ansible.builtin.include_role:
+        name: ak1ra_lab.general.cert_manager

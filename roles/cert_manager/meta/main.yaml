@@ -1,0 +1,31 @@
+---
+# Role metadata for ak1ra_lab.general.cert_manager
+
+galaxy_info:
+  author: ak1ra
+  description: >-
+    Install cert-manager and declare ACME ClusterIssuers with Cloudflare
+    DNS-01, HTTP-01 or external-account-binding solvers.
+  license: MIT
+  min_ansible_version: "2.18"
+
+  platforms:
+    - name: Debian
+      versions:
+        - trixie
+        - bookworm
+    - name: Ubuntu
+      versions:
+        - noble
+        - jammy
+
+  galaxy_tags:
+    - acme
+    - certificates
+    - certmanager
+    - kubernetes
+    - tls
+
+dependencies: []
+
+allow_duplicates: false
