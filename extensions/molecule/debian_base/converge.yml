@@ -27,3 +27,8 @@
     - name: apply ak1ra_lab.general.debian_base
       ansible.builtin.include_role:
         name: ak1ra_lab.general.debian_base
+      vars:
+        # Role parameter: the role must still append the backports suite.
+        debian_base_apt_repo_debian_suites:
+          - "{{ ansible_facts['distribution_release'] }}"
+          - "{{ ansible_facts['distribution_release'] }}-updates"
