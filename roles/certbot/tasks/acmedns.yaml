@@ -9,9 +9,13 @@
 - name: derive the acme-dns credentials directory
   ansible.builtin.set_fact:
     _certbot_acmedns_credentials_dir: >-
-      {{ certbot_acmedns_credentials_dir | default('', true)
-         or (playbook_dir ~ '/host_vars/' ~ inventory_hostname) }}
+      {{ (certbot_acmedns_credentials_dir | default('', true)
+         or (playbook_dir ~ '/host_vars/' ~ inventory_hostname))
+         | ansible.builtin.regex_replace('/+$', '') }}
 
+# Load explicitly even for the default host_vars directory: the caller may pass
+# the acme_dns_register_* inputs as role parameters, which outrank the
+# automatically loaded host_vars values.
 - name: load the persisted acme-dns accounts
   when: (_certbot_acmedns_credentials_dir ~ '/acme_dns_credentials.yaml') is ansible.builtin.file
   ansible.builtin.include_vars:
@@ -56,8 +60,10 @@
   when: certbot_acmedns_register | ansible.builtin.bool
   no_log: true
   ansible.builtin.set_fact:
-    _certbot_acmedns_server_url: "{{ acme_dns_register_server_url }}"
-    _certbot_acmedns_accounts: "{{ acme_dns_register_accounts }}"
+    # Role parameters shadow the role's input-named facts, so read the
+    # effective facts it publishes after registration.
+    _certbot_acmedns_server_url: "{{ acme_dns_register_effective_server_url }}"
+    _certbot_acmedns_accounts: "{{ acme_dns_register_effective_accounts }}"
 
 - name: validate the acme-dns account registry
   when: _certbot_acmedns_domains | length > 0 or _certbot_acmedns_accounts | length > 0
