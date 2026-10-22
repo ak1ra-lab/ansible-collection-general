@@ -6,12 +6,24 @@
 - name: build the fixture module with go_build
   hosts: all
   gather_facts: false
-  vars:
-    go_build_repo_url: file:///tmp/molecule-ak1ra-general-go-build/fixture
-    go_build_repo_dir: /tmp/molecule-ak1ra-general-go-build/src
-    go_build_base_dir: /tmp/molecule-ak1ra-general-go-build
-    go_build_output_name: fixture
   tasks:
     - name: build the fixture module
       ansible.builtin.include_role:
         name: ak1ra_lab.general.go_build
+      vars:
+        go_build_repo_url: file:///tmp/molecule-ak1ra-general-go-build/fixture
+        go_build_repo_dir: /tmp/molecule-ak1ra-general-go-build/src
+        go_build_base_dir: /tmp/molecule-ak1ra-general-go-build
+        go_build_output_name: fixture
+        # Role parameter: the role must resolve it against the checkout
+        # directory, not leave it relative to the playbook.
+        go_build_chdir: cmd/fixture
+
+    - name: assert the role published the absolute output paths
+      ansible.builtin.assert:
+        that:
+          - go_build_chdir == '/tmp/molecule-ak1ra-general-go-build/src/cmd/fixture'
+          - go_build_binary_path == '/tmp/molecule-ak1ra-general-go-build/bin/fixture'
+        fail_msg: >-
+          go_build did not publish the resolved checkout and output paths.
+        quiet: true

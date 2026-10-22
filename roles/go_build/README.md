@@ -35,15 +35,22 @@ found.
 | go_build_base_dir    | /tmp/go-build | Base directory for source checkout, output, and caches   |
 | go_build_repo_dir    | empty string  | Optional checkout directory override; empty derives `{{ go_build_base_dir }}/src/<git-server>/<org>/<project>` |
 
-## Output Fact
+## Output Facts
 
 After the role runs every target host will have:
 
 ```yaml
+go_build_repo_dir: /path/to/checkout
+go_build_chdir: /path/to/checkout/subdir   # absolute; equals go_build_repo_dir when no subdir was requested
 go_build_binary_path: "{{ go_build_base_dir }}/bin/{{ go_build_output_name }}"
+go_build_stamp_path: "{{ go_build_base_dir }}/.{{ go_build_output_name }}.build-meta"
 ```
 
-Use it in subsequent tasks to copy the binary to the remote host.
+Use `go_build_binary_path` in subsequent tasks to copy the binary to the remote
+host. `go_build_repo_dir` and `go_build_chdir` are inputs as well as outputs:
+the role resolves them internally and publishes the absolute values, so they
+can be passed as `include_role`/`import_role` `vars:` without being shadowed by
+`set_fact`.
 
 ## Lightweight repo pattern
 

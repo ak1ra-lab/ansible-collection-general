@@ -45,6 +45,25 @@
 
           go 1.21
 
+    - name: create the fixture subdirectory command directory
+      ansible.builtin.file:
+        path: "{{ _go_build_fixture }}/cmd/fixture"
+        state: directory
+        mode: "0755"
+
+    - name: write the fixture subdirectory command
+      ansible.builtin.copy:
+        dest: "{{ _go_build_fixture }}/cmd/fixture/main.go"
+        mode: "0644"
+        content: |
+          package main
+
+          import "fmt"
+
+          func main() {
+              fmt.Println("molecule go_build fixture ok")
+          }
+
     - name: initialize the fixture git repository
       ansible.builtin.command:
         argv: [git, init, -q, -b, main]
