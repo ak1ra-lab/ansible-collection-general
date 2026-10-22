@@ -1,19 +1,35 @@
 ---
 # acme_dns_register/basic scenario - register two validation domains, with
 # example.com and *.example.com sharing one account.
+#
+# The role is invoked with include_role vars (the same way the certbot role
+# invokes it).  Those are role parameters and outrank set_fact, so the
+# effective_* output facts must still contain the newly registered accounts.
 
 - name: register acme-dns accounts
   hosts: localhost
   gather_facts: false
-  vars:
-    acme_dns_register_server_url: http://127.0.0.1:8057
-    acme_dns_register_acme_domains:
-      - example.com
-      - "*.example.com"
-      - www.example.com
-    acme_dns_register_credentials_dir: /tmp/molecule-ak1ra-general-acme-dns-register/controller
-    acme_dns_register_manual_prompt: false
   tasks:
     - name: include the acme_dns_register role
       ansible.builtin.include_role:
         name: ak1ra_lab.general.acme_dns_register
+      vars:
+        acme_dns_register_server_url: http://127.0.0.1:8057
+        acme_dns_register_accounts: {}
+        acme_dns_register_acme_domains:
+          - example.com
+          - "*.example.com"
+          - www.example.com
+        acme_dns_register_credentials_dir: /tmp/molecule-ak1ra-general-acme-dns-register/controller
+        acme_dns_register_manual_prompt: false
+
+    - name: assert the role returns the effective registry
+      ansible.builtin.assert:
+        that:
+          - acme_dns_register_effective_server_url == 'http://127.0.0.1:8057'
+          - acme_dns_register_effective_accounts | length == 2
+          - "'example.com' in acme_dns_register_effective_accounts"
+          - "'www.example.com' in acme_dns_register_effective_accounts"
+        fail_msg: >-
+          the role did not publish the accounts registered during this run.
+        quiet: true

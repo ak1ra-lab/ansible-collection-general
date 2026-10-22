@@ -24,9 +24,15 @@
 #   acme_dns_register_credentials_dir        - directory for persisted accounts
 #
 # Output facts:
-#   acme_dns_register_accounts          - domain -> account mapping
-#   acme_dns_register_new_domains       - domains registered during this run
-#   acme_dns_register_newly_registered  - true when new_domains is non-empty
+#   acme_dns_register_effective_server_url - resolved acme-dns server URL
+#   acme_dns_register_effective_accounts   - final domain -> account mapping
+#   acme_dns_register_new_domains          - domains registered during this run
+#   acme_dns_register_newly_registered     - true when new_domains is non-empty
+#
+# The input-named facts (acme_dns_register_server_url/accounts) are refreshed
+# only when callers pass them as play vars.  Role parameters (include_role
+# `vars:`) outrank set_fact, so include_role callers must read the effective_*
+# facts instead.
 
 - name: load the persisted account registry
   ansible.builtin.import_tasks: load.yaml

@@ -24,7 +24,8 @@ account.
 
 1. Normalizes `acme_dns_register_acme_domains` by stripping leading `*.` and
    deduplicating the result.
-2. Reuses accounts from `acme_dns_register_accounts`; registers missing
+2. Reuses accounts from `acme_dns_register_accounts` and the persisted
+   registry in `<credentials_dir>/acme_dns_credentials.yaml`; registers missing
    domains with `POST /register`.
 3. Persists the complete registry to
    `<credentials_dir>/acme_dns_credentials.yaml` (mode `0600`):
@@ -80,16 +81,29 @@ domains that span several zones.
 
 After the role runs the play has:
 
-- `acme_dns_register_accounts` - the effective domain -> account mapping
+- `acme_dns_register_effective_server_url` - the resolved acme-dns server URL
+- `acme_dns_register_effective_accounts` - the effective domain -> account
+  mapping, including accounts registered during this run
 - `acme_dns_register_new_domains` - domains registered during this run
 - `acme_dns_register_newly_registered` - true when the list is non-empty
+
+The role also sets `acme_dns_register_server_url` and
+`acme_dns_register_accounts` for callers that pass their inputs as play vars.
+When the role is invoked with `include_role`/`import_role` and `vars:` (role
+parameters), Ansible gives those parameters precedence over `set_fact` inside
+the role, so the input-named facts cannot be relied on for the result. Read the
+`effective_*` facts in that case; `ak1ra_lab.general.certbot` does so.
 
 ## Notes
 
 - Registration happens once per validation domain; re-runs with the persisted
-  registry skip existing accounts. Load the file (for example with
-  `vars_files:`) or let `ak1ra_lab.general.certbot` load it automatically when
-  `certbot_dns_provider: acmedns`.
+  registry skip existing accounts. The default registry directory is
+  `<playbook_dir>/host_vars/<inventory_hostname>`. Ansible auto-loads that
+  directory, but the role also includes the file explicitly (under a private
+  variable): callers pass the role inputs as `include_role` `vars:` (role
+  parameters), which outrank auto-loaded host_vars, so relying on auto-loading
+  alone would re-register already persisted domains. A custom
+  `acme_dns_register_credentials_dir` uses the same include path.
 - With a Cloudflare token, CNAME records are reconciled on every run, so
   adding a validation domain later only requires re-running the role.
 - Without a Cloudflare token, the manual prompt is unsuitable for

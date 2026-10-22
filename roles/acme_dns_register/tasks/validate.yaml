@@ -7,10 +7,12 @@
       - acme_dns_register_acme_domains is sequence
       - acme_dns_register_acme_domains is not string
       - acme_dns_register_cloudflare_zones is mapping
+      - _acme_dns_register_server_url is string
+      - _acme_dns_register_accounts is mapping
       - >-
         acme_dns_register_acme_domains | length == 0
-        and acme_dns_register_accounts | length == 0
-        or acme_dns_register_server_url is ansible.builtin.match('^https?://')
+        and _acme_dns_register_accounts | length == 0
+        or _acme_dns_register_server_url is ansible.builtin.match('^https?://')
     fail_msg: >-
       acme_dns_register_server_url must be an HTTP/HTTPS URL when accounts or
       domains are present; acme_dns_register_accounts and
@@ -30,36 +32,36 @@
       acme_dns_register_acme_domains must be a list of non-empty domain names.
     quiet: true
 
-- name: validate the configured acme-dns accounts
-  when: acme_dns_register_accounts | length > 0
+- name: validate the effective acme-dns accounts
+  when: _acme_dns_register_accounts | length > 0
   ansible.builtin.assert:
     that:
       - account_domain is string
       - account_domain | trim | length > 0
       - account_domain == account_domain | lower
       - account_domain is not ansible.builtin.match('^\*\.')
-      - acme_dns_register_accounts[account_domain] is mapping
-      - acme_dns_register_accounts[account_domain].username is defined
-      - acme_dns_register_accounts[account_domain].username is string
-      - acme_dns_register_accounts[account_domain].password is defined
-      - acme_dns_register_accounts[account_domain].password is string
-      - acme_dns_register_accounts[account_domain].subdomain is defined
-      - acme_dns_register_accounts[account_domain].subdomain is string
-      - acme_dns_register_accounts[account_domain].fulldomain is defined
-      - acme_dns_register_accounts[account_domain].fulldomain is string
-      - acme_dns_register_accounts[account_domain].username | length > 0
-      - acme_dns_register_accounts[account_domain].password | length > 0
-      - acme_dns_register_accounts[account_domain].subdomain | length > 0
-      - acme_dns_register_accounts[account_domain].fulldomain | length > 0
+      - _acme_dns_register_accounts[account_domain] is mapping
+      - _acme_dns_register_accounts[account_domain].username is defined
+      - _acme_dns_register_accounts[account_domain].username is string
+      - _acme_dns_register_accounts[account_domain].password is defined
+      - _acme_dns_register_accounts[account_domain].password is string
+      - _acme_dns_register_accounts[account_domain].subdomain is defined
+      - _acme_dns_register_accounts[account_domain].subdomain is string
+      - _acme_dns_register_accounts[account_domain].fulldomain is defined
+      - _acme_dns_register_accounts[account_domain].fulldomain is string
+      - _acme_dns_register_accounts[account_domain].username | length > 0
+      - _acme_dns_register_accounts[account_domain].password | length > 0
+      - _acme_dns_register_accounts[account_domain].subdomain | length > 0
+      - _acme_dns_register_accounts[account_domain].fulldomain | length > 0
       - >-
-        acme_dns_register_accounts[account_domain].keys() | list
+        _acme_dns_register_accounts[account_domain].keys() | list
         | ansible.builtin.difference(['username', 'password', 'subdomain', 'fulldomain']) | length == 0
     fail_msg: >-
-      each acme_dns_register_accounts entry must be keyed by a validation
+      each effective acme-dns account entry must be keyed by a validation
       domain (without "*.") and contain username, password, subdomain and
       fulldomain.
     quiet: true
-  loop: "{{ acme_dns_register_accounts.keys() | list }}"
+  loop: "{{ _acme_dns_register_accounts.keys() | list }}"
   loop_control:
     loop_var: account_domain
     label: "{{ account_domain }}"

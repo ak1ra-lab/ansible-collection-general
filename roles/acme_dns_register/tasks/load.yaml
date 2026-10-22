@@ -1,13 +1,23 @@
 ---
-# Load the persisted registry before validation so re-runs reuse accounts and
-# the server URL even when they are not passed explicitly.
+# Resolve the role's effective server URL and account registry.
+#
+# Ansible auto-loads <playbook_dir>/host_vars/<inventory_hostname>/, but this
+# role is normally invoked with include_role/import_role `vars:`.  Role
+# parameters outrank both host_vars and set_fact, so relying on the auto-loaded
+# values would ignore the persisted registry whenever a caller passes
+# acme_dns_register_accounts or acme_dns_register_server_url.  Loading the file
+# under a private name makes the merge independent of variable precedence; a
+# custom acme_dns_register_credentials_dir is handled by the same task.
+#
+# State is kept in _acme_dns_register_* facts: role parameters also outrank
+# set_fact, so the role must not use set_fact to update an input variable.
 
 - name: derive the credentials output directory
   ansible.builtin.set_fact:
     _acme_dns_register_output_dir: >-
-      {{ acme_dns_register_credentials_dir
-         if acme_dns_register_credentials_dir | length > 0
-         else (playbook_dir ~ '/host_vars/' ~ inventory_hostname) }}
+      {{ (acme_dns_register_credentials_dir | default('', true)
+          or (playbook_dir ~ '/host_vars/' ~ inventory_hostname))
+         | ansible.builtin.regex_replace('/+$', '') }}
 
 - name: load the persisted acme-dns account registry
   when: (_acme_dns_register_output_dir ~ '/acme_dns_credentials.yaml') is ansible.builtin.file
@@ -15,13 +25,13 @@
     file: "{{ _acme_dns_register_output_dir }}/acme_dns_credentials.yaml"
     name: _acme_dns_register_file
 
-- name: merge the persisted registry with explicit inputs
+- name: resolve the effective server URL and account registry
   no_log: true
   ansible.builtin.set_fact:
-    acme_dns_register_server_url: >-
+    _acme_dns_register_server_url: >-
       {{ (acme_dns_register_server_url | default('', true)
           or ((_acme_dns_register_file | default({})).acme_dns_register_server_url | default('')))
          | ansible.builtin.regex_replace('/+$', '') }}
-    acme_dns_register_accounts: >-
+    _acme_dns_register_accounts: >-
       {{ ((_acme_dns_register_file | default({})).acme_dns_register_accounts | default({}))
          | ansible.builtin.combine(acme_dns_register_accounts) }}
