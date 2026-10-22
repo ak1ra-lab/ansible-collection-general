@@ -1,0 +1,10 @@
+---
+# ansible-playbook playbooks/certbot.yaml -e "playbook_hosts=certbot"
+- name: deploy certbot
+  hosts: "{{ playbook_hosts | default('certbot') }}"
+  become: true
+
+  tasks:
+    - name: deploy certbot role
+      ansible.builtin.import_role:
+        name: ak1ra_lab.general.certbot
