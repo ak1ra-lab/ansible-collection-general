@@ -38,10 +38,19 @@ certbot_bin: ""
 certbot_email: ""
 
 # Use the Let's Encrypt staging CA (certbot --test-cert).  Mutually exclusive
-# with certbot_acme_server.
+# with certbot_acme_server, and certbot_acme_ca must remain letsencrypt.
 certbot_staging: false
 
-# ACME directory URL override, e.g. ZeroSSL, an internal CA, or Pebble.
+# Named ACME CA preset used when certbot_acme_server is empty:
+#   letsencrypt - Let's Encrypt production (default)
+#   zerossl     - ZeroSSL (requires EAB)
+#   google      - Google Trust Services (requires EAB)
+#   buypass     - Buypass Go SSL
+#   custom      - set certbot_acme_server explicitly
+certbot_acme_ca: letsencrypt
+
+# ACME directory URL override, e.g. a private CA, an internal step-ca, or a
+# Pebble test server.  Empty uses certbot_acme_ca.
 certbot_acme_server: ""
 
 # Disable TLS verification of the ACME directory (test or private CAs only).

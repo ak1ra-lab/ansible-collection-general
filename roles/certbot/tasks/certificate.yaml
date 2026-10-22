@@ -59,7 +59,8 @@
          + _certbot_base_args
          + _certbot_key_args
          + (['--test-cert'] if certbot_staging | ansible.builtin.bool else [])
-         + (['--server', certbot_acme_server] if certbot_acme_server | length > 0 else [])
+         + (['--server', _certbot_acme_server_effective]
+            if _certbot_acme_server_effective | length > 0 else [])
          + (['--eab-kid', certbot_eab.key_id | trim,
              '--eab-hmac-key', certbot_eab.hmac_key | trim]
             if certbot_eab | length > 0 else [])

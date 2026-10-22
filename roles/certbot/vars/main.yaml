@@ -43,6 +43,21 @@ _certbot_manage_units: >-
                or certbot_work_dir != '/var/lib/letsencrypt'
                or certbot_log_dir != '/var/log/letsencrypt')) -}}
 
+# ── ACME CA presets ─────────────────────────────────────────────────────────
+
+_certbot_acme_server_presets:
+  letsencrypt: https://acme-v02.api.letsencrypt.org/directory
+  zerossl: https://acme.zerossl.com/v2/DV90
+  google: https://dv.acme-v02.api.pki.goog/directory
+  buypass: https://api.buypass.com/acme/directory
+
+# certbot_acme_server overrides the preset; --test-cert selects the Let's
+# Encrypt staging CA, so no explicit directory is passed in staging mode.
+_certbot_acme_server_effective: >-
+  {{- '' if certbot_staging | ansible.builtin.bool
+      else (certbot_acme_server if certbot_acme_server | length > 0
+            else _certbot_acme_server_presets[certbot_acme_ca] | default('', true)) -}}
+
 _certbot_config_dir: "{{ certbot_config_dir | ansible.builtin.regex_replace('/+$', '') }}"
 _certbot_default_deploy_hook: "{{ _certbot_config_dir }}/renewal-hooks/deploy/certbot-deploy-hooks.sh"
 _certbot_acmedns_auth_hook: "{{ _certbot_config_dir }}/acmedns/acmedns-auth.py"

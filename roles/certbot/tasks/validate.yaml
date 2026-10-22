@@ -23,12 +23,18 @@
   ansible.builtin.assert:
     that:
       - certbot_email is string
+      - certbot_acme_ca is string
+      - certbot_acme_ca in (_certbot_acme_server_presets.keys() | list + ['custom'])
       - certbot_acme_server is string
       - not (certbot_staging | ansible.builtin.bool and certbot_acme_server | length > 0)
+      - not (certbot_staging | ansible.builtin.bool and certbot_acme_ca != 'letsencrypt')
+      - certbot_acme_ca != 'custom' or certbot_acme_server | length > 0
       - certbot_challenge in ['dns-01', 'http-01']
       - certbot_key_type in ['ecdsa', 'rsa']
     fail_msg: >-
-      certbot_staging and certbot_acme_server are mutually exclusive, and
+      certbot_acme_ca must be a preset (letsencrypt, zerossl, google, buypass)
+      or custom with certbot_acme_server; certbot_staging requires the
+      letsencrypt preset and cannot be combined with certbot_acme_server; and
       certbot_challenge/certbot_key_type must be supported values.
     quiet: true
 
@@ -45,6 +51,7 @@
         certbot_eab is not mapping
         or certbot_eab | length == 0
         or certbot_acme_server | length > 0
+        or certbot_acme_ca != 'letsencrypt'
       - >-
         certbot_eab is not mapping
         or certbot_eab | length == 0
@@ -61,8 +68,8 @@
     fail_msg: >-
       certbot_eab must be a mapping with key_id and hmac_key (the
       base64url-encoded key from the CA, at least 32 bytes / 43 characters for
-      HS256); it requires certbot_acme_server and cannot be combined with
-      certbot_staging.
+      HS256); it requires a non-default CA preset or certbot_acme_server and
+      cannot be combined with certbot_staging.
     quiet: true
 
 - name: validate the list and mapping inputs

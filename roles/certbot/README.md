@@ -60,6 +60,29 @@ certbot_certificates:
 `certbot_key_type` defaults to `ecdsa` (certbot's own default since 2.0). Set
 it to `rsa` to use `certbot_rsa_key_size` (4096) instead.
 
+## ACME CA
+
+`certbot_acme_ca` selects a built-in CA preset; `certbot_acme_server` overrides
+it with an explicit directory URL.
+
+| Preset | ACME directory |
+| --- | --- |
+| `letsencrypt` (default) | `https://acme-v02.api.letsencrypt.org/directory` |
+| `zerossl` | `https://acme.zerossl.com/v2/DV90` |
+| `google` | `https://dv.acme-v02.api.pki.goog/directory` |
+| `buypass` | `https://api.buypass.com/acme/directory` |
+
+For a private CA or a test server, set an explicit directory:
+
+```yaml
+certbot_acme_ca: custom
+certbot_acme_server: https://ca.example.com/acme/directory
+```
+
+`certbot_staging: true` selects the Let's Encrypt staging CA through
+`--test-cert`; it requires the `letsencrypt` preset and cannot be combined
+with `certbot_acme_server`.
+
 ## External account binding (EAB)
 
 Some ACME CAs require external account binding; ZeroSSL is the most common
@@ -67,7 +90,7 @@ example, and Google Trust Services and SSL.com also use it. EAB is part of
 certbot's ACME client, not a plugin, so no extra package is needed:
 
 ```yaml
-certbot_acme_server: https://acme.zerossl.com/v2/DV90
+certbot_acme_ca: zerossl
 certbot_eab:
   key_id: "..."
   hmac_key: "{{ vault_eab_hmac }}"
@@ -82,7 +105,8 @@ and not to `renew`. certbot does not store EAB in the renewal configuration;
 renewals use the account key under `/etc/letsencrypt/accounts`. Back that
 directory up, and re-run the role if the account has to be recreated.
 
-`certbot_eab` requires `certbot_acme_server` and cannot be combined with
+`certbot_eab` requires a non-default CA preset (for example `zerossl` or
+`google`) or an explicit `certbot_acme_server`, and cannot be combined with
 `certbot_staging` (the staging flag selects the Let's Encrypt staging CA).
 Debian 12 ships certbot 2.1, which already supports EAB and defaults to
 HS256, the algorithm used by ZeroSSL and cert-manager.
@@ -356,8 +380,9 @@ group.
 - Certificate state lives in `/etc/letsencrypt` (account key, renewal config,
   lineages). Back it up; do not delete it to "reset" a certificate - use
   `certbot delete --cert-name ...` when a lineage is really unwanted.
-- `certbot_staging: true` (or `certbot_acme_server` for an internal CA) should
-  be used while iterating. Staging and production share the lineage name, so
+- `certbot_staging: true` (or `certbot_acme_ca: custom` plus
+  `certbot_acme_server` for an internal CA) should be used while iterating.
+  Staging and production share the lineage name, so
   switching the CA on an existing lineage requires a forced re-issuance
   (`force: true` or a changed domain set).
 - `certbot_no_verify_ssl: true` is for test/private ACME endpoints. On `pypi`
