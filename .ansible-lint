@@ -5,10 +5,15 @@
 #   min → basic → moderate → safety → shared → production
 profile: production
 
-# Paths to exclude from linting.
+# Paths to exclude from linting.  The playbooks/*_vars trees are local,
+# gitignored inventory data (some of it vault-encrypted), not collection
+# content; linting them only produces decryption warnings and formatting
+# noise from files that are not part of the repository.
 exclude_paths:
   - .git/
   - .venv/
+  - playbooks/host_vars/
+  - playbooks/group_vars/
 
 # Rules to skip entirely.
 skip_list:
