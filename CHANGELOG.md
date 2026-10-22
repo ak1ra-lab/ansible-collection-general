@@ -4,6 +4,37 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project does not currently guarantee stable backward compatibility.
 
+## [0.3.0] - 2026-10-25
+
+### Added
+
+- Added the `certbot` role: install certbot from apt, PyPI (managed virtualenv through `pyproject_install`) or an external binary; obtain and renew certificates with DNS-01 (any `certbot-dns-*` plugin through a credentials mapping, Cloudflare by default, or acme-dns with a per-validation-domain JSON account registry and bundled manual hook) or HTTP-01 (standalone or webroot); detect domain drift in existing lineages; support external account binding (EAB, for example ZeroSSL); render global or per-lineage deploy renewal hooks, `cli.ini`, logrotate and a systemd timer. `playbooks/certbot.yaml` is the minimal example entry point.
+- The `certbot` role provides `certbot_acme_ca` presets (`letsencrypt`, `zerossl`, `google`, `buypass`, `custom`), keeps `certbot_acme_server` as an explicit directory override and `certbot_staging` for Let's Encrypt staging, and manages its own systemd units under `/etc/systemd/system` for apt and PyPI installs so `certbot_bin`, the explicit paths, `certbot_renew_args` and `certbot_no_verify_ssl` stay consistent across install sources. EAB is configured through `certbot_eab`; deploy hooks can be global (`certbot_deploy_hooks`) or per lineage (`certbot_certificates[].deploy_hooks`); EAB arguments and command output are marked `no_log`. Existing lineages are not reconciled automatically: changing the CA, challenge, provider or key type needs an explicit `force: true` (or lineage deletion) to take effect. The role also validates lineage names, DNS provider names, HTTP-01 wildcards, package state and EAB values, and fails clearly when an existing certificate's SANs cannot be read.
+- Added the `cert_manager` role: install/upgrade cert-manager from the official release manifest, resolving the latest stable release through `github_releases_info` when `cert_manager_version` is empty and verifying the GitHub asset digest; `cert_manager_manifest_url` and `cert_manager_manifest_checksum` override the manifest for mirrors and air-gapped installs. Manage ACME `ClusterIssuer` resources with per-issuer Cloudflare DNS-01, HTTP-01 and external account binding (EAB, for example ZeroSSL) credentials, including reference-only Secrets managed outside the role. Cloudflare and EAB credentials are modelled inside each `cert_manager_cluster_issuers[]` entry (`solver.cloudflare` and `eab`) with automatic Secret names; rendered Secret facts and manifests are marked `no_log`. It deliberately does not manage `Ingress` or `Certificate` resources, and documents the `kubernetes` Python dependency instead of creating a controller-side virtualenv.
+- Added Molecule scenarios `certbot/apt` (Pebble ACME issuance over HTTP-01 with EAB and per-lineage deploy hooks), `certbot/pypi` (venv, Cloudflare plugin, credentials and units), `certbot/acmedns` (per-domain auth hook selection against a fake acme-dns API), `acme_dns_register/basic` (per-validation-domain registration and idempotence) and `cert_manager/render` (manifest rendering without a cluster, including shared and reference-only Secrets).
+- `galaxy.yml` now declares `kubernetes.core`, required by `cert_manager`.
+
+### Changed
+
+- Rename the `acme_dns` role variable `acme_dns_domain` to `acme_dns_zone`, require `acme_dns_nsname` instead of defaulting it to the zone, and pin the built acme-dns release to `v2.0.2` with the `sqlite` database engine (the `sqlite3` engine value is removed upstream)
+- Move the `acme_dns` role's upstream build identity and systemd service/unit names from defaults to internal role vars; `acme_dns_go_build_repo_version`, `_goarch`, and `_base_dir` remain overridable
+- Keep `acme_dns_group` as a separate service group defaulting to `acme-dns`, and derive the default home/config directories from `acme_dns_user`
+- `acme_dns_register` now registers one acme-dns account per validation domain, persists a domain -> account mapping to `acme_dns_credentials.yaml`, creates each `_acme-challenge` CNAME against that domain's own fulldomain, and supports per-domain Cloudflare zone overrides; the single-account `acme_dns_register_username` / `_password` / `_subdomain` / `_fulldomain` interface is removed.
+
+### Fixed
+
+- Strip trailing dots from the `acme_dns` role's `acme_dns_zone` and `acme_dns_nsname`; acme-dns appends the root label itself, so the previous template produced invalid `..` names and silently started without its SOA and static records
+- Stop writing an A record in the `acme_dns` role for an out-of-zone `acme_dns_nsname`; that address belongs in the parent zone. The role's README now separates parent-zone delegation records from the records served by acme-dns
+- `acme_dns_register` keeps its resolved server URL and account registry in internal `_acme_dns_register_*` facts and publishes `acme_dns_register_effective_*` outputs. Values passed as `include_role`/`import_role` `vars:` outrank `set_fact`, so the previous code updated facts that the role itself could not see: after a successful registration its validation still read the original empty registry and failed.
+- `acme_dns_register` keeps explicitly loading `acme_dns_credentials.yaml`, including from the default `host_vars/<inventory_hostname>/` directory: role parameters outrank Ansible's auto-loaded host_vars, so the explicit include is what keeps role-parameter invocations idempotent.
+- `acme_dns_register` no longer asks the operator to add CNAME records with a literal `*.` label for wildcard domains.
+- `acme_dns_register` escapes the Cloudflare zone in the CNAME record regex.
+- `acme_dns_register` marks the Cloudflare token fact and API task `no_log` so API tokens stay out of verbose output.
+- `go_build` resolves the checkout, working directory, binary and stamp paths in internal facts and publishes them after the build, so `go_build_repo_dir` and `go_build_chdir` passed as role parameters are no longer shadowed by `set_fact`.
+- `debian_base` appends the backports suite in the repository task instead of mutating `debian_base_apt_repo_debian_suites` with `set_fact`, so a caller-provided suite list passed as a role parameter still receives the backports suite.
+- `debian_base` refreshes the APT index after adding the backports source, so enabling backports is idempotent: the first run already upgrades backports packages (for example `linux-libc-dev`) instead of leaving them for a later run.
+- Use bare Jinja2 builtin filter and test names (`lower`, `trim`, `sequence`, `string`, `mapping`, `defined`, `boolean`, `equalto`, ...) instead of `ansible.builtin.*`: the fully-qualified aliases only exist in ansible-core 2.19+, while the collection still declares 2.18 as its minimum.
+
 ## [0.2.0] - 2026-10-14
 
 ### Added

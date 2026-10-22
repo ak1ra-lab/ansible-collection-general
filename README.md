@@ -8,6 +8,8 @@ Roles include:
 - `ak1ra_lab.general.acme_dns`
 - `ak1ra_lab.general.acme_dns_register`
 - `ak1ra_lab.general.apt_install`
+- `ak1ra_lab.general.cert_manager`
+- `ak1ra_lab.general.certbot`
 - `ak1ra_lab.general.debian_base`
 - `ak1ra_lab.general.docker`
 - `ak1ra_lab.general.go_build`
@@ -65,6 +67,11 @@ teardown verification.
 | --- | --- |
 | `apt_install/basic` | Third-party repository keyring URL, DEB822 source, origin pinning, unattended-upgrades, package install and hold, the revert switches, legacy `.list` removal |
 | `apt_install/variants` | Inline keyring content, release-based pinning, `any-version` suites, a keyring package with a pinned checksum |
+| `cert_manager/render` | ClusterIssuer/Secret rendering, per-issuer Cloudflare and HTTP-01 solvers, EAB, shared/reference-only Secrets, manifest permissions (no cluster required) |
+| `certbot/apt` | apt install, Pebble ACME issuance via HTTP-01 with EAB, renewal configuration, role-managed unit, per-lineage deploy hook dispatch and timer |
+| `certbot/pypi` | PyPI install into the managed venv, Cloudflare plugin, credentials, hook, cli.ini, logrotate and systemd units |
+| `certbot/acmedns` | per-validation-domain acme-dns auth hook selection against a fake `/update` API |
+| `acme_dns_register/basic` | per-validation-domain acme-dns registration, mapping persistence and idempotence against a fake `/register` API |
 | `debian_base` | DEB822 archive/security sources, backports pinning and first-run index refresh, unattended-upgrades drop-ins, force-IPv4, baseline package, sudoers |
 | `go_build` | Fixture git repository, binary build and stamp-based rebuild skip |
 | `pyproject_install/local` | `uv build --wheel` on the controller, wheel install into the target venv, remote wheel cleanup |
@@ -95,9 +102,11 @@ every molecule invocation. The controller additionally needs `go` (the
 
 ## Roles
 
-- `apt_install`: add a third-party APT repository in DEB822 format with a managed keyring, optional pinning and unattended-upgrades wiring, and optional package installation. Debian only.
 - `acme_dns`: deploy an acme-dns server: Go binary built on `localhost`, systemd unit, and DNS config.
-- `acme_dns_register`: register a client with an acme-dns server, persist credentials, and create `_acme-challenge` CNAME records (Cloudflare API or a manual prompt).
+- `acme_dns_register`: register one acme-dns account per validation domain, persist the domain -> account mapping, and create each `_acme-challenge` CNAME record against that domain's own fulldomain (Cloudflare API or a manual prompt).
+- `apt_install`: add a third-party APT repository in DEB822 format with a managed keyring, optional pinning and unattended-upgrades wiring, and optional package installation. Debian only.
+- `cert_manager`: install/upgrade cert-manager from the official release manifest (latest stable by default, resolved through `github_releases_info`) and declare ACME `ClusterIssuer` resources with per-issuer Cloudflare DNS-01, HTTP-01 and external account binding (EAB, for example ZeroSSL) credentials, including reference-only Secrets. Application `Ingress`/`Certificate` resources are intentionally out of scope.
+- `certbot`: obtain and renew certificates with certbot from apt or a managed PyPI virtualenv, using DNS-01 (Cloudflare, or acme-dns with one account per validation domain) or HTTP-01, with EAB support, global or per-lineage renewal deploy hooks and a systemd timer.
 - `debian_base`: apply a Debian baseline with curated packages, apt repository defaults, unattended upgrades, and common host bootstrap settings. Debian only.
 - `docker`: install Docker CE from the official repository and manage `/etc/docker/daemon.json` and the `docker` group. Debian only.
 - `go_build`: clone and build a Go project on `localhost`, then expose the built binary path for follow-up tasks.
