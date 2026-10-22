@@ -1,0 +1,125 @@
+---
+# certbot/acmedns scenario - invoke the auth hook as certbot would and assert
+# that each validation domain uses its own acme-dns account.
+
+- name: verify the acme-dns auth hook
+  hosts: all
+  gather_facts: false
+  vars:
+    _certbot_acmedns_dir: /tmp/molecule-ak1ra-general-certbot-acmedns
+    _certbot_hook: /etc/letsencrypt/acmedns/acmedns-auth.py
+    _certbot_storage: /etc/letsencrypt/credentials/acmedns.json
+    _certbot_requests: "{{ _certbot_acmedns_dir }}/requests.jsonl"
+  tasks:
+    - name: collect the acme-dns files
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: _certbot_acmedns_files
+      loop:
+        - "{{ _certbot_hook }}"
+        - "{{ _certbot_storage }}"
+
+    - name: assert the auth hook and storage permissions
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.mode == ('0755' if item.item == _certbot_hook else '0600')
+        fail_msg: "{{ item.item }} is missing or has the wrong mode"
+        quiet: true
+      loop: "{{ _certbot_acmedns_files.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: read the acme-dns account registry
+      ansible.builtin.slurp:
+        src: "{{ _certbot_storage }}"
+      register: _certbot_storage_content
+
+    - name: parse the acme-dns account registry
+      ansible.builtin.set_fact:
+        _certbot_storage_data: "{{ _certbot_storage_content.content | b64decode | from_json }}"
+
+    - name: assert the registry contains one account per validation domain
+      ansible.builtin.assert:
+        that:
+          - _certbot_storage_data.server_url == 'http://127.0.0.1:8056'
+          - _certbot_storage_data.accounts | length == 2
+          - "'example.com' in _certbot_storage_data.accounts"
+          - "'www.example.com' in _certbot_storage_data.accounts"
+          - _certbot_storage_data.accounts['example.com'].subdomain == 'molecule-subdomain-base'
+          - _certbot_storage_data.accounts['www.example.com'].subdomain == 'molecule-subdomain-www'
+        fail_msg: "unexpected acme-dns account registry"
+        quiet: true
+
+    - name: clear the fake acme-dns request log
+      ansible.builtin.file:
+        path: "{{ _certbot_requests }}"
+        state: absent
+
+    - name: invoke the auth hook for each validation domain
+      ansible.builtin.command:
+        argv: ["{{ _certbot_hook }}"]
+      environment:
+        CERTBOT_DOMAIN: "{{ item.domain }}"
+        CERTBOT_VALIDATION: "{{ item.validation }}"
+      changed_when: false
+      loop:
+        - domain: example.com
+          validation: "0000000000000000000000000000000000000001"
+        - domain: "*.example.com"
+          validation: "0000000000000000000000000000000000000002"
+        - domain: www.example.com
+          validation: "0000000000000000000000000000000000000003"
+
+    - name: read the fake acme-dns requests
+      ansible.builtin.slurp:
+        src: "{{ _certbot_requests }}"
+      register: _certbot_acmedns_requests
+
+    - name: parse the fake acme-dns requests
+      ansible.builtin.set_fact:
+        _certbot_acmedns_parsed: >-
+          {{ (_certbot_acmedns_requests.content | b64decode).splitlines()
+             | map('from_json') | list }}
+
+    - name: assert each domain selected the expected account
+      ansible.builtin.assert:
+        that:
+          - _certbot_acmedns_parsed | length == 3
+          - _certbot_acmedns_parsed[0].path == '/update'
+          - _certbot_acmedns_parsed[0].user == 'molecule-user-base'
+          - _certbot_acmedns_parsed[0].key == 'molecule-key-base'
+          - _certbot_acmedns_parsed[0].body.subdomain == 'molecule-subdomain-base'
+          - _certbot_acmedns_parsed[0].body.txt == '0000000000000000000000000000000000000001'
+          - _certbot_acmedns_parsed[1].user == 'molecule-user-base'
+          - _certbot_acmedns_parsed[1].key == 'molecule-key-base'
+          - _certbot_acmedns_parsed[1].body.subdomain == 'molecule-subdomain-base'
+          - _certbot_acmedns_parsed[1].body.txt == '0000000000000000000000000000000000000002'
+          - _certbot_acmedns_parsed[2].user == 'molecule-user-www'
+          - _certbot_acmedns_parsed[2].key == 'molecule-key-www'
+          - _certbot_acmedns_parsed[2].body.subdomain == 'molecule-subdomain-www'
+          - _certbot_acmedns_parsed[2].body.txt == '0000000000000000000000000000000000000003'
+        fail_msg: >-
+          unexpected acme-dns requests:
+          {{ _certbot_acmedns_parsed }}
+        quiet: true
+
+    - name: invoke the auth hook for an unregistered domain
+      ansible.builtin.command:
+        argv: ["{{ _certbot_hook }}"]
+      environment:
+        CERTBOT_DOMAIN: unregistered.example.com
+        CERTBOT_VALIDATION: "0000000000000000000000000000000000000004"
+      changed_when: false
+      failed_when: false
+      register: _certbot_acmedns_missing
+
+    - name: assert an unregistered domain fails clearly
+      ansible.builtin.assert:
+        that:
+          - _certbot_acmedns_missing.rc != 0
+          - "'no acme-dns account for unregistered.example.com' in _certbot_acmedns_missing.stderr"
+        fail_msg: >-
+          the hook did not report the missing account:
+          {{ _certbot_acmedns_missing.stderr }}
+        quiet: true

@@ -1,0 +1,59 @@
+---
+# Internal derived values - callers should not override these.
+
+_certbot_bin: >-
+  {{- certbot_bin if certbot_bin | length > 0
+      else (certbot_venv_dir ~ '/bin/certbot' if certbot_install_source == 'pypi'
+            else ('/usr/bin/certbot' if certbot_install_source == 'apt' else '')) -}}
+
+# certbot-dns-<provider> PyPI package; empty for acme-dns (manual hooks) and
+# for HTTP-01.
+_certbot_dns_package: >-
+  {{- ('certbot-dns-' ~ certbot_dns_provider)
+      if (certbot_challenge == 'dns-01'
+          and certbot_dns_provider | length > 0
+          and certbot_dns_provider != 'acmedns')
+      else '' -}}
+
+_certbot_pypi_packages: >-
+  {{- certbot_pypi_packages if certbot_pypi_packages | length > 0
+      else (['certbot']
+            + ([_certbot_dns_package] if _certbot_dns_package | length > 0 else [])) -}}
+
+_certbot_apt_packages: >-
+  {{- ['certbot']
+      + ([('python3-' ~ _certbot_dns_package)] if _certbot_dns_package | length > 0 else []) -}}
+
+# Paths understood by certbot; passed explicitly so certbot_config_dir,
+# certbot_work_dir and certbot_log_dir can be relocated.
+_certbot_base_args:
+  - --config-dir
+  - "{{ certbot_config_dir }}"
+  - --work-dir
+  - "{{ certbot_work_dir }}"
+  - --logs-dir
+  - "{{ certbot_log_dir }}"
+
+# The distribution units use the default paths.  Shadow them only when the
+# paths are relocated, or when certbot comes from PyPI.
+_certbot_manage_units: >-
+  {{- certbot_install_source == 'pypi'
+      or (certbot_install_source == 'apt'
+          and (certbot_config_dir != '/etc/letsencrypt'
+               or certbot_work_dir != '/var/lib/letsencrypt'
+               or certbot_log_dir != '/var/log/letsencrypt')) -}}
+
+_certbot_config_dir: "{{ certbot_config_dir | ansible.builtin.regex_replace('/+$', '') }}"
+_certbot_default_deploy_hook: "{{ _certbot_config_dir }}/renewal-hooks/deploy/certbot-deploy-hooks.sh"
+_certbot_acmedns_auth_hook: "{{ _certbot_config_dir }}/acmedns/acmedns-auth.py"
+
+# True when either the global or at least one per-certificate hook is set.
+_certbot_deploy_hooks_used: >-
+  {{- certbot_deploy_hooks | length > 0
+      or (certbot_certificates | selectattr('deploy_hooks', 'defined')
+          | selectattr('deploy_hooks', 'truthy') | list | length > 0) -}}
+
+_certbot_cli_ini_effective: >-
+  {{- certbot_cli_ini_extra
+      | ansible.builtin.combine({'no-verify-ssl': 'True'}
+        if certbot_no_verify_ssl | ansible.builtin.bool else {}) -}}

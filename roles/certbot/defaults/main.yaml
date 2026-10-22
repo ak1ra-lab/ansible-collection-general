@@ -1,0 +1,172 @@
+---
+# ak1ra_lab.general.certbot
+#
+# Obtain and renew certificates with certbot on a systemd host.  DNS-01 is
+# the primary challenge type (Cloudflare and acme-dns are the supported
+# providers); HTTP-01 is available for hosts without DNS API access.
+#
+# The role only obtains certificates.  Services that consume them (nginx,
+# ...) are configured by their own roles; they can reload after a renewal
+# through the global `certbot_deploy_hooks` or a certificate's own
+# `deploy_hooks`.
+#
+# Defaults are resolved lazily, so a variable may reference another variable
+# that is defined later in this file (for example
+# certbot_dns_credentials_dir -> certbot_config_dir).
+
+# ── installation ─────────────────────────────────────────────────────────────
+
+# apt   - distribution package (recommended: security updates via apt)
+# pypi  - isolated virtualenv managed by ak1ra_lab.general.pyproject_install
+# none  - certbot is provided externally (snap, container image, ...)
+certbot_install_source: apt
+certbot_package_state: present
+
+# pypi only: target virtualenv, optional shared version pin (e.g. "4.0.0")
+# and an explicit package list (empty derives certbot + the DNS plugin).
+certbot_venv_dir: /var/lib/certbot/venv
+certbot_pypi_version: ""
+certbot_pypi_packages: []
+
+# Absolute path to the certbot executable.  Derived from the install source
+# when empty; required for certbot_install_source=none.
+certbot_bin: ""
+
+# ── ACME account / CA ────────────────────────────────────────────────────────
+
+# Contact address registered with the ACME account (required for issuance).
+certbot_email: ""
+
+# Use the Let's Encrypt staging CA (certbot --test-cert).  Mutually exclusive
+# with certbot_acme_server.
+certbot_staging: false
+
+# ACME directory URL override, e.g. ZeroSSL, an internal CA, or Pebble.
+certbot_acme_server: ""
+
+# Disable TLS verification of the ACME directory (test or private CAs only).
+certbot_no_verify_ssl: false
+
+# External account binding (EAB) credentials for CAs that require them
+# (ZeroSSL, Google Trust Services, ...).  The mapping is empty by default;
+# set both keys to enable EAB.  hmac_key is the base64url-encoded key string
+# provided by the CA.  EAB is only needed when the ACME account is
+# registered, so it is passed to `certonly` and not to `renew`.
+certbot_eab: {}
+
+# ── certificates ─────────────────────────────────────────────────────────────
+
+# Each entry supports:
+#   name:         lineage name / --cert-name (default: first domain, "*." stripped)
+#   domains:      list of DNS names (required)
+#   force:        re-issue even when the lineage already matches (default: false)
+#   deploy_hooks: shell commands for this lineage only (default: [])
+#   extra_args:   additional certbot arguments (default: [])
+certbot_certificates: []
+
+certbot_challenge: dns-01        # dns-01 | http-01
+certbot_key_type: ecdsa          # ecdsa | rsa
+certbot_elliptic_curve: secp256r1
+certbot_rsa_key_size: 4096
+
+# ── DNS-01 ───────────────────────────────────────────────────────────────────
+
+# certbot-dns-<provider> plugin.  Set to "acmedns" for the acme-dns manual
+# hooks, or to "" when only HTTP-01 is used.
+certbot_dns_provider: cloudflare
+
+# Raw plugin credentials rendered as an INI file.  Keys are plugin-specific;
+# for Cloudflare:
+#   certbot_dns_credentials:
+#     dns_cloudflare_api_token: "{{ vault_cloudflare_api_token }}"
+# Leave empty for plugins that read credentials from the environment or an
+# instance profile (e.g. route53).
+certbot_dns_credentials: {}
+certbot_dns_credentials_dir: "{{ certbot_config_dir }}/credentials"
+certbot_dns_credentials_file: "{{ certbot_dns_credentials_dir }}/{{ certbot_dns_provider }}.ini"
+certbot_dns_propagation_seconds: 30
+
+# ── acme-dns (certbot_dns_provider: acmedns) ─────────────────────────────────
+
+# One acme-dns account per validation domain.  A validation domain is the
+# certificate identifier with a leading "*." removed: example.com and
+# *.example.com share one account, while www.example.com gets its own.
+#
+# Accounts can be supplied directly, loaded from the persisted
+# acme_dns_register host_vars file, or registered on demand by setting
+# certbot_acmedns_register: true.
+certbot_acmedns_register: false
+certbot_acmedns_server_url: ""
+certbot_acmedns_accounts: {}
+# Controller-side persistence directory used by acme_dns_register; empty uses
+# its default ({{ playbook_dir }}/host_vars/{{ inventory_hostname }}).
+certbot_acmedns_credentials_dir: ""
+# Host-side JSON registry consumed by the manual auth hook.
+certbot_acmedns_storage_path: "{{ certbot_dns_credentials_dir }}/acmedns.json"
+# Cloudflare credentials used by acme_dns_register for the CNAME records.
+certbot_acmedns_cloudflare_api_token: ""
+certbot_acmedns_cloudflare_zone_token: ""
+certbot_acmedns_cloudflare_zone: ""
+certbot_acmedns_cloudflare_zones: {}
+# Prompt for CNAME records after a fresh registration when no Cloudflare
+# token is available; set false for non-interactive runs.
+certbot_acmedns_manual_prompt: true
+
+# ── HTTP-01 ──────────────────────────────────────────────────────────────────
+
+# standalone - certbot's built-in HTTP server binds certbot_http01_port; no
+#              other process (web server) may listen on that port.
+# webroot    - certbot only writes the challenge file below webroot_path; an
+#              already running web server must serve
+#              /.well-known/acme-challenge/ from that directory on port 80.
+#
+# Public ACME CAs always send the HTTP-01 request to port 80, regardless of
+# certbot_http01_port.  A non-80 local port is only useful with a private or
+# test ACME server that validates on that port (for example Pebble's
+# httpPort), or when an external port 80 is forwarded to the local port.
+# certbot_http01_port is used by standalone only; webroot is served by the
+# web server.  These are certbot authenticators, unrelated to the third-party
+# certbot-dns-standalone DNS-01 plugin.  HTTP-01 cannot issue wildcards, and
+# the DNS A/AAAA records for every requested name must point at this host.
+certbot_http01_method: standalone   # standalone | webroot
+certbot_http01_port: 80
+# All names in certbot_certificates must be served from this one webroot.
+certbot_webroot_path: /var/www/html
+
+# ── renewal ──────────────────────────────────────────────────────────────────
+
+# Shell commands rendered into /etc/letsencrypt/renewal-hooks/deploy.  They
+# run as root after a successful renewal; use them to reload the consuming
+# service and to hand the certificate to a non-root service.  Copy the files
+# with install(1) (portable), or adjust ownership/ACLs (setfacl needs the acl
+# package and an ACL-capable filesystem); renewal replaces the archive files,
+# so apply permissions here on every renewal.  On certbot < 3.2 these hooks
+# only run from `certbot renew`, not from the initial `certonly`.
+#
+# These commands are global (every renewed lineage).  For a hook that must
+# run only when one certificate lineage is renewed, set
+# certbot_certificates[].deploy_hooks instead; the role dispatches it with
+# the RENEWED_LINEAGE environment variable.
+certbot_deploy_hooks: []
+
+certbot_manage_timer: "{{ certbot_install_source in ['apt', 'pypi'] }}"
+certbot_timer_enabled: true
+certbot_timer_on_calendar: "*-*-* 00,12:00:00"
+certbot_timer_randomized_delay_sec: "12h"
+
+# Arguments used by the managed systemd unit's `certbot renew` command.
+certbot_renew_args: >-
+  {{- ['-q'] + (['--no-verify-ssl'] if certbot_no_verify_ssl | ansible.builtin.bool else []) -}}
+
+# ── files / paths ────────────────────────────────────────────────────────────
+
+certbot_config_dir: /etc/letsencrypt
+certbot_work_dir: /var/lib/letsencrypt
+certbot_log_dir: /var/log/letsencrypt
+
+# cli.ini and logrotate are shipped by the distribution package; manage them
+# only when certbot is installed from PyPI (or when explicitly requested).
+certbot_manage_cli_ini: "{{ certbot_install_source == 'pypi' }}"
+certbot_manage_logrotate: "{{ certbot_install_source == 'pypi' }}"
+# Extra cli.ini options, e.g. {no-verify-ssl: true} for a private ACME CA.
+certbot_cli_ini_extra: {}

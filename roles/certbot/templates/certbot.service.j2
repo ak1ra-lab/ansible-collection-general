@@ -1,0 +1,10 @@
+[Unit]
+Description=Certbot
+Documentation=https://certbot.eff.org/docs
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart={{ _certbot_bin }} {{ _certbot_base_args | join(' ') }} {{ certbot_renew_args | join(' ') }} renew --no-random-sleep-on-renew
+PrivateTmp=true

@@ -1,0 +1,11 @@
+[Unit]
+Description=Run certbot twice daily
+
+[Timer]
+OnCalendar={{ certbot_timer_on_calendar }}
+RandomizedDelaySec={{ certbot_timer_randomized_delay_sec }}
+Persistent=true
+Unit=certbot.service
+
+[Install]
+WantedBy=timers.target

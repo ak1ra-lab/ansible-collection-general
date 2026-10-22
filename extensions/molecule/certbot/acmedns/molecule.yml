@@ -1,0 +1,7 @@
+---
+# certbot/acmedns scenario - exercise the acme-dns manual auth hook against a
+# local fake acme-dns API.  No certificate is issued; the hook is invoked
+# directly with the environment certbot would provide.
+#
+# The scenario inherits the shared test sequence from
+# extensions/molecule/config.yml.

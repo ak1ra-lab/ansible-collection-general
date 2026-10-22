@@ -1,0 +1,31 @@
+---
+# Role metadata for ak1ra_lab.general.certbot
+
+galaxy_info:
+  author: ak1ra
+  description: >-
+    Obtain and renew TLS certificates with certbot using DNS-01 (Cloudflare
+    or acme-dns) or HTTP-01 challenges on systemd hosts.
+  license: MIT
+  min_ansible_version: "2.18"
+
+  platforms:
+    - name: Debian
+      versions:
+        - trixie
+        - bookworm
+    - name: Ubuntu
+      versions:
+        - noble
+        - jammy
+
+  galaxy_tags:
+    - acme
+    - certificates
+    - certbot
+    - letsencrypt
+    - tls
+
+dependencies: []
+
+allow_duplicates: false

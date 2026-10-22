@@ -1,0 +1,152 @@
+---
+# certbot/pypi scenario - assert the virtualenv, the Cloudflare plugin, the
+# credentials and the role-managed systemd/logrotate configuration.
+
+- name: verify the certbot PyPI installation
+  hosts: all
+  gather_facts: false
+  vars:
+    _certbot_bin: /var/lib/certbot/venv/bin/certbot
+    _certbot_credentials: /etc/letsencrypt/credentials/cloudflare.ini
+  tasks:
+    - name: collect the virtualenv certbot binary
+      ansible.builtin.stat:
+        path: "{{ _certbot_bin }}"
+      register: _certbot_verify_bin
+
+    - name: assert the virtualenv certbot is executable
+      ansible.builtin.assert:
+        that:
+          - _certbot_verify_bin.stat.exists
+          - _certbot_verify_bin.stat.executable
+        fail_msg: "{{ _certbot_bin }} was not installed"
+        quiet: true
+
+    - name: read the certbot version
+      ansible.builtin.command:
+        argv: ["{{ _certbot_bin }}", --version]
+      changed_when: false
+      register: _certbot_verify_version
+
+    - name: assert the virtualenv certbot runs
+      ansible.builtin.assert:
+        that:
+          - _certbot_verify_version.stdout is search('^certbot ')
+        fail_msg: >-
+          unexpected certbot version output:
+          {{ _certbot_verify_version.stdout }} {{ _certbot_verify_version.stderr }}
+        quiet: true
+
+    - name: list the certbot plugins
+      ansible.builtin.command:
+        argv: ["{{ _certbot_bin }}", plugins]
+      changed_when: false
+      register: _certbot_verify_plugins
+
+    - name: assert the Cloudflare DNS plugin is installed
+      ansible.builtin.assert:
+        that:
+          - "'dns-cloudflare' in _certbot_verify_plugins.stdout"
+        fail_msg: >-
+          certbot-dns-cloudflare is not available:
+          {{ _certbot_verify_plugins.stdout }}
+        quiet: true
+
+    - name: collect the credentials file
+      ansible.builtin.stat:
+        path: "{{ _certbot_credentials }}"
+      register: _certbot_verify_credentials
+
+    - name: assert the credentials file permissions
+      ansible.builtin.assert:
+        that:
+          - _certbot_verify_credentials.stat.exists
+          - _certbot_verify_credentials.stat.mode == '0600'
+        fail_msg: >-
+          {{ _certbot_credentials }} must exist with mode 0600 (got
+          {{ _certbot_verify_credentials.stat.mode | default('missing') }})
+        quiet: true
+
+    - name: read the credentials file
+      ansible.builtin.slurp:
+        src: "{{ _certbot_credentials }}"
+      register: _certbot_verify_credentials_content
+
+    - name: assert the credentials content
+      ansible.builtin.assert:
+        that:
+          - "'dns_cloudflare_api_token = molecule-cloudflare-token' in (_certbot_verify_credentials_content.content | b64decode)"
+        fail_msg: "the Cloudflare API token was not rendered"
+        quiet: true
+
+    - name: collect the deploy renewal hook
+      ansible.builtin.stat:
+        path: /etc/letsencrypt/renewal-hooks/deploy/certbot-deploy-hooks.sh
+      register: _certbot_verify_hook
+
+    - name: read the deploy renewal hook
+      ansible.builtin.slurp:
+        src: /etc/letsencrypt/renewal-hooks/deploy/certbot-deploy-hooks.sh
+      register: _certbot_verify_hook_content
+
+    - name: assert the deploy renewal hook is rendered
+      ansible.builtin.assert:
+        that:
+          - _certbot_verify_hook.stat.exists
+          - _certbot_verify_hook.stat.executable
+          - "'systemctl reload nginx' in (_certbot_verify_hook_content.content | b64decode)"
+        fail_msg: "the deploy renewal hook was not rendered"
+        quiet: true
+
+    - name: read the managed service unit
+      ansible.builtin.slurp:
+        src: /etc/systemd/system/certbot.service
+      register: _certbot_verify_unit
+
+    - name: assert the managed unit uses the virtualenv certbot
+      ansible.builtin.assert:
+        that:
+          - "'/var/lib/certbot/venv/bin/certbot' in (_certbot_verify_unit.content | b64decode)"
+          - "'renew --no-random-sleep-on-renew' in (_certbot_verify_unit.content | b64decode)"
+        fail_msg: "certbot.service does not use the virtualenv binary"
+        quiet: true
+
+    - name: collect the managed cli.ini and logrotate files
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: _certbot_verify_managed
+      loop:
+        - /etc/letsencrypt/cli.ini
+        - /etc/logrotate.d/certbot
+
+    - name: assert cli.ini and logrotate are rendered
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+        fail_msg: "{{ item.item }} is missing"
+        quiet: true
+      loop: "{{ _certbot_verify_managed.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: read the certbot timer state
+      ansible.builtin.command:
+        argv: [systemctl, is-enabled, certbot.timer]
+      changed_when: false
+      register: _certbot_verify_timer
+
+    - name: read the certbot timer activity
+      ansible.builtin.command:
+        argv: [systemctl, is-active, certbot.timer]
+      changed_when: false
+      register: _certbot_verify_timer_active
+
+    - name: assert the renewal timer is enabled and active
+      ansible.builtin.assert:
+        that:
+          - _certbot_verify_timer.stdout == 'enabled'
+          - _certbot_verify_timer_active.stdout == 'active'
+        fail_msg: >-
+          certbot.timer is {{ _certbot_verify_timer.stdout }} /
+          {{ _certbot_verify_timer_active.stdout }}
+        quiet: true

@@ -1,0 +1,38 @@
+---
+# certbot/acmedns scenario - assert the teardown removed the acme-dns files.
+
+- name: verify the certbot acme-dns teardown
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: collect the teardown paths
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: _certbot_acmedns_absent
+      loop:
+        - /etc/letsencrypt
+        - /tmp/molecule-ak1ra-general-certbot-acmedns
+
+    - name: assert the acme-dns state is gone
+      ansible.builtin.assert:
+        that:
+          - not item.stat.exists
+        fail_msg: "{{ item.item }} must be gone after cleanup"
+        quiet: true
+      loop: "{{ _certbot_acmedns_absent.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: collect the controller credentials directory
+      ansible.builtin.stat:
+        path: /tmp/molecule-ak1ra-general-certbot-acmedns
+      register: _certbot_acmedns_absent_controller
+      delegate_to: localhost
+      become: false
+
+    - name: assert the controller credentials are gone
+      ansible.builtin.assert:
+        that:
+          - not _certbot_acmedns_absent_controller.stat.exists
+        fail_msg: "the controller credentials directory must be removed"
+        quiet: true

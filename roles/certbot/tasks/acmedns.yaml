@@ -1,0 +1,156 @@
+---
+- name: collect the acme-dns validation domains
+  ansible.builtin.set_fact:
+    _certbot_acmedns_domains: >-
+      {{ certbot_certificates | map(attribute='domains') | ansible.builtin.flatten
+         | map('ansible.builtin.regex_replace', '^\*\.', '')
+         | map('lower') | ansible.builtin.unique | list }}
+
+- name: derive the acme-dns credentials directory
+  ansible.builtin.set_fact:
+    _certbot_acmedns_credentials_dir: >-
+      {{ certbot_acmedns_credentials_dir | default('', true)
+         or (playbook_dir ~ '/host_vars/' ~ inventory_hostname) }}
+
+- name: load the persisted acme-dns accounts
+  when: (_certbot_acmedns_credentials_dir ~ '/acme_dns_credentials.yaml') is ansible.builtin.file
+  ansible.builtin.include_vars:
+    file: "{{ _certbot_acmedns_credentials_dir }}/acme_dns_credentials.yaml"
+    name: _certbot_acmedns_file
+
+- name: normalize the persisted acme-dns accounts
+  no_log: true
+  ansible.builtin.set_fact:
+    _certbot_acmedns_saved_accounts: >-
+      {{ (_certbot_acmedns_file | default({})).acme_dns_register_accounts | default({}) }}
+    _certbot_acmedns_saved_server_url: >-
+      {{ (_certbot_acmedns_file | default({})).acme_dns_register_server_url | default('') }}
+
+- name: resolve the acme-dns server and account registry
+  no_log: true
+  ansible.builtin.set_fact:
+    _certbot_acmedns_server_url: >-
+      {{ (certbot_acmedns_server_url | default('', true)
+          or _certbot_acmedns_saved_server_url)
+         | ansible.builtin.regex_replace('/+$', '') }}
+    _certbot_acmedns_accounts: >-
+      {{ _certbot_acmedns_saved_accounts
+         | ansible.builtin.combine(certbot_acmedns_accounts | default({})) }}
+
+- name: register or reuse the acme-dns accounts
+  when: certbot_acmedns_register | ansible.builtin.bool
+  ansible.builtin.include_role:
+    name: ak1ra_lab.general.acme_dns_register
+  vars:
+    acme_dns_register_server_url: "{{ _certbot_acmedns_server_url }}"
+    acme_dns_register_accounts: "{{ _certbot_acmedns_accounts }}"
+    acme_dns_register_acme_domains: "{{ _certbot_acmedns_domains }}"
+    acme_dns_register_credentials_dir: "{{ _certbot_acmedns_credentials_dir }}"
+    acme_dns_register_cloudflare_api_token: "{{ certbot_acmedns_cloudflare_api_token }}"
+    acme_dns_register_cloudflare_zone_token: "{{ certbot_acmedns_cloudflare_zone_token }}"
+    acme_dns_register_cloudflare_zone: "{{ certbot_acmedns_cloudflare_zone }}"
+    acme_dns_register_cloudflare_zones: "{{ certbot_acmedns_cloudflare_zones }}"
+    acme_dns_register_manual_prompt: "{{ certbot_acmedns_manual_prompt }}"
+
+- name: adopt the registered acme-dns accounts
+  when: certbot_acmedns_register | ansible.builtin.bool
+  no_log: true
+  ansible.builtin.set_fact:
+    _certbot_acmedns_server_url: "{{ acme_dns_register_server_url }}"
+    _certbot_acmedns_accounts: "{{ acme_dns_register_accounts }}"
+
+- name: validate the acme-dns account registry
+  when: _certbot_acmedns_domains | length > 0 or _certbot_acmedns_accounts | length > 0
+  ansible.builtin.assert:
+    that:
+      - _certbot_acmedns_server_url is string
+      - _certbot_acmedns_server_url is ansible.builtin.match('^https?://')
+      - _certbot_acmedns_accounts is mapping
+      - >-
+        _certbot_acmedns_domains
+        | ansible.builtin.difference(_certbot_acmedns_accounts.keys() | list) | length == 0
+    fail_msg: >-
+      acme-dns needs certbot_acmedns_server_url and one account per validation
+      domain. Run with certbot_acmedns_register=true or provide
+      certbot_acmedns_accounts.
+    quiet: true
+
+- name: validate each acme-dns account
+  when: _certbot_acmedns_accounts | length > 0
+  ansible.builtin.assert:
+    that:
+      - account_domain is string
+      - account_domain | trim | length > 0
+      - account_domain == account_domain | lower
+      - account_domain is not ansible.builtin.match('^\*\.')
+      - _certbot_acmedns_accounts[account_domain] is mapping
+      - _certbot_acmedns_accounts[account_domain].username is defined
+      - _certbot_acmedns_accounts[account_domain].username is string
+      - _certbot_acmedns_accounts[account_domain].password is defined
+      - _certbot_acmedns_accounts[account_domain].password is string
+      - _certbot_acmedns_accounts[account_domain].subdomain is defined
+      - _certbot_acmedns_accounts[account_domain].subdomain is string
+      - _certbot_acmedns_accounts[account_domain].fulldomain is defined
+      - _certbot_acmedns_accounts[account_domain].fulldomain is string
+      - _certbot_acmedns_accounts[account_domain].username | length > 0
+      - _certbot_acmedns_accounts[account_domain].password | length > 0
+      - _certbot_acmedns_accounts[account_domain].subdomain | length > 0
+      - _certbot_acmedns_accounts[account_domain].fulldomain | length > 0
+      - >-
+        _certbot_acmedns_accounts[account_domain].keys() | list
+        | ansible.builtin.difference(['username', 'password', 'subdomain', 'fulldomain']) | length == 0
+    fail_msg: >-
+      each certbot_acmedns_accounts entry must contain username, password,
+      subdomain and fulldomain.
+    quiet: true
+  loop: "{{ _certbot_acmedns_accounts.keys() | list }}"
+  loop_control:
+    loop_var: account_domain
+    label: "{{ account_domain }}"
+
+- name: validate the acme-dns storage path
+  ansible.builtin.assert:
+    that:
+      - certbot_acmedns_storage_path is ansible.builtin.match('^/')
+    fail_msg: >-
+      certbot_acmedns_storage_path must be an absolute path.
+    quiet: true
+
+- name: ensure the acme-dns storage directory exists
+  ansible.builtin.file:
+    path: "{{ certbot_acmedns_storage_path | dirname }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: render the acme-dns account registry
+  no_log: true
+  ansible.builtin.copy:
+    content: >-
+      {{
+        {
+          'server_url': _certbot_acmedns_server_url,
+          'accounts': _certbot_acmedns_accounts
+        } | ansible.builtin.to_nice_json(indent=2)
+      }}
+    dest: "{{ certbot_acmedns_storage_path }}"
+    owner: root
+    group: root
+    mode: "0600"
+
+- name: ensure the acme-dns hook directory exists
+  ansible.builtin.file:
+    path: "{{ _certbot_config_dir }}/acmedns"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: render the acme-dns auth hook
+  ansible.builtin.template:
+    src: acmedns-auth.py.j2
+    dest: "{{ _certbot_acmedns_auth_hook }}"
+    owner: root
+    group: root
+    mode: "0755"

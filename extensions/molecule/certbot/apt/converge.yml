@@ -1,0 +1,33 @@
+---
+# certbot/apt scenario - obtain a certificate from the local Pebble server
+# using the apt package and the HTTP-01 standalone challenge.
+
+- name: obtain a certificate with the apt certbot package
+  hosts: all
+  gather_facts: true
+  vars:
+    certbot_install_source: apt
+    certbot_email: molecule@example.invalid
+    certbot_acme_server: https://localhost:14000/dir
+    certbot_no_verify_ssl: true
+    certbot_challenge: http-01
+    certbot_http01_method: standalone
+    certbot_http01_port: 5002
+    # Pebble requires EAB in this scenario; the key is configured in
+    # prepare.yml and the HMAC key is the base64url encoding of
+    # "molecule-eab-hmac-key-0123456789" (32 bytes, the HS256 minimum).
+    certbot_eab:
+      key_id: molecule-eab-kid
+      hmac_key: bW9sZWN1bGUtZWFiLWhtYWMta2V5LTAxMjM0NTY3ODk
+    certbot_deploy_hooks:
+      - "echo global >> /tmp/molecule-ak1ra-general-certbot-pebble/hooks.log"
+    certbot_certificates:
+      - name: molecule-certbot.test
+        domains:
+          - molecule-certbot.test
+        deploy_hooks:
+          - "echo per-cert >> /tmp/molecule-ak1ra-general-certbot-pebble/hooks.log"
+  tasks:
+    - name: include the certbot role
+      ansible.builtin.include_role:
+        name: ak1ra_lab.general.certbot

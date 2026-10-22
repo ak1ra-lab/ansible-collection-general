@@ -1,0 +1,191 @@
+---
+# certbot/apt scenario - assert the apt installation, the issued lineage,
+# the renewal configuration, the deploy hook and the systemd timer.
+
+- name: verify the certbot apt installation and issued certificate
+  hosts: all
+  gather_facts: false
+  vars:
+    _certbot_name: molecule-certbot.test
+    _certbot_live: /etc/letsencrypt/live/molecule-certbot.test
+  tasks:
+    - name: collect the certbot binary
+      ansible.builtin.stat:
+        path: /usr/bin/certbot
+      register: _certbot_verify_bin
+
+    - name: assert certbot is installed from apt
+      ansible.builtin.assert:
+        that:
+          - _certbot_verify_bin.stat.exists
+          - _certbot_verify_bin.stat.executable
+        fail_msg: "the apt certbot package did not install /usr/bin/certbot"
+        quiet: true
+
+    - name: collect the issued certificate files
+      ansible.builtin.stat:
+        path: "{{ _certbot_live }}/{{ item }}"
+      register: _certbot_verify_files
+      loop:
+        - cert.pem
+        - chain.pem
+        - fullchain.pem
+        - privkey.pem
+
+    - name: assert the lineage exists
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+        fail_msg: "{{ item.item }} is missing from {{ _certbot_live }}"
+        quiet: true
+      loop: "{{ _certbot_verify_files.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: read the certificate metadata
+      ansible.builtin.command:
+        argv:
+          - openssl
+          - x509
+          - -in
+          - "{{ _certbot_live }}/cert.pem"
+          - -noout
+          - -issuer
+          - -ext
+          - subjectAltName
+      changed_when: false
+      register: _certbot_verify_cert
+
+    - name: assert Pebble issued the certificate for the requested domain
+      ansible.builtin.assert:
+        that:
+          - "'DNS:molecule-certbot.test' in _certbot_verify_cert.stdout"
+          - "'Pebble' in _certbot_verify_cert.stdout"
+        fail_msg: >-
+          unexpected certificate:
+          {{ _certbot_verify_cert.stdout }}
+        quiet: true
+
+    - name: read the renewal configuration
+      ansible.builtin.slurp:
+        src: "/etc/letsencrypt/renewal/{{ _certbot_name }}.conf"
+      register: _certbot_verify_renewal
+
+    - name: assert the renewal configuration records the challenge and server
+      ansible.builtin.assert:
+        that:
+          - "'authenticator = standalone' in (_certbot_verify_renewal.content | b64decode)"
+          - "'server = https://localhost:14000/dir' in (_certbot_verify_renewal.content | b64decode)"
+        fail_msg: >-
+          unexpected renewal configuration:
+          {{ _certbot_verify_renewal.content | b64decode }}
+        quiet: true
+
+    - name: collect the deploy renewal hook
+      ansible.builtin.stat:
+        path: /etc/letsencrypt/renewal-hooks/deploy/certbot-deploy-hooks.sh
+      register: _certbot_verify_hook
+
+    - name: read the deploy renewal hook
+      ansible.builtin.slurp:
+        src: /etc/letsencrypt/renewal-hooks/deploy/certbot-deploy-hooks.sh
+      register: _certbot_verify_hook_content
+
+    - name: assert the deploy renewal hook dispatches by lineage
+      ansible.builtin.assert:
+        that:
+          - _certbot_verify_hook.stat.exists
+          - _certbot_verify_hook.stat.executable
+          - "'echo global' in (_certbot_verify_hook_content.content | b64decode)"
+          - "'echo per-cert' in (_certbot_verify_hook_content.content | b64decode)"
+          - "'/etc/letsencrypt/live/molecule-certbot.test' in (_certbot_verify_hook_content.content | b64decode)"
+          - "'RENEWED_LINEAGE' in (_certbot_verify_hook_content.content | b64decode)"
+        fail_msg: "the deploy renewal hook was not rendered correctly"
+        quiet: true
+
+    - name: clear the deploy hook log
+      ansible.builtin.file:
+        path: /tmp/molecule-ak1ra-general-certbot-pebble/hooks.log
+        state: absent
+
+    - name: run the deploy hook for the managed lineage
+      ansible.builtin.command:
+        argv: [/etc/letsencrypt/renewal-hooks/deploy/certbot-deploy-hooks.sh]
+      environment:
+        RENEWED_LINEAGE: /etc/letsencrypt/live/molecule-certbot.test
+      changed_when: false
+
+    - name: read the deploy hook log for the managed lineage
+      ansible.builtin.slurp:
+        src: /tmp/molecule-ak1ra-general-certbot-pebble/hooks.log
+      register: _certbot_verify_hook_log
+
+    - name: assert both global and per-cert hooks ran
+      ansible.builtin.assert:
+        that:
+          - "'global' in (_certbot_verify_hook_log.content | b64decode)"
+          - "'per-cert' in (_certbot_verify_hook_log.content | b64decode)"
+        fail_msg: "the global and per-certificate hooks did not both run"
+        quiet: true
+
+    - name: clear the deploy hook log again
+      ansible.builtin.file:
+        path: /tmp/molecule-ak1ra-general-certbot-pebble/hooks.log
+        state: absent
+
+    - name: run the deploy hook for an unrelated lineage
+      ansible.builtin.command:
+        argv: [/etc/letsencrypt/renewal-hooks/deploy/certbot-deploy-hooks.sh]
+      environment:
+        RENEWED_LINEAGE: /etc/letsencrypt/live/unrelated.test
+      changed_when: false
+
+    - name: read the deploy hook log for the unrelated lineage
+      ansible.builtin.slurp:
+        src: /tmp/molecule-ak1ra-general-certbot-pebble/hooks.log
+      register: _certbot_verify_hook_log_unrelated
+
+    - name: assert only the global hook ran for an unrelated lineage
+      ansible.builtin.assert:
+        that:
+          - "'global' in (_certbot_verify_hook_log_unrelated.content | b64decode)"
+          - "'per-cert' not in (_certbot_verify_hook_log_unrelated.content | b64decode)"
+        fail_msg: "the per-certificate hook ran for an unrelated lineage"
+        quiet: true
+
+    - name: read the certbot timer state
+      ansible.builtin.command:
+        argv: [systemctl, is-enabled, certbot.timer]
+      changed_when: false
+      register: _certbot_verify_timer
+
+    - name: read the certbot timer activity
+      ansible.builtin.command:
+        argv: [systemctl, is-active, certbot.timer]
+      changed_when: false
+      register: _certbot_verify_timer_active
+
+    - name: assert the renewal timer is enabled and active
+      ansible.builtin.assert:
+        that:
+          - _certbot_verify_timer.stdout == 'enabled'
+          - _certbot_verify_timer_active.stdout == 'active'
+        fail_msg: >-
+          certbot.timer is {{ _certbot_verify_timer.stdout }} /
+          {{ _certbot_verify_timer_active.stdout }}
+        quiet: true
+
+    - name: list the certificates known to certbot
+      ansible.builtin.command:
+        argv: [/usr/bin/certbot, certificates]
+      changed_when: false
+      register: _certbot_verify_list
+
+    - name: assert certbot lists the issued certificate
+      ansible.builtin.assert:
+        that:
+          - "'Certificate Name: molecule-certbot.test' in _certbot_verify_list.stdout"
+        fail_msg: >-
+          certbot does not list the certificate:
+          {{ _certbot_verify_list.stdout }}
+        quiet: true

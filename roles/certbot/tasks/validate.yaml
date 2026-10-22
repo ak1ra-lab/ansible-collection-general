@@ -1,0 +1,238 @@
+---
+- name: validate the install source
+  ansible.builtin.assert:
+    that:
+      - certbot_install_source in ['apt', 'pypi', 'none']
+      - _certbot_bin | length > 0
+    fail_msg: >-
+      certbot_install_source must be apt, pypi or none, and the certbot
+      executable must be resolvable (set certbot_bin when using none).
+    quiet: true
+
+- name: validate the apt install source runs on Debian
+  when: certbot_install_source == 'apt'
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['os_family'] | default('') == 'Debian'
+    fail_msg: >-
+      certbot_install_source=apt uses Debian package names; use pypi or none
+      on {{ ansible_facts['distribution'] | default('this platform') }}.
+    quiet: true
+
+- name: validate the ACME server settings
+  ansible.builtin.assert:
+    that:
+      - certbot_email is string
+      - certbot_acme_server is string
+      - not (certbot_staging | ansible.builtin.bool and certbot_acme_server | length > 0)
+      - certbot_challenge in ['dns-01', 'http-01']
+      - certbot_key_type in ['ecdsa', 'rsa']
+    fail_msg: >-
+      certbot_staging and certbot_acme_server are mutually exclusive, and
+      certbot_challenge/certbot_key_type must be supported values.
+    quiet: true
+
+- name: validate the external account binding settings
+  ansible.builtin.assert:
+    that:
+      - certbot_eab is mapping
+      - >-
+        certbot_eab is not mapping
+        or certbot_eab | length == 0
+        or (certbot_eab['key_id'] | default('', true) | trim | length > 0
+            and certbot_eab['hmac_key'] | default('', true) | trim | length > 0)
+      - >-
+        certbot_eab is not mapping
+        or certbot_eab | length == 0
+        or certbot_acme_server | length > 0
+      - >-
+        certbot_eab is not mapping
+        or certbot_eab | length == 0
+        or not (certbot_staging | ansible.builtin.bool)
+      - >-
+        certbot_eab is not mapping
+        or certbot_eab | length == 0
+        or (certbot_eab.keys() | list
+            | ansible.builtin.difference(['key_id', 'hmac_key']) | length == 0)
+      - >-
+        certbot_eab is not mapping
+        or certbot_eab | length == 0
+        or certbot_eab['hmac_key'] | default('', true) | trim | length >= 43
+    fail_msg: >-
+      certbot_eab must be a mapping with key_id and hmac_key (the
+      base64url-encoded key from the CA, at least 32 bytes / 43 characters for
+      HS256); it requires certbot_acme_server and cannot be combined with
+      certbot_staging.
+    quiet: true
+
+- name: validate the list and mapping inputs
+  ansible.builtin.assert:
+    that:
+      - certbot_certificates is sequence
+      - certbot_certificates is not string
+      - certbot_deploy_hooks is sequence
+      - certbot_deploy_hooks is not string
+      - certbot_deploy_hooks | select('string') | list | length == certbot_deploy_hooks | length
+      - >-
+        certbot_deploy_hooks | map('trim') | reject('equalto', '') | list | length
+        == certbot_deploy_hooks | length
+      - certbot_renew_args is sequence
+      - certbot_renew_args is not string
+      - certbot_renew_args | select('string') | list | length == certbot_renew_args | length
+      - certbot_dns_credentials is mapping
+      - certbot_cli_ini_extra is mapping
+      - certbot_eab is mapping
+      - certbot_acmedns_accounts is mapping
+      - certbot_acmedns_cloudflare_zones is mapping
+      - certbot_acmedns_server_url is string
+      - certbot_acmedns_storage_path is string
+    fail_msg: >-
+      certbot_certificates, certbot_deploy_hooks and certbot_renew_args must
+      be lists; certbot_dns_credentials, certbot_cli_ini_extra, certbot_eab,
+      certbot_acmedns_accounts and certbot_acmedns_cloudflare_zones must be
+      mappings; certbot_acmedns_server_url and certbot_acmedns_storage_path
+      must be strings.
+    quiet: true
+
+- name: validate the HTTP-01 settings
+  when: certbot_challenge == 'http-01'
+  ansible.builtin.assert:
+    that:
+      - certbot_http01_method in ['standalone', 'webroot']
+      - certbot_http01_port | int >= 1
+      - certbot_http01_port | int <= 65535
+      - >-
+        certbot_http01_method != 'webroot'
+        or (certbot_webroot_path | length > 0
+            and certbot_webroot_path is ansible.builtin.match('^/'))
+    fail_msg: >-
+      certbot_http01_method must be standalone or webroot;
+      certbot_http01_port must be a TCP port, and webroot requires an
+      absolute certbot_webroot_path.
+    quiet: true
+
+- name: check the HTTP-01 webroot
+  when:
+    - certbot_challenge == 'http-01'
+    - certbot_http01_method == 'webroot'
+    - certbot_certificates | length > 0
+  ansible.builtin.stat:
+    path: "{{ certbot_webroot_path }}"
+  register: _certbot_webroot
+
+- name: validate the HTTP-01 webroot
+  when:
+    - certbot_challenge == 'http-01'
+    - certbot_http01_method == 'webroot'
+    - certbot_certificates | length > 0
+  ansible.builtin.assert:
+    that:
+      - _certbot_webroot.stat.isdir | default(false)
+    fail_msg: >-
+      certbot_http01_method=webroot needs an existing directory at
+      {{ certbot_webroot_path }}, and the web server must serve
+      /.well-known/acme-challenge/ from it.  The DNS A/AAAA records for every
+      requested name must also point at this host; the role does not verify
+      DNS because split-horizon and proxied zones make that check unreliable.
+    quiet: true
+
+- name: validate the DNS-01 settings when certificates are requested
+  when:
+    - certbot_certificates | length > 0
+    - certbot_challenge == 'dns-01'
+  ansible.builtin.assert:
+    that:
+      - certbot_dns_provider | length > 0
+      - >-
+        certbot_dns_provider != 'cloudflare'
+        or (certbot_dns_credentials['dns_cloudflare_api_token'] | default('') | length > 0)
+    fail_msg: >-
+      DNS-01 requires certbot_dns_provider, and the Cloudflare plugin requires
+      certbot_dns_credentials with dns_cloudflare_api_token.
+    quiet: true
+
+- name: validate the certificate definitions
+  when: certbot_certificates | length > 0
+  ansible.builtin.assert:
+    that:
+      - certbot_email | length > 0
+      - cert.domains is defined
+      - cert.domains is sequence
+      - cert.domains is not string
+      - cert.domains | length > 0
+      - cert.domains | select('string') | list | length == cert.domains | length
+      - >-
+        cert.domains | map('trim') | reject('equalto', '') | list | length
+        == cert.domains | length
+      - cert.name is not defined or cert.name is string
+      - cert.name is not defined or cert.name | trim | length > 0
+      - "'/' not in (cert.name | default('', true))"
+      - >-
+        cert.extra_args is not defined
+        or (cert.extra_args is sequence and cert.extra_args is not string)
+      - >-
+        cert.extra_args is not defined
+        or (cert.extra_args | select('string') | list | length
+            == cert.extra_args | length)
+      - >-
+        cert.keys() | list
+        | ansible.builtin.difference(['name', 'domains', 'force', 'deploy_hooks', 'extra_args'])
+        | length == 0
+    fail_msg: >-
+      certbot_certificates entries need domains (a list of DNS names), a
+      contact email (certbot_email), a name without path separators, and only
+      the supported keys; extra_args and deploy_hooks must be lists of strings.
+    quiet: true
+  loop: "{{ certbot_certificates }}"
+  loop_control:
+    loop_var: cert
+    label: "{{ cert.name | default(cert.domains | default([]) | first | default(''), true) }}"
+
+- name: validate the per-certificate deploy hooks
+  when:
+    - certbot_certificates | length > 0
+    - cert.deploy_hooks is defined
+  ansible.builtin.assert:
+    that:
+      - cert.deploy_hooks is sequence
+      - cert.deploy_hooks is not string
+      - cert.deploy_hooks | select('string') | list | length == cert.deploy_hooks | length
+      - >-
+        cert.deploy_hooks | map('trim') | reject('equalto', '') | list | length
+        == cert.deploy_hooks | length
+    fail_msg: >-
+      certbot_certificates[].deploy_hooks must be a list of shell command
+      strings.
+    quiet: true
+  loop: "{{ certbot_certificates }}"
+  loop_control:
+    loop_var: cert
+    label: "{{ cert.name | default(cert.domains | default([]) | first | default(''), true) }}"
+
+- name: collect the effective certificate names
+  ansible.builtin.set_fact:
+    _certbot_cert_names: []
+  when: certbot_certificates | length > 0
+
+- name: collect the effective certificate names
+  ansible.builtin.set_fact:
+    _certbot_cert_names: >-
+      {{ _certbot_cert_names
+         + [cert.name | default(cert.domains[0] | ansible.builtin.regex_replace('^\\*\\.', ''), true)] }}
+  loop: "{{ certbot_certificates }}"
+  loop_control:
+    loop_var: cert
+    label: "{{ cert.domains[0] }}"
+
+- name: validate the effective certificate names
+  when: certbot_certificates | length > 0
+  ansible.builtin.assert:
+    that:
+      - >-
+        _certbot_cert_names | select('string') | list | length
+        == _certbot_cert_names | length
+      - _certbot_cert_names | ansible.builtin.unique | length == _certbot_cert_names | length
+    fail_msg: >-
+      every certificate must resolve to a unique lineage name; set `name`
+      explicitly when two certificates share their first domain.
+    quiet: true

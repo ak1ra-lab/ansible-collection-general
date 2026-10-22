@@ -1,0 +1,8 @@
+---
+# certbot/pypi scenario - install certbot and certbot-dns-cloudflare from
+# PyPI into the role's virtualenv and render the credentials, deploy hook,
+# cli.ini, logrotate configuration and systemd units.  No certificate is
+# requested: issuance is covered by certbot/apt against Pebble.
+#
+# The scenario inherits the shared test sequence from
+# extensions/molecule/config.yml.

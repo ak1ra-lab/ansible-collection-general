@@ -1,0 +1,33 @@
+---
+# certbot/pypi scenario - stop the timer and remove the virtualenv, the
+# certificate state and the role-managed configuration files.
+
+- name: tear down the certbot PyPI fixtures
+  hosts: all
+  gather_facts: false
+  ignore_unreachable: true
+  tasks:
+    - name: disable the certbot timer
+      ansible.builtin.command:
+        argv: [systemctl, disable, --now, certbot.timer]
+      changed_when: false
+      failed_when: false
+
+    - name: remove the certbot state and managed files
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/letsencrypt
+        - /var/lib/certbot
+        - /var/lib/letsencrypt
+        - /var/log/letsencrypt
+        - /etc/logrotate.d/certbot
+        - /etc/systemd/system/certbot.service
+        - /etc/systemd/system/certbot.timer
+        - /etc/systemd/system/timers.target.wants/certbot.timer
+
+    - name: reload the systemd manager configuration
+      ansible.builtin.command:
+        argv: [systemctl, daemon-reload]
+      changed_when: false

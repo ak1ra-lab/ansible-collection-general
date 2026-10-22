@@ -1,0 +1,43 @@
+---
+# certbot/pypi scenario - assert the teardown removed the virtualenv, the
+# certificate state and the role-managed configuration files.
+
+- name: verify the certbot PyPI teardown
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: collect the teardown paths
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: _certbot_absent_paths
+      loop:
+        - /var/lib/certbot
+        - /etc/letsencrypt
+        - /var/log/letsencrypt
+        - /etc/systemd/system/certbot.service
+        - /etc/systemd/system/certbot.timer
+        - /etc/logrotate.d/certbot
+
+    - name: assert the certbot state is gone
+      ansible.builtin.assert:
+        that:
+          - not item.stat.exists
+        fail_msg: "{{ item.item }} must be gone after cleanup"
+        quiet: true
+      loop: "{{ _certbot_absent_paths.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: query the certbot timer state
+      ansible.builtin.command:
+        argv: [systemctl, is-enabled, certbot.timer]
+      changed_when: false
+      failed_when: false
+      register: _certbot_absent_timer
+
+    - name: assert the certbot timer is gone
+      ansible.builtin.assert:
+        that:
+          - _certbot_absent_timer.rc != 0
+        fail_msg: "certbot.timer must not remain enabled"
+        quiet: true

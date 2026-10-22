@@ -1,0 +1,109 @@
+#!/usr/bin/env python3
+"""Update the acme-dns TXT record for a certbot DNS-01 challenge.
+
+Managed by ak1ra_lab.general.certbot - do not edit.
+
+The role stores one acme-dns account per validation domain, keyed by the
+domain with any leading "*." removed.  Certbot exports CERTBOT_DOMAIN and
+CERTBOT_VALIDATION to this hook; example.com and *.example.com therefore use
+the same account, while www.example.com uses its own account.
+"""
+
+import json
+import os
+import sys
+import urllib.error
+import urllib.request
+
+STORAGE_PATH = "{{ certbot_acmedns_storage_path }}"
+TIMEOUT_SECONDS = 30
+
+
+def fail(message):
+    print(f"acmedns-auth: {message}", file=sys.stderr)
+    sys.exit(1)
+
+
+def load_storage(path):
+    try:
+        with open(path, encoding="utf-8") as handle:
+            storage = json.load(handle)
+    except FileNotFoundError:
+        fail(f"storage file {path} does not exist")
+    except OSError as exc:
+        fail(f"cannot read {path}: {exc}")
+    except json.JSONDecodeError as exc:
+        fail(f"storage file {path} is not valid JSON: {exc}")
+
+    if not isinstance(storage, dict):
+        fail(f"storage file {path} must contain a JSON object")
+    if not isinstance(storage.get("accounts"), dict):
+        fail(f"storage file {path} is missing the accounts mapping")
+    return storage
+
+
+def account_for(storage, domain):
+    accounts = storage["accounts"]
+    account = accounts.get(domain)
+    if account is None:
+        registered = ", ".join(sorted(accounts)) or "(none)"
+        fail(
+            f"no acme-dns account for {domain}; registered domains: {registered}. "
+            "Run the certbot role with certbot_acmedns_register=true."
+        )
+    if not isinstance(account, dict):
+        fail(f"the acme-dns account for {domain} must be a JSON object")
+
+    for key in ("username", "password", "subdomain", "fulldomain"):
+        value = account.get(key)
+        if not isinstance(value, str) or not value:
+            fail(f"the acme-dns account for {domain} is missing a non-empty {key}")
+    return account
+
+
+def main():
+    validation = os.environ.get("CERTBOT_VALIDATION", "")
+    if not validation:
+        fail("CERTBOT_VALIDATION is not set")
+
+    domain = os.environ.get("CERTBOT_DOMAIN", "")
+    if not domain:
+        fail("CERTBOT_DOMAIN is not set")
+    if domain.startswith("*."):
+        domain = domain[2:]
+    domain = domain.lower()
+
+    storage = load_storage(STORAGE_PATH)
+    account = account_for(storage, domain)
+    server_url = (account.get("server_url") or storage.get("server_url") or "").rstrip("/")
+    if not server_url:
+        fail(f"no acme-dns server URL configured for {domain}")
+
+    payload = json.dumps(
+        {"subdomain": account["subdomain"], "txt": validation}
+    ).encode()
+    request = urllib.request.Request(
+        f"{server_url}/update",
+        data=payload,
+        method="POST",
+        headers={
+            "Content-Type": "application/json",
+            "X-Api-User": account["username"],
+            "X-Api-Key": account["password"],
+        },
+    )
+
+    try:
+        with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as response:
+            if response.status != 200:
+                fail(f"update for {domain} failed with HTTP {response.status}")
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode(errors="replace")
+        fail(f"update for {domain} failed with HTTP {exc.code}: {detail}")
+    except (urllib.error.URLError, TimeoutError) as exc:
+        reason = getattr(exc, "reason", exc)
+        fail(f"cannot reach {server_url} for {domain}: {reason}")
+
+
+if __name__ == "__main__":
+    main()

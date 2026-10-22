@@ -1,0 +1,7 @@
+# Managed by ak1ra_lab.general.certbot - do not edit.
+#
+# logrotate owns rotation; disable certbot's internal log rotation.
+max-log-backups = 0
+{% for key, value in _certbot_cli_ini_effective.items() %}
+{{ key }} = {{ value }}
+{% endfor %}

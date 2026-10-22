@@ -1,0 +1,18 @@
+---
+# certbot/pypi scenario - install certbot and the Cloudflare plugin from
+# PyPI and render the role-managed configuration files.
+
+- name: install certbot from PyPI
+  hosts: all
+  gather_facts: true
+  vars:
+    certbot_install_source: pypi
+    certbot_dns_provider: cloudflare
+    certbot_dns_credentials:
+      dns_cloudflare_api_token: molecule-cloudflare-token
+    certbot_deploy_hooks:
+      - systemctl reload nginx
+  tasks:
+    - name: include the certbot role
+      ansible.builtin.include_role:
+        name: ak1ra_lab.general.certbot

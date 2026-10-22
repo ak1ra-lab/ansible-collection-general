@@ -1,0 +1,24 @@
+#!/bin/sh
+# Managed by ak1ra_lab.general.certbot - do not edit.
+#
+# Certbot runs this script after a successful renewal (renewal-hooks/deploy).
+# Global hooks run for every renewed lineage; per-certificate hooks run only
+# when RENEWED_LINEAGE matches that certificate's live directory.
+set -u
+_certbot_hook_failed=0
+{% for hook in certbot_deploy_hooks %}
+(
+{{ hook }}
+) || _certbot_hook_failed=1
+{% endfor %}
+{% for cert in certbot_certificates if cert.deploy_hooks | default([]) | length > 0 %}
+{% set cert_name = cert.name | default(cert.domains[0] | ansible.builtin.regex_replace('^\*\.', ''), true) %}
+if [ "${RENEWED_LINEAGE:-}" = {{ (_certbot_config_dir ~ '/live/' ~ cert_name) | ansible.builtin.quote }} ]; then
+{% for hook in cert.deploy_hooks %}
+  (
+{{ hook }}
+  ) || _certbot_hook_failed=1
+{% endfor %}
+fi
+{% endfor %}
+exit "$_certbot_hook_failed"

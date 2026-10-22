@@ -1,0 +1,7 @@
+---
+# certbot/apt scenario - install certbot from apt, obtain a certificate from
+# the local Pebble ACME server via HTTP-01/standalone with EAB, and verify the
+# renewal configuration, per-lineage deploy hook dispatch and systemd timer.
+#
+# The scenario inherits the shared test sequence from
+# extensions/molecule/config.yml.

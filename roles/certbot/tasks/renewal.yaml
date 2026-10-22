@@ -1,0 +1,42 @@
+---
+- name: ensure the renewal hook directory exists
+  when: _certbot_deploy_hooks_used | ansible.builtin.bool
+  ansible.builtin.file:
+    path: "{{ _certbot_config_dir }}/renewal-hooks/deploy"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: render the deploy renewal hook
+  when: _certbot_deploy_hooks_used | ansible.builtin.bool
+  ansible.builtin.template:
+    src: deploy-hooks.sh.j2
+    dest: "{{ _certbot_default_deploy_hook }}"
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: remove the deploy renewal hook when no hooks are configured
+  when: not (_certbot_deploy_hooks_used | ansible.builtin.bool)
+  ansible.builtin.file:
+    path: "{{ _certbot_default_deploy_hook }}"
+    state: absent
+
+- name: render cli.ini
+  when: certbot_manage_cli_ini | ansible.builtin.bool
+  ansible.builtin.template:
+    src: cli.ini.j2
+    dest: "{{ certbot_config_dir }}/cli.ini"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: render the logrotate configuration
+  when: certbot_manage_logrotate | ansible.builtin.bool
+  ansible.builtin.template:
+    src: logrotate.j2
+    dest: /etc/logrotate.d/certbot
+    owner: root
+    group: root
+    mode: "0644"

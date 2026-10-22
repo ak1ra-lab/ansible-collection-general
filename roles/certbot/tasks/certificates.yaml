@@ -1,0 +1,48 @@
+---
+- name: obtain the requested certificates
+  when: certbot_certificates | length > 0
+  block:
+    - name: build the certificate key arguments
+      ansible.builtin.set_fact:
+        _certbot_key_args: >-
+          {{ ['--key-type', certbot_key_type]
+             + (['--rsa-key-size', certbot_rsa_key_size | string]
+                if certbot_key_type == 'rsa'
+                else ['--elliptic-curve', certbot_elliptic_curve]) }}
+
+    - name: build the DNS-01 challenge arguments
+      when: certbot_challenge == 'dns-01'
+      ansible.builtin.set_fact:
+        _certbot_challenge_args: >-
+          {{ (['--manual', '--preferred-challenges', 'dns',
+               '--manual-auth-hook', _certbot_acmedns_auth_hook]
+              if certbot_dns_provider == 'acmedns'
+              else (['--dns-' ~ certbot_dns_provider,
+                     '--dns-' ~ certbot_dns_provider ~ '-propagation-seconds=' ~ (certbot_dns_propagation_seconds | string)]
+                    + (['--dns-' ~ certbot_dns_provider ~ '-credentials=' ~ certbot_dns_credentials_file]
+                       if certbot_dns_credentials | length > 0 else []))) }}
+
+    - name: build the standalone HTTP-01 arguments
+      when:
+        - certbot_challenge == 'http-01'
+        - certbot_http01_method == 'standalone'
+      ansible.builtin.set_fact:
+        _certbot_challenge_args: >-
+          {{ ['--standalone']
+             + (['--http-01-port', certbot_http01_port | string]
+                if certbot_http01_port | int != 80 else []) }}
+
+    - name: build the webroot HTTP-01 arguments
+      when:
+        - certbot_challenge == 'http-01'
+        - certbot_http01_method == 'webroot'
+      ansible.builtin.set_fact:
+        _certbot_challenge_args: >-
+          {{ ['--webroot', '--webroot-path', certbot_webroot_path] }}
+
+    - name: obtain each certificate
+      ansible.builtin.include_tasks: certificate.yaml
+      loop: "{{ certbot_certificates }}"
+      loop_control:
+        loop_var: cert
+        label: "{{ cert.name | default(cert.domains | default([]) | first | default(''), true) }}"

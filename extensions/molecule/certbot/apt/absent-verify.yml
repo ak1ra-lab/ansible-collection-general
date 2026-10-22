@@ -1,0 +1,55 @@
+---
+# certbot/apt scenario - assert the teardown removed the packages, the
+# certificate state and the Pebble fixtures.
+
+- name: verify the certbot apt teardown
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: collect the teardown paths
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: _certbot_absent_paths
+      loop:
+        - /usr/bin/certbot
+        - /etc/letsencrypt
+        - /var/log/letsencrypt
+        - /tmp/molecule-ak1ra-general-certbot-pebble
+
+    - name: assert the certbot state is gone
+      ansible.builtin.assert:
+        that:
+          - not item.stat.exists
+        fail_msg: "{{ item.item }} must be gone after cleanup"
+        quiet: true
+      loop: "{{ _certbot_absent_paths.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: query the certbot package state
+      ansible.builtin.command:
+        argv: [dpkg-query, -W, "-f=${Status}", certbot]
+      changed_when: false
+      failed_when: false
+      register: _certbot_absent_package
+
+    - name: assert the certbot package is gone
+      ansible.builtin.assert:
+        that:
+          - _certbot_absent_package.rc != 0
+        fail_msg: "the certbot package must be purged"
+        quiet: true
+
+    - name: query the certbot timer state
+      ansible.builtin.command:
+        argv: [systemctl, is-enabled, certbot.timer]
+      changed_when: false
+      failed_when: false
+      register: _certbot_absent_timer
+
+    - name: assert the certbot timer is gone
+      ansible.builtin.assert:
+        that:
+          - _certbot_absent_timer.rc != 0
+        fail_msg: "certbot.timer must not remain enabled"
+        quiet: true

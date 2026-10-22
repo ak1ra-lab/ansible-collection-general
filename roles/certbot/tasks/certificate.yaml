@@ -1,0 +1,101 @@
+---
+- name: derive the certificate lineage name
+  ansible.builtin.set_fact:
+    _certbot_cert_name: >-
+      {{ cert.name | default(cert.domains[0] | ansible.builtin.regex_replace('^\*\.', ''), true) }}
+
+- name: collect the certificate state
+  ansible.builtin.stat:
+    path: "{{ certbot_config_dir }}/live/{{ _certbot_cert_name }}/cert.pem"
+  register: _certbot_cert_stat
+
+- name: initialize the certificate drift state
+  ansible.builtin.set_fact:
+    _certbot_cert_domains_changed: false
+
+- name: inspect the existing certificate domains
+  when: _certbot_cert_stat.stat.exists
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - x509
+      - -in
+      - "{{ certbot_config_dir }}/live/{{ _certbot_cert_name }}/cert.pem"
+      - -noout
+      - -ext
+      - subjectAltName
+  changed_when: false
+  failed_when: false
+  register: _certbot_cert_sans
+
+- name: compare the existing and requested domains
+  when: _certbot_cert_stat.stat.exists
+  ansible.builtin.set_fact:
+    _certbot_cert_domains_changed: >-
+      {{ (_certbot_cert_sans.stdout
+          | ansible.builtin.regex_findall('DNS:([^,\s]+)')
+          | map('lower') | sort)
+         != (cert.domains | map('lower') | sort) }}
+
+- name: determine whether the certificate must be issued
+  ansible.builtin.set_fact:
+    _certbot_cert_force: >-
+      {{ (cert.force | default(false) | ansible.builtin.bool)
+         or (_certbot_cert_domains_changed | ansible.builtin.bool) }}
+    _certbot_cert_needs_issue: >-
+      {{ (not _certbot_cert_stat.stat.exists)
+         or (cert.force | default(false) | ansible.builtin.bool)
+         or (_certbot_cert_domains_changed | ansible.builtin.bool) }}
+
+- name: build the certbot arguments
+  ansible.builtin.set_fact:
+    # --cert-name with the complete domain list updates an existing lineage,
+    # including adding or removing SANs.  This is certbot's recommended
+    # replacement for --expand, which cannot remove names.
+    _certbot_cert_args: >-
+      {{ [_certbot_bin, 'certonly', '--non-interactive', '--agree-tos',
+          '--email', certbot_email, '--cert-name', _certbot_cert_name,
+          '--domains', cert.domains | join(',')]
+         + _certbot_base_args
+         + _certbot_key_args
+         + (['--test-cert'] if certbot_staging | ansible.builtin.bool else [])
+         + (['--server', certbot_acme_server] if certbot_acme_server | length > 0 else [])
+         + (['--eab-kid', certbot_eab.key_id | trim,
+             '--eab-hmac-key', certbot_eab.hmac_key | trim]
+            if certbot_eab | length > 0 else [])
+         + (['--no-verify-ssl'] if certbot_no_verify_ssl | ansible.builtin.bool else [])
+         + _certbot_challenge_args
+         + (['--force-renewal'] if _certbot_cert_force | ansible.builtin.bool else [])
+         + (cert.extra_args | default([]) | list) }}
+
+- name: obtain the certificate
+  when: _certbot_cert_needs_issue | ansible.builtin.bool
+  ansible.builtin.command:
+    argv: "{{ _certbot_cert_args }}"
+  changed_when: true
+
+- name: report the issued certificate
+  when: _certbot_cert_needs_issue | ansible.builtin.bool
+  ansible.builtin.debug:
+    msg: >-
+      certificate {{ _certbot_cert_name }} obtained at
+      {{ certbot_config_dir }}/live/{{ _certbot_cert_name }}/fullchain.pem
+
+# ansible.builtin.command is synchronous: certbot has exited and written the
+# lineage before this task runs, so no retry loop is needed here.
+- name: verify the certificate exists
+  when: _certbot_cert_needs_issue | ansible.builtin.bool
+  ansible.builtin.stat:
+    path: "{{ certbot_config_dir }}/live/{{ _certbot_cert_name }}/cert.pem"
+  register: _certbot_cert_after
+
+- name: validate the issued certificate
+  when: _certbot_cert_needs_issue | ansible.builtin.bool
+  ansible.builtin.assert:
+    that:
+      - _certbot_cert_after.stat.exists
+    fail_msg: >-
+      certbot reported success but
+      {{ certbot_config_dir }}/live/{{ _certbot_cert_name }}/cert.pem
+      does not exist; check the certificate name and the certbot output.
+    quiet: true

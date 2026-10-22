@@ -1,0 +1,53 @@
+---
+- name: install certbot and the DNS plugin from apt
+  when: certbot_install_source == 'apt'
+  ansible.builtin.apt:
+    name: "{{ _certbot_apt_packages }}"
+    state: "{{ certbot_package_state }}"
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: check for a distribution certbot binary
+  when: certbot_install_source == 'pypi'
+  ansible.builtin.stat:
+    path: /usr/bin/certbot
+  register: _certbot_distribution_bin
+
+- name: warn about a leftover distribution certbot
+  when:
+    - certbot_install_source == 'pypi'
+    - _certbot_distribution_bin.stat.exists
+  ansible.builtin.debug:
+    msg: >-
+      /usr/bin/certbot from the distribution package is still installed.
+      The role uses {{ _certbot_bin }} and its own systemd unit, but
+      `certbot` on PATH remains the distribution binary.
+
+- name: install certbot and the DNS plugin from PyPI
+  when: certbot_install_source == 'pypi'
+  ansible.builtin.include_role:
+    name: ak1ra_lab.general.pyproject_install
+  vars:
+    pyproject_install_source: pypi
+    pyproject_install_package_name: >-
+      {{ _certbot_package }}{{ ('==' ~ certbot_pypi_version) if certbot_pypi_version | length > 0 else '' }}
+    pyproject_install_venv_dir: "{{ certbot_venv_dir }}"
+  loop: "{{ _certbot_pypi_packages }}"
+  loop_control:
+    loop_var: _certbot_package
+    label: "{{ _certbot_package }}"
+
+- name: check the certbot executable
+  ansible.builtin.stat:
+    path: "{{ _certbot_bin }}"
+  register: _certbot_bin_stat
+
+- name: validate the certbot executable
+  ansible.builtin.assert:
+    that:
+      - _certbot_bin_stat.stat.exists
+      - _certbot_bin_stat.stat.executable
+    fail_msg: >-
+      certbot is not executable at {{ _certbot_bin }}; check
+      certbot_install_source and certbot_bin.
+    quiet: true

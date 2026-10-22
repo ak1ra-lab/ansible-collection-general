@@ -1,0 +1,52 @@
+---
+# certbot/apt scenario - stop Pebble, remove the certbot state and purge the
+# test packages.  Tolerates a fresh host and an unreachable container.
+
+- name: tear down the certbot apt fixtures
+  hosts: all
+  gather_facts: false
+  ignore_unreachable: true
+  tasks:
+    - name: stop the Pebble processes
+      ansible.builtin.command:
+        argv: [pkill, -x, "{{ item }}"]
+      changed_when: false
+      failed_when: false
+      loop:
+        - pebble
+        - pebble-challtestsrv
+
+    - name: disable the certbot timer
+      ansible.builtin.command:
+        argv: [systemctl, disable, --now, certbot.timer]
+      changed_when: false
+      failed_when: false
+
+    - name: remove the certbot state and Pebble fixtures
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/letsencrypt
+        - /var/lib/letsencrypt
+        - /var/log/letsencrypt
+        - /etc/logrotate.d/certbot
+        - /etc/systemd/system/certbot.service
+        - /etc/systemd/system/certbot.timer
+        - /etc/systemd/system/timers.target.wants/certbot.timer
+        - /tmp/molecule-ak1ra-general-certbot-pebble
+
+    - name: purge the certbot and Pebble packages
+      ansible.builtin.apt:
+        name:
+          - certbot
+          - python3-certbot
+          - python3-certbot-dns-cloudflare
+          - pebble
+        state: absent
+        purge: true
+
+    - name: reload the systemd manager configuration
+      ansible.builtin.command:
+        argv: [systemctl, daemon-reload]
+      changed_when: false

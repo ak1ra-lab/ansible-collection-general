@@ -1,0 +1,18 @@
+---
+# certbot/acmedns scenario - render the acme-dns credentials and auth hook.
+# certbot itself is not used, so no ACME account or certificate is needed.
+
+- name: render the acme-dns credentials and auth hook
+  hosts: all
+  gather_facts: true
+  vars:
+    certbot_install_source: none
+    certbot_bin: /bin/true
+    certbot_dns_provider: acmedns
+    # No explicit accounts: the role must load the persisted registry written
+    # by acme_dns_register (seeded by prepare.yml on the controller).
+    certbot_acmedns_credentials_dir: /tmp/molecule-ak1ra-general-certbot-acmedns/controller
+  tasks:
+    - name: include the certbot role
+      ansible.builtin.include_role:
+        name: ak1ra_lab.general.certbot

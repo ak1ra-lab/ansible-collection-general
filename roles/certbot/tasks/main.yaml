@@ -1,0 +1,18 @@
+---
+- name: validate the role inputs
+  ansible.builtin.import_tasks: validate.yaml
+
+- name: install certbot
+  ansible.builtin.import_tasks: install.yaml
+
+- name: configure DNS credentials
+  ansible.builtin.import_tasks: dns_credentials.yaml
+
+- name: configure renewal hooks and log rotation
+  ansible.builtin.import_tasks: renewal.yaml
+
+- name: obtain certificates
+  ansible.builtin.import_tasks: certificates.yaml
+
+- name: configure the renewal timer
+  ansible.builtin.import_tasks: service.yaml
