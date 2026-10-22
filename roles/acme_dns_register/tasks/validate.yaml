@@ -1,45 +1,81 @@
 ---
-# Validate acme_dns_register inputs before performing any network operations.
-
-- name: validate acmedns server URL
+- name: validate the acme-dns server and collection types
   ansible.builtin.assert:
     that:
-      - acme_dns_register_server_url | length > 0
-      - acme_dns_register_server_url is ansible.builtin.match("^https?://")
+      - acme_dns_register_server_url is string
+      - acme_dns_register_accounts is mapping
+      - acme_dns_register_acme_domains is sequence
+      - acme_dns_register_acme_domains is not string
+      - acme_dns_register_cloudflare_zones is mapping
+      - >-
+        acme_dns_register_acme_domains | length == 0
+        and acme_dns_register_accounts | length == 0
+        or acme_dns_register_server_url is ansible.builtin.match('^https?://')
     fail_msg: >-
-      acme_dns_register_server_url must be a valid HTTP/HTTPS URL.
-      Got: '{{ acme_dns_register_server_url }}'.
+      acme_dns_register_server_url must be an HTTP/HTTPS URL when accounts or
+      domains are present; acme_dns_register_accounts and
+      acme_dns_register_cloudflare_zones must be mappings, and
+      acme_dns_register_acme_domains must be a list.
     quiet: true
 
-- name: validate pre-configured credentials are complete
-  when: >-
-    acme_dns_register_username | length > 0
-    or acme_dns_register_password | length > 0
-    or acme_dns_register_subdomain | length > 0
+- name: validate the ACME domains
+  when: acme_dns_register_acme_domains | length > 0
   ansible.builtin.assert:
     that:
-      - acme_dns_register_username | length > 0
-      - acme_dns_register_password | length > 0
-      - acme_dns_register_subdomain | length > 0
+      - acme_dns_register_acme_domains | select('string') | list | length == acme_dns_register_acme_domains | length
+      - >-
+        acme_dns_register_acme_domains | map('trim') | reject('equalto', '') | list | length
+        == acme_dns_register_acme_domains | length
     fail_msg: >-
-      When any acme-dns credential is set, all three must be provided:
-      acme_dns_register_username, acme_dns_register_password,
-      acme_dns_register_subdomain.
+      acme_dns_register_acme_domains must be a list of non-empty domain names.
     quiet: true
 
-- name: validate Cloudflare zone is derivable for CNAME integration
-  when:
-    - acme_dns_register_username | length == 0
-    - >-
-      acme_dns_register_cloudflare_api_token | length > 0
-      or acme_dns_register_cloudflare_zone_token | length > 0
-    - acme_dns_register_cloudflare_zone | length == 0
+- name: validate the configured acme-dns accounts
+  when: acme_dns_register_accounts | length > 0
   ansible.builtin.assert:
     that:
-      - acme_dns_register_hostname.split('.') | length >= 2
+      - account_domain is string
+      - account_domain | trim | length > 0
+      - account_domain == account_domain | lower
+      - account_domain is not ansible.builtin.match('^\*\.')
+      - acme_dns_register_accounts[account_domain] is mapping
+      - acme_dns_register_accounts[account_domain].username is defined
+      - acme_dns_register_accounts[account_domain].username is string
+      - acme_dns_register_accounts[account_domain].password is defined
+      - acme_dns_register_accounts[account_domain].password is string
+      - acme_dns_register_accounts[account_domain].subdomain is defined
+      - acme_dns_register_accounts[account_domain].subdomain is string
+      - acme_dns_register_accounts[account_domain].fulldomain is defined
+      - acme_dns_register_accounts[account_domain].fulldomain is string
+      - acme_dns_register_accounts[account_domain].username | length > 0
+      - acme_dns_register_accounts[account_domain].password | length > 0
+      - acme_dns_register_accounts[account_domain].subdomain | length > 0
+      - acme_dns_register_accounts[account_domain].fulldomain | length > 0
+      - >-
+        acme_dns_register_accounts[account_domain].keys() | list
+        | ansible.builtin.difference(['username', 'password', 'subdomain', 'fulldomain']) | length == 0
     fail_msg: >-
-      Cannot auto-derive the Cloudflare zone from
-      acme_dns_register_hostname='{{ acme_dns_register_hostname }}'.
-      Please set acme_dns_register_cloudflare_zone explicitly
-      (e.g. "example.com").
+      each acme_dns_register_accounts entry must be keyed by a validation
+      domain (without "*.") and contain username, password, subdomain and
+      fulldomain.
     quiet: true
+  loop: "{{ acme_dns_register_accounts.keys() | list }}"
+  loop_control:
+    loop_var: account_domain
+    label: "{{ account_domain }}"
+
+- name: validate the Cloudflare zone overrides
+  when: acme_dns_register_cloudflare_zones | length > 0
+  ansible.builtin.assert:
+    that:
+      - item.key is string
+      - item.key | trim | length > 0
+      - item.value is string
+      - item.value | trim | length > 0
+    fail_msg: >-
+      acme_dns_register_cloudflare_zones must map validation domains to
+      non-empty Cloudflare zone names.
+    quiet: true
+  loop: "{{ acme_dns_register_cloudflare_zones | ansible.builtin.dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"

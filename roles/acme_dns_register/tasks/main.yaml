@@ -1,56 +1,53 @@
 ---
 # acme_dns_register role
 #
-# Registers with an acme-dns server (POST /register) and persists the resulting
-# credentials to a host_vars directory.
+# Registers one acme-dns account per validation domain, persists the
+# domain -> account registry to a host_vars directory, and ensures the
+# required _acme-challenge CNAME records.
 #
-# If the credentials are already present in host_vars the registration step is
-# skipped (idempotent).
+# A validation domain is the ACME identifier with any leading "*." removed:
+# example.com and *.example.com share one account, while www.example.com gets
+# its own account.
 #
-# When a Cloudflare API token and the acme-dns fulldomain are available, the
-# required _acme-challenge CNAME record(s) are reconciled on every run
-# (idempotent).  For all other DNS providers the role pauses and prompts the
-# operator to add the record(s) manually after a fresh registration.
-#
-# All tasks run on the Ansible controller (delegate_to: localhost).
+# Registration runs on the managed host; the registry write and CNAME tasks
+# are delegated to the Ansible controller (delegate_to: localhost).
 #
 # Public interface (pass via `vars:` on import_role):
 #   acme_dns_register_server_url             - acme-dns server URL (required)
-#   acme_dns_register_username               - existing username (omit to register)
-#   acme_dns_register_password               - existing password
-#   acme_dns_register_subdomain              - existing subdomain
-#   acme_dns_register_fulldomain             - existing fulldomain (optional)
+#   acme_dns_register_accounts               - existing domain -> account mapping
+#   acme_dns_register_acme_domains           - ACME identifiers needing accounts
 #   acme_dns_register_cloudflare_api_token   - CF account token (optional)
 #   acme_dns_register_cloudflare_zone_token  - CF zone token (optional, preferred)
-#   acme_dns_register_cloudflare_zone        - explicit CF zone (optional)
-#   acme_dns_register_hostname               - host FQDN (default: inventory_hostname)
-#   acme_dns_register_acme_domains           - list of ACME domains for CNAME records
-#   acme_dns_register_credentials_dir        - directory for persisted credentials
+#   acme_dns_register_cloudflare_zone        - global CF zone fallback
+#   acme_dns_register_cloudflare_zones       - per-domain CF zone overrides
+#   acme_dns_register_manual_prompt          - prompt when no CF token (default true)
+#   acme_dns_register_credentials_dir        - directory for persisted accounts
 #
-# Output facts (available to subsequent tasks in the play):
-#   acme_dns_register_newly_registered  - true when registration occurred this run
-#   acme_dns_register_username          - registered (or pre-existing) username
-#   acme_dns_register_password          - registered (or pre-existing) password
-#   acme_dns_register_subdomain         - registered (or pre-existing) subdomain
-#   acme_dns_register_fulldomain        - acme-dns CNAME target
+# Output facts:
+#   acme_dns_register_accounts          - domain -> account mapping
+#   acme_dns_register_new_domains       - domains registered during this run
+#   acme_dns_register_newly_registered  - true when new_domains is non-empty
 
-- name: include_tasks validate.yaml
-  ansible.builtin.include_tasks: validate.yaml
+- name: load the persisted account registry
+  ansible.builtin.import_tasks: load.yaml
 
-- name: include_tasks register.yaml
-  ansible.builtin.include_tasks: register.yaml
+- name: validate the role inputs
+  ansible.builtin.import_tasks: validate.yaml
 
-- name: include_tasks cname_cloudflare.yaml
+- name: register or reuse acme-dns accounts
+  ansible.builtin.import_tasks: register.yaml
+
+- name: ensure Cloudflare CNAME records
   when:
-    - acme_dns_register_fulldomain | length > 0
+    - _acme_dns_register_cnames | length > 0
     - >-
       acme_dns_register_cloudflare_api_token | length > 0
       or acme_dns_register_cloudflare_zone_token | length > 0
-  ansible.builtin.include_tasks: cname_cloudflare.yaml
+  ansible.builtin.import_tasks: cname_cloudflare.yaml
 
-- name: include_tasks cname_manual.yaml
+- name: show the CNAME records after a fresh registration
   when:
-    - acme_dns_register_newly_registered | ansible.builtin.bool
+    - acme_dns_register_new_domains | length > 0
     - acme_dns_register_cloudflare_api_token | length == 0
     - acme_dns_register_cloudflare_zone_token | length == 0
-  ansible.builtin.include_tasks: cname_manual.yaml
+  ansible.builtin.import_tasks: cname_manual.yaml

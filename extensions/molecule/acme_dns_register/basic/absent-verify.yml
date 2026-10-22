@@ -1,0 +1,18 @@
+---
+# acme_dns_register/basic scenario - assert the teardown removed the fixtures.
+
+- name: verify the acme-dns registration teardown
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: collect the fixture directory
+      ansible.builtin.stat:
+        path: /tmp/molecule-ak1ra-general-acme-dns-register
+      register: _acme_dns_register_absent
+
+    - name: assert the fixture directory is gone
+      ansible.builtin.assert:
+        that:
+          - not _acme_dns_register_absent.stat.exists
+        fail_msg: "the acme-dns registration fixtures must be removed"
+        quiet: true

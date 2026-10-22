@@ -1,0 +1,67 @@
+---
+# acme_dns_register/basic scenario - verify the domain -> account mapping and
+# that idempotent re-runs do not register the same domains twice.
+
+- name: verify the acme-dns account registry
+  hosts: localhost
+  gather_facts: false
+  vars:
+    _acme_dns_register_dir: /tmp/molecule-ak1ra-general-acme-dns-register
+    _acme_dns_register_registry: "{{ _acme_dns_register_dir }}/controller/acme_dns_credentials.yaml"
+  tasks:
+    - name: collect the registry file
+      ansible.builtin.stat:
+        path: "{{ _acme_dns_register_registry }}"
+      register: _acme_dns_register_registry_stat
+
+    - name: assert the registry is private
+      ansible.builtin.assert:
+        that:
+          - _acme_dns_register_registry_stat.stat.exists
+          - _acme_dns_register_registry_stat.stat.mode == '0600'
+        fail_msg: "{{ _acme_dns_register_registry }} must exist with mode 0600"
+        quiet: true
+
+    - name: read the registry
+      ansible.builtin.slurp:
+        src: "{{ _acme_dns_register_registry }}"
+      register: _acme_dns_register_registry_content
+
+    - name: parse the registry
+      ansible.builtin.set_fact:
+        _acme_dns_register_registry_data: >-
+          {{ _acme_dns_register_registry_content.content | b64decode | from_yaml }}
+
+    - name: assert the registry has one account per validation domain
+      ansible.builtin.assert:
+        that:
+          - _acme_dns_register_registry_data.acme_dns_register_server_url == 'http://127.0.0.1:8057'
+          - _acme_dns_register_registry_data.acme_dns_register_accounts | length == 2
+          - "'example.com' in _acme_dns_register_registry_data.acme_dns_register_accounts"
+          - "'www.example.com' in _acme_dns_register_registry_data.acme_dns_register_accounts"
+          - "'*.example.com' not in _acme_dns_register_registry_data.acme_dns_register_accounts"
+          - >-
+            _acme_dns_register_registry_data.acme_dns_register_accounts['example.com'].fulldomain
+            != _acme_dns_register_registry_data.acme_dns_register_accounts['www.example.com'].fulldomain
+        fail_msg: "unexpected acme-dns account registry"
+        quiet: true
+
+    - name: read the fake acme-dns requests
+      ansible.builtin.slurp:
+        src: "{{ _acme_dns_register_dir }}/requests.jsonl"
+      register: _acme_dns_register_requests
+
+    - name: parse the fake acme-dns requests
+      ansible.builtin.set_fact:
+        _acme_dns_register_parsed: >-
+          {{ (_acme_dns_register_requests.content | b64decode).splitlines()
+             | map('from_json') | list }}
+
+    - name: assert only two registrations happened across converge and idempotence
+      ansible.builtin.assert:
+        that:
+          - _acme_dns_register_parsed | selectattr('path', 'equalto', '/register') | list | length == 2
+        fail_msg: >-
+          unexpected acme-dns requests:
+          {{ _acme_dns_register_parsed }}
+        quiet: true

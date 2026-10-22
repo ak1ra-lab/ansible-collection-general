@@ -4,9 +4,10 @@
 galaxy_info:
   author: ak1ra
   description: >-
-    Register an acme-dns account and optionally add the required _acme-challenge
-    CNAME record so that TLS certificates can be obtained via DNS-01 challenge
-    without storing DNS provider credentials on the remote host.
+    Register one acme-dns account per validation domain and optionally add the
+    required _acme-challenge CNAME records so that TLS certificates can be
+    obtained via DNS-01 challenge without storing DNS provider credentials on
+    the remote host.
   license: MIT
   min_ansible_version: "2.18"
 

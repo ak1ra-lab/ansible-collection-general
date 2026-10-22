@@ -1,0 +1,23 @@
+---
+# acme_dns_register/basic scenario - stop the fake API and remove the
+# registry.
+
+- name: tear down the acme-dns registration fixtures
+  hosts: localhost
+  gather_facts: false
+  vars:
+    _acme_dns_register_dir: /tmp/molecule-ak1ra-general-acme-dns-register
+  tasks:
+    - name: stop the fake acme-dns registration API
+      ansible.builtin.shell:
+        cmd: >-
+          if [ -f {{ _acme_dns_register_dir }}/server.pid ]; then
+            kill "$(cat {{ _acme_dns_register_dir }}/server.pid)" || true;
+          fi
+      changed_when: false
+      failed_when: false
+
+    - name: remove the acme-dns registration fixtures
+      ansible.builtin.file:
+        path: "{{ _acme_dns_register_dir }}"
+        state: absent

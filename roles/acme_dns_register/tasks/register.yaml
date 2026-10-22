@@ -1,74 +1,102 @@
 ---
-# Register with the acme-dns server and persist credentials to host_vars.
-# Skipped entirely when credentials are already set (idempotent re-runs).
-# All tasks run on the Ansible controller.
-
-- name: check whether acme-dns registration is needed
-  become: false
-  delegate_to: localhost
+- name: normalize the acme-dns validation domains
   ansible.builtin.set_fact:
-    _acme_dns_register_needed: >-
-      {{ acme_dns_register_username | length == 0
-         or acme_dns_register_password | length == 0
-         or acme_dns_register_subdomain | length == 0 }}
+    _acme_dns_register_domains: >-
+      {{ acme_dns_register_acme_domains
+         | map('ansible.builtin.regex_replace', '^\*\.', '')
+         | map('lower') | ansible.builtin.unique | list }}
 
-- name: register with acme-dns server
-  when: _acme_dns_register_needed | ansible.builtin.bool
-  become: false
-  delegate_to: localhost
-  block:
-    - name: POST /register to acme-dns server
-      no_log: true
-      ansible.builtin.uri:
-        url: "{{ acme_dns_register_server_url }}/register"
-        method: POST
-        return_content: true
-        status_code: 201
-      register: _acme_dns_register_response
-
-    - name: set acme-dns credential facts from registration response
-      no_log: true
-      ansible.builtin.set_fact:
-        acme_dns_register_username: "{{ _acme_dns_register_response.json.username }}"
-        acme_dns_register_password: "{{ _acme_dns_register_response.json.password }}"
-        acme_dns_register_subdomain: "{{ _acme_dns_register_response.json.subdomain }}"
-        acme_dns_register_fulldomain: "{{ _acme_dns_register_response.json.fulldomain }}"
-        acme_dns_register_newly_registered: true
-
-    - name: derive credentials output directory
-      ansible.builtin.set_fact:
-        _acme_dns_register_output_dir: >-
-          {{ acme_dns_register_credentials_dir
-             if acme_dns_register_credentials_dir | length > 0
-             else (playbook_dir ~ '/host_vars/' ~ inventory_hostname) }}
-
-    - name: ensure credentials output directory exists
-      ansible.builtin.file:
-        path: "{{ _acme_dns_register_output_dir }}"
-        state: directory
-        mode: "0755"
-
-    - name: write acme-dns credentials to host_vars
-      no_log: true
-      ansible.builtin.template:
-        src: acme_dns_credentials.yaml.j2
-        dest: "{{ _acme_dns_register_output_dir }}/acme_dns_credentials.yaml"
-        mode: "0600"
-
-- name: mark registration as skipped (credentials already present)
-  when: not (_acme_dns_register_needed | ansible.builtin.bool)
-  become: false
-  delegate_to: localhost
+- name: determine which domains need an acme-dns account
   ansible.builtin.set_fact:
-    acme_dns_register_newly_registered: false
+    _acme_dns_register_missing_domains: >-
+      {{ _acme_dns_register_domains
+         | ansible.builtin.difference(acme_dns_register_accounts.keys() | list) }}
 
-- name: derive the acme-dns fulldomain from the server URL
-  when:
-    - not (_acme_dns_register_needed | ansible.builtin.bool)
-    - acme_dns_register_fulldomain | length == 0
+- name: initialize the newly registered domain list
+  ansible.builtin.set_fact:
+    acme_dns_register_new_domains: []
+
+- name: register the missing acme-dns accounts
+  when: _acme_dns_register_missing_domains | length > 0
+  no_log: true
+  ansible.builtin.uri:
+    url: "{{ acme_dns_register_server_url }}/register"
+    method: POST
+    return_content: true
+    status_code: 201
+  register: _acme_dns_register_response
+  loop: "{{ _acme_dns_register_missing_domains }}"
+  loop_control:
+    label: "{{ item }}"
+
+- name: add the registered accounts to the registry
+  when: _acme_dns_register_missing_domains | length > 0
+  no_log: true
+  ansible.builtin.set_fact:
+    acme_dns_register_accounts: >-
+      {{ acme_dns_register_accounts | ansible.builtin.combine({item.item: {
+           'username': item.json.username,
+           'password': item.json.password,
+           'subdomain': item.json.subdomain,
+           'fulldomain': item.json.fulldomain
+         }}) }}
+    acme_dns_register_new_domains: >-
+      {{ _acme_dns_register_response.results | map(attribute='item') | list }}
+  loop: "{{ _acme_dns_register_response.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+- name: validate the registered accounts
+  when: _acme_dns_register_missing_domains | length > 0
+  ansible.builtin.assert:
+    that:
+      - acme_dns_register_new_domains | length == _acme_dns_register_missing_domains | length
+      - >-
+        _acme_dns_register_missing_domains
+        | ansible.builtin.difference(acme_dns_register_accounts.keys() | list) | length == 0
+    fail_msg: >-
+      the acme-dns server did not return complete credentials for every
+      requested validation domain.
+    quiet: true
+
+- name: set the registration summary facts
+  ansible.builtin.set_fact:
+    acme_dns_register_newly_registered: "{{ acme_dns_register_new_domains | length > 0 }}"
+
+- name: ensure the credentials output directory exists
   become: false
   delegate_to: localhost
+  ansible.builtin.file:
+    path: "{{ _acme_dns_register_output_dir }}"
+    state: directory
+    mode: "0700"
+
+- name: write the acme-dns account registry
+  become: false
+  delegate_to: localhost
+  no_log: true
+  ansible.builtin.copy:
+    content: >-
+      {{
+        {
+          'acme_dns_register_server_url': acme_dns_register_server_url,
+          'acme_dns_register_accounts': acme_dns_register_accounts
+        } | ansible.builtin.to_nice_yaml(indent=2, sort_keys=true)
+      }}
+    dest: "{{ _acme_dns_register_output_dir }}/acme_dns_credentials.yaml"
+    mode: "0600"
+
+- name: initialize the CNAME list
   ansible.builtin.set_fact:
-    acme_dns_register_fulldomain: >-
-      {{ acme_dns_register_subdomain ~ '.'
-         ~ (acme_dns_register_server_url | ansible.builtin.urlsplit('hostname')) }}
+    _acme_dns_register_cnames: []
+
+- name: build the CNAME records
+  ansible.builtin.set_fact:
+    _acme_dns_register_cnames: >-
+      {{ _acme_dns_register_cnames
+         + [{'domain': item,
+             'name': '_acme-challenge.' ~ item,
+             'target': acme_dns_register_accounts[item].fulldomain}] }}
+  loop: "{{ _acme_dns_register_domains }}"
+  loop_control:
+    label: "{{ item }}"

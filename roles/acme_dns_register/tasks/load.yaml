@@ -1,0 +1,27 @@
+---
+# Load the persisted registry before validation so re-runs reuse accounts and
+# the server URL even when they are not passed explicitly.
+
+- name: derive the credentials output directory
+  ansible.builtin.set_fact:
+    _acme_dns_register_output_dir: >-
+      {{ acme_dns_register_credentials_dir
+         if acme_dns_register_credentials_dir | length > 0
+         else (playbook_dir ~ '/host_vars/' ~ inventory_hostname) }}
+
+- name: load the persisted acme-dns account registry
+  when: (_acme_dns_register_output_dir ~ '/acme_dns_credentials.yaml') is ansible.builtin.file
+  ansible.builtin.include_vars:
+    file: "{{ _acme_dns_register_output_dir }}/acme_dns_credentials.yaml"
+    name: _acme_dns_register_file
+
+- name: merge the persisted registry with explicit inputs
+  no_log: true
+  ansible.builtin.set_fact:
+    acme_dns_register_server_url: >-
+      {{ (acme_dns_register_server_url | default('', true)
+          or ((_acme_dns_register_file | default({})).acme_dns_register_server_url | default('')))
+         | ansible.builtin.regex_replace('/+$', '') }}
+    acme_dns_register_accounts: >-
+      {{ ((_acme_dns_register_file | default({})).acme_dns_register_accounts | default({}))
+         | ansible.builtin.combine(acme_dns_register_accounts) }}

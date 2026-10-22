@@ -1,0 +1,7 @@
+---
+# acme_dns_register/basic scenario - register one acme-dns account per
+# validation domain against a fake API on localhost.  No Cloudflare token is
+# used, so the manual CNAME prompt is disabled.
+#
+# The scenario inherits the shared test sequence from
+# extensions/molecule/config.yml.
