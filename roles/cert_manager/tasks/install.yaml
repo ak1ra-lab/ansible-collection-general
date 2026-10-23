@@ -1,4 +1,50 @@
 ---
+- name: resolve the cert-manager release
+  when: cert_manager_install | ansible.builtin.bool
+  block:
+    - name: query the cert-manager release
+      when: cert_manager_manifest_url | length == 0
+      ak1ra_lab.general.github_releases_info:
+        repo: cert-manager/cert-manager
+        release_tag: "{{ cert_manager_version }}"
+        asset_name: cert-manager.yaml
+        require_digest: false
+        token: "{{ cert_manager_github_token }}"
+      register: _cert_manager_release
+      delegate_to: "{{ cert_manager_delegate_to }}"
+      become: false
+      run_once: true
+
+    - name: resolve the effective version and manifest source
+      ansible.builtin.set_fact:
+        _cert_manager_version: >-
+          {{- cert_manager_version if cert_manager_version | length > 0
+              else (((_cert_manager_release | default({})).release | default({})).tag_name
+                    | default('custom', true)) -}}
+        _cert_manager_manifest_url: >-
+          {{- cert_manager_manifest_url if cert_manager_manifest_url | length > 0
+              else ((_cert_manager_release | default({})).download_url | default('', true)) -}}
+        _cert_manager_manifest_checksum: >-
+          {{- cert_manager_manifest_checksum if cert_manager_manifest_checksum | length > 0
+              else (((_cert_manager_release | default({})).download_checksum | default('', true))
+                    if cert_manager_manifest_url | length == 0 else '') -}}
+
+    - name: validate the resolved cert-manager release
+      ansible.builtin.assert:
+        that:
+          - _cert_manager_version is string
+          - _cert_manager_version | length > 0
+          - _cert_manager_manifest_url is string
+          - _cert_manager_manifest_url | length > 0
+          - >-
+            _cert_manager_version == 'custom'
+            or _cert_manager_version is ansible.builtin.match('^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$')
+        fail_msg: >-
+          could not resolve a cert-manager release manifest.  Set
+          cert_manager_version and cert_manager_manifest_url explicitly, or
+          check GitHub access and rate limits.
+        quiet: true
+
 - name: ensure the manifest cache directory exists
   ansible.builtin.file:
     path: "{{ cert_manager_manifest_cache_dir }}"
@@ -10,9 +56,9 @@
 
 - name: download the cert-manager release manifest
   ansible.builtin.get_url:
-    url: "{{ cert_manager_manifest_url }}"
-    dest: "{{ cert_manager_manifest_cache_dir }}/cert-manager-{{ cert_manager_version }}.yaml"
-    checksum: "{{ cert_manager_manifest_checksum | default(omit, true) }}"
+    url: "{{ _cert_manager_manifest_url }}"
+    dest: "{{ cert_manager_manifest_cache_dir }}/cert-manager-{{ _cert_manager_version }}.yaml"
+    checksum: "{{ _cert_manager_manifest_checksum | default(omit, true) }}"
     mode: "0644"
     force: false
   delegate_to: "{{ cert_manager_delegate_to }}"
@@ -22,7 +68,7 @@
 - name: apply the cert-manager release manifest
   kubernetes.core.k8s:
     state: present
-    src: "{{ cert_manager_manifest_cache_dir }}/cert-manager-{{ cert_manager_version }}.yaml"
+    src: "{{ cert_manager_manifest_cache_dir }}/cert-manager-{{ _cert_manager_version }}.yaml"
     apply: true
     server_side_apply:
       field_manager: ansible

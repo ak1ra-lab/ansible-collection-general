@@ -25,12 +25,19 @@ cert_manager_context: ""
 # tool manage the controller and its CRDs; do not apply the same objects from
 # two owners.
 cert_manager_install: false
-# Release to install, e.g. v1.18.2 (required when cert_manager_install=true).
+# Release to install, e.g. v1.21.2.  Empty resolves the latest stable release
+# from the GitHub API; pin a version for reproducible installs.
 cert_manager_version: ""
-cert_manager_manifest_url: "https://github.com/cert-manager/cert-manager/releases/download/{{ cert_manager_version }}/cert-manager.yaml"
-# Optional checksum for get_url, e.g. "sha256:0123...".
+# Release manifest URL.  Empty uses the cert-manager.yaml asset resolved from
+# the GitHub release; set this for a mirror or an air-gapped environment.
+cert_manager_manifest_url: ""
+# Optional checksum for get_url, e.g. "sha256:0123...".  Empty uses the
+# GitHub asset digest when the manifest is resolved from GitHub.
 cert_manager_manifest_checksum: ""
-# Cache directory on the delegate host.
+# Optional GitHub API token used to resolve the release (rate limits).
+cert_manager_github_token: ""
+# Cache directory on the delegate host.  The default uses the controller's
+# HOME; set it explicitly when cert_manager_delegate_to is a remote host.
 cert_manager_manifest_cache_dir: "{{ lookup('ansible.builtin.env', 'HOME') }}/.cache/cert-manager"
 cert_manager_install_wait: true
 

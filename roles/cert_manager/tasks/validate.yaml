@@ -3,11 +3,18 @@
   when: cert_manager_install | ansible.builtin.bool
   ansible.builtin.assert:
     that:
-      - cert_manager_version is ansible.builtin.match('^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$')
+      - cert_manager_version is string
+      - >-
+        cert_manager_version | length == 0
+        or cert_manager_version is ansible.builtin.match('^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$')
+      - cert_manager_manifest_url is string
+      - cert_manager_manifest_checksum is string
+      - cert_manager_github_token is string
       - cert_manager_manifest_cache_dir | length > 0
     fail_msg: >-
-      cert_manager_install requires cert_manager_version (for example
-      v1.18.2) and a cache directory for the release manifest.
+      cert_manager_install requires cert_manager_version to be empty (latest)
+      or a version such as v1.21.2, plus a cache directory for the release
+      manifest.
     quiet: true
 
 - name: validate the common settings
@@ -23,6 +30,27 @@
       cert_manager_delegate_to is required, cert_manager_cluster_issuers must
       be a list, and cert_manager_manifest_dir must be an absolute path.
     quiet: true
+
+# Loop over indexes instead of the issuer dictionaries so verbose output never
+# prints solver credentials or EAB HMAC keys.  The label still shows the name.
+- name: build the ClusterIssuer indexes
+  ansible.builtin.set_fact:
+    _cert_manager_issuer_indexes: "{{ range(0, cert_manager_cluster_issuers | length) | list }}"
+
+- name: validate the ClusterIssuer entry type
+  when: cert_manager_cluster_issuers | length > 0
+  ansible.builtin.assert:
+    that:
+      - issuer is mapping
+    fail_msg: >-
+      cert_manager_cluster_issuers[{{ issuer_index }}] must be a mapping.
+    quiet: true
+  loop: "{{ _cert_manager_issuer_indexes }}"
+  loop_control:
+    loop_var: issuer_index
+    label: "{{ issuer_index }}"
+  vars:
+    issuer: "{{ cert_manager_cluster_issuers[issuer_index] }}"
 
 - name: validate the basic ClusterIssuer definitions
   when: cert_manager_cluster_issuers | length > 0
@@ -43,20 +71,29 @@
       - issuer.email is not defined or issuer.email is string
       - issuer.email | default(cert_manager_acme_email, true) | length > 0
       - issuer.profile is not defined or issuer.profile is string
-      - issuer.private_key_secret_name is not defined or issuer.private_key_secret_name is string
+      - >-
+        issuer.private_key_secret_name is not defined
+        or (issuer.private_key_secret_name is string
+            and (issuer.private_key_secret_name | length == 0
+                 or (issuer.private_key_secret_name | length <= 63
+                     and issuer.private_key_secret_name
+                         is ansible.builtin.match('^[a-z0-9]([-a-z0-9]*[a-z0-9])?$'))))
       - >-
         issuer.keys() | list
         | difference(['name', 'server', 'email', 'profile',
                       'private_key_secret_name', 'solver', 'eab']) | length == 0
     fail_msg: >-
-      every ClusterIssuer needs a DNS-label name, an https:// ACME server, a
-      solver mapping, and an email (issuer.email or cert_manager_acme_email).
-      Optional profile and private_key_secret_name must be strings.
+      every ClusterIssuer ({{ issuer.name | default('#' ~ issuer_index) }})
+      needs a DNS-label name, an https:// ACME server, a solver mapping, and
+      an email (issuer.email or cert_manager_acme_email).  Optional profile
+      must be a string and private_key_secret_name a DNS-label Secret name.
     quiet: true
-  loop: "{{ cert_manager_cluster_issuers }}"
+  loop: "{{ _cert_manager_issuer_indexes }}"
   loop_control:
-    loop_var: issuer
-    label: "{{ issuer.name | default('', true) }}"
+    loop_var: issuer_index
+    label: "{{ issuer.name | default('#' ~ issuer_index) }}"
+  vars:
+    issuer: "{{ cert_manager_cluster_issuers[issuer_index] }}"
 
 - name: validate the ClusterIssuer names
   when: cert_manager_cluster_issuers | length > 0
@@ -81,12 +118,15 @@
       - issuer.solver | length == 1
       - issuer.solver.keys() | list | difference(['cloudflare', 'http01']) | length == 0
     fail_msg: >-
-      every ClusterIssuer needs exactly one solver: cloudflare or http01.
+      every ClusterIssuer ({{ issuer.name }}) needs exactly one solver:
+      cloudflare or http01.
     quiet: true
-  loop: "{{ cert_manager_cluster_issuers }}"
+  loop: "{{ _cert_manager_issuer_indexes }}"
   loop_control:
-    loop_var: issuer
+    loop_var: issuer_index
     label: "{{ issuer.name }}"
+  vars:
+    issuer: "{{ cert_manager_cluster_issuers[issuer_index] }}"
 
 - name: validate the Cloudflare solver settings
   when:
@@ -114,14 +154,16 @@
         issuer.solver.cloudflare.keys() | list
         | difference(['api_token', 'secret_name', 'dns_zones']) | length == 0
     fail_msg: >-
-      the Cloudflare solver needs api_token or secret_name, dns_zones must be
-      a list of strings, and the Secret name must be a DNS label of at most 63
-      characters.
+      the Cloudflare solver for {{ issuer.name }} needs api_token or
+      secret_name, dns_zones must be a list of strings, and the Secret name
+      must be a DNS label of at most 63 characters.
     quiet: true
-  loop: "{{ cert_manager_cluster_issuers }}"
+  loop: "{{ _cert_manager_issuer_indexes }}"
   loop_control:
-    loop_var: issuer
+    loop_var: issuer_index
     label: "{{ issuer.name }}"
+  vars:
+    issuer: "{{ cert_manager_cluster_issuers[issuer_index] }}"
 
 - name: validate the HTTP-01 solver settings
   when:
@@ -132,12 +174,15 @@
       - issuer.solver.http01.ingress_class is not defined or issuer.solver.http01.ingress_class is string
       - issuer.solver.http01.keys() | list | difference(['ingress_class']) | length == 0
     fail_msg: >-
-      the HTTP-01 solver supports only the optional ingress_class key.
+      the HTTP-01 solver for {{ issuer.name }} supports only the optional
+      ingress_class key.
     quiet: true
-  loop: "{{ cert_manager_cluster_issuers }}"
+  loop: "{{ _cert_manager_issuer_indexes }}"
   loop_control:
-    loop_var: issuer
+    loop_var: issuer_index
     label: "{{ issuer.name }}"
+  vars:
+    issuer: "{{ cert_manager_cluster_issuers[issuer_index] }}"
 
 - name: validate the external account binding settings
   when:
@@ -167,14 +212,17 @@
         issuer.eab.keys() | list
         | difference(['key_id', 'hmac_key', 'secret_name']) | length == 0
     fail_msg: >-
-      eab needs key_id and either hmac_key (the CA-provided base64url key, at
-      least 32 bytes / 43 characters for HS256) or secret_name; the Secret
-      name must be a DNS label of at most 63 characters.
+      eab for {{ issuer.name }} needs key_id and either hmac_key (the
+      CA-provided base64url key, at least 32 bytes / 43 characters for HS256)
+      or secret_name; the Secret name must be a DNS label of at most 63
+      characters.
     quiet: true
-  loop: "{{ cert_manager_cluster_issuers }}"
+  loop: "{{ _cert_manager_issuer_indexes }}"
   loop_control:
-    loop_var: issuer
+    loop_var: issuer_index
     label: "{{ issuer.name }}"
+  vars:
+    issuer: "{{ cert_manager_cluster_issuers[issuer_index] }}"
 
 - name: initialize the managed secret list
   ansible.builtin.set_fact:
@@ -182,6 +230,7 @@
 
 - name: collect the managed Cloudflare secrets
   when: cert_manager_cluster_issuers | length > 0
+  no_log: true
   ansible.builtin.set_fact:
     _cert_manager_managed_secrets: >-
       {{ _cert_manager_managed_secrets
@@ -192,13 +241,16 @@
             if (issuer.solver.cloudflare is defined
                 and issuer.solver.cloudflare.api_token | default('', true) | length > 0)
             else []) }}
-  loop: "{{ cert_manager_cluster_issuers }}"
+  loop: "{{ _cert_manager_issuer_indexes }}"
   loop_control:
-    loop_var: issuer
+    loop_var: issuer_index
     label: "{{ issuer.name }}"
+  vars:
+    issuer: "{{ cert_manager_cluster_issuers[issuer_index] }}"
 
 - name: collect the managed external account binding secrets
   when: cert_manager_cluster_issuers | length > 0
+  no_log: true
   ansible.builtin.set_fact:
     _cert_manager_managed_secrets: >-
       {{ _cert_manager_managed_secrets
@@ -208,10 +260,12 @@
             if (issuer.eab is defined
                 and issuer.eab.hmac_key | default('', true) | length > 0)
             else []) }}
-  loop: "{{ cert_manager_cluster_issuers }}"
+  loop: "{{ _cert_manager_issuer_indexes }}"
   loop_control:
-    loop_var: issuer
+    loop_var: issuer_index
     label: "{{ issuer.name }}"
+  vars:
+    issuer: "{{ cert_manager_cluster_issuers[issuer_index] }}"
 
 - name: initialize the managed secret entry map
   ansible.builtin.set_fact:
@@ -238,4 +292,33 @@
     fail_msg: >-
       two issuers use the same Secret name with different credentials; give
       each credential a distinct secret_name.
+    quiet: true
+
+- name: initialize the account key secret list
+  ansible.builtin.set_fact:
+    _cert_manager_account_key_names: []
+
+- name: collect the account key secret names
+  ansible.builtin.set_fact:
+    _cert_manager_account_key_names: >-
+      {{ _cert_manager_account_key_names | default([])
+         + [issuer.private_key_secret_name
+               | default(issuer.name ~ '-account-key', true)] }}
+  loop: "{{ _cert_manager_issuer_indexes }}"
+  loop_control:
+    loop_var: issuer_index
+    label: "{{ issuer.name }}"
+  vars:
+    issuer: "{{ cert_manager_cluster_issuers[issuer_index] }}"
+
+- name: validate that account key and solver secret names do not conflict
+  ansible.builtin.assert:
+    that:
+      - >-
+        _cert_manager_managed_secrets | map(attribute='name') | list
+        | difference(_cert_manager_account_key_names) | length
+        == _cert_manager_managed_secrets | length
+    fail_msg: >-
+      a private_key_secret_name collides with a managed solver or EAB Secret;
+      choose a distinct account key Secret name.
     quiet: true

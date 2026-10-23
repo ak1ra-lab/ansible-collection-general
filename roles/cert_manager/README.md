@@ -37,15 +37,25 @@ are cluster-scoped and applied once.
 
 ```yaml
 cert_manager_install: true
-cert_manager_version: v1.18.2
+# Empty resolves the latest stable release.  Pin a version for reproducible
+# installs, for example v1.21.2.
+cert_manager_version: ""
 ```
 
-The role downloads
-`https://github.com/cert-manager/cert-manager/releases/download/<version>/cert-manager.yaml`
-into `cert_manager_manifest_cache_dir` and applies it with server-side apply.
-It then waits for the `cert-manager-webhook` deployment and the
-`clusterissuers.cert-manager.io` CRD. Upgrade by changing the version; CRDs are
-included in the release manifest.
+The role resolves the release with
+`ak1ra_lab.general.github_releases_info` (the latest stable release when
+`cert_manager_version` is empty), takes the `cert-manager.yaml` asset URL and
+GitHub digest, downloads it into `cert_manager_manifest_cache_dir`, and applies
+it with server-side apply. It then waits for the `cert-manager-webhook`
+deployment and the `clusterissuers.cert-manager.io` CRD. Upgrade by changing
+the version; CRDs are included in the release manifest.
+
+`cert_manager_manifest_url` overrides the resolved asset URL (mirror or
+air-gapped environment); `cert_manager_manifest_checksum` overrides the digest.
+`cert_manager_github_token` is optional and avoids anonymous GitHub API rate
+limits when resolving the release. The cache directory default uses the
+controller's `HOME`; set it explicitly when `cert_manager_delegate_to` is a
+remote host.
 
 If the cluster is managed by Helm or GitOps, leave `cert_manager_install: false`
 and let that tool own the controller and CRDs. Do not apply the same objects
@@ -211,6 +221,11 @@ same definitions are also applied to the cluster.
 - Pick one owner for the cert-manager controller and for each ClusterIssuer.
   Running this role next to Flux/ArgoCD against the same objects is a conflict,
   not a backup.
+- The role is additive-only: removing an issuer or credential from
+  `cert_manager_cluster_issuers` does not delete the ClusterIssuer or Secret
+  from the cluster, and does not remove old files from
+  `cert_manager_manifest_dir`. Delete those deliberately with `kubectl` or the
+  tool that owns the cluster.
 - cert-manager creates the ACME account key and the certificates; the role only
   manages issuers and solver/EAB Secrets. Do not delete account-key or
   certificate Secrets to "reset" something.
@@ -230,7 +245,10 @@ See `defaults/main.yaml` for the full list. The most important ones:
 | Variable | Default | Description |
 | --- | --- | --- |
 | `cert_manager_install` | `false` | Apply the cert-manager release manifest |
-| `cert_manager_version` | empty | Release to install (`v1.18.2`); required when installing |
+| `cert_manager_version` | empty | Release to install (`v1.21.2`); empty resolves the latest stable release |
+| `cert_manager_manifest_url` | empty | Override the resolved asset URL (mirror/air-gapped) |
+| `cert_manager_manifest_checksum` | empty | Override the resolved GitHub asset digest |
+| `cert_manager_github_token` | empty | Optional GitHub API token for release resolution |
 | `cert_manager_apply` | `true` | Apply the managed solver/EAB Secrets and ClusterIssuers |
 | `cert_manager_manifest_dir` | empty | Optional rendered-manifest output directory |
 | `cert_manager_delegate_to` | `localhost` | Host that runs the k8s modules |
