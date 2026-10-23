@@ -11,6 +11,8 @@
       register: _certbot_acmedns_absent
       loop:
         - /etc/letsencrypt
+        - /var/lib/letsencrypt
+        - /var/log/letsencrypt
         - /tmp/molecule-ak1ra-general-certbot-acmedns
 
     - name: assert the acme-dns state is gone

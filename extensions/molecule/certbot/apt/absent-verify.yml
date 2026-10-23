@@ -53,3 +53,19 @@
           - _certbot_absent_timer.rc != 0
         fail_msg: "certbot.timer must not remain enabled"
         quiet: true
+
+    - name: check for leftover Pebble processes
+      ansible.builtin.command:
+        argv: [pgrep, -f, /usr/bin/pebble]
+      changed_when: false
+      failed_when: false
+      register: _certbot_absent_pebble
+
+    - name: assert no Pebble processes remain
+      ansible.builtin.assert:
+        that:
+          - _certbot_absent_pebble.rc != 0
+        fail_msg: >-
+          Pebble processes remain after cleanup:
+          {{ _certbot_absent_pebble.stdout }}
+        quiet: true

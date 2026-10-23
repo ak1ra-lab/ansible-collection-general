@@ -82,6 +82,7 @@
           -dns01 :8053 -http01 '' -https01 '' -tlsalpn01 '' -management :8055
           -defaultIPv6 ''
           > {{ _certbot_pebble_dir }}/challtestsrv.log 2>&1 &
+          echo $! > {{ _certbot_pebble_dir }}/challtestsrv.pid
         chdir: "{{ _certbot_pebble_dir }}"
       changed_when: true
 
@@ -92,6 +93,7 @@
           -config {{ _certbot_pebble_dir }}/pebble-config.json
           -dnsserver 127.0.0.1:8053
           > {{ _certbot_pebble_dir }}/pebble.log 2>&1 &
+          echo $! > {{ _certbot_pebble_dir }}/pebble.pid
         chdir: "{{ _certbot_pebble_dir }}"
       changed_when: true
 

@@ -24,6 +24,8 @@
         state: absent
       loop:
         - /etc/letsencrypt
+        - /var/lib/letsencrypt
+        - /var/log/letsencrypt
         - "{{ _certbot_acmedns_dir }}"
 
     - name: remove the persisted controller credentials

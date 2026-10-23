@@ -6,15 +6,21 @@
   hosts: all
   gather_facts: false
   ignore_unreachable: true
+  vars:
+    _certbot_pebble_dir: /tmp/molecule-ak1ra-general-certbot-pebble
   tasks:
     - name: stop the Pebble processes
-      ansible.builtin.command:
-        argv: [pkill, -x, "{{ item }}"]
+      ansible.builtin.shell:
+        cmd: |
+          for pidfile in \
+            {{ _certbot_pebble_dir }}/pebble.pid \
+            {{ _certbot_pebble_dir }}/challtestsrv.pid; do
+            if [ -f "$pidfile" ]; then
+              kill "$(cat "$pidfile")" 2>/dev/null || true
+            fi
+          done
       changed_when: false
       failed_when: false
-      loop:
-        - pebble
-        - pebble-challtestsrv
 
     - name: disable the certbot timer
       ansible.builtin.command:
