@@ -3,9 +3,11 @@
   ansible.builtin.assert:
     that:
       - certbot_install_source in ['apt', 'pypi', 'none']
+      - certbot_package_state in ['present', 'latest']
       - _certbot_bin | length > 0
     fail_msg: >-
-      certbot_install_source must be apt, pypi or none, and the certbot
+      certbot_install_source must be apt, pypi or none,
+      certbot_package_state must be present or latest, and the certbot
       executable must be resolvable (set certbot_bin when using none).
     quiet: true
 
@@ -38,6 +40,18 @@
       certbot_challenge/certbot_key_type must be supported values.
     quiet: true
 
+- name: validate the external account binding types
+  when:
+    - certbot_eab is mapping
+    - certbot_eab | length > 0
+  ansible.builtin.assert:
+    that:
+      - certbot_eab['key_id'] is string
+      - certbot_eab['hmac_key'] is string
+    fail_msg: >-
+      certbot_eab key_id and hmac_key must be strings.
+    quiet: true
+
 - name: validate the external account binding settings
   ansible.builtin.assert:
     that:
@@ -65,11 +79,16 @@
         certbot_eab is not mapping
         or certbot_eab | length == 0
         or certbot_eab['hmac_key'] | default('', true) | trim | length >= 43
+      - >-
+        certbot_eab is not mapping
+        or certbot_eab | length == 0
+        or (certbot_eab['hmac_key'] | trim)
+            is ansible.builtin.match('^[A-Za-z0-9_-]+$')
     fail_msg: >-
       certbot_eab must be a mapping with key_id and hmac_key (the
       base64url-encoded key from the CA, at least 32 bytes / 43 characters for
-      HS256); it requires a non-default CA preset or certbot_acme_server and
-      cannot be combined with certbot_staging.
+      HS256, using base64url characters); it requires a non-default CA preset
+      or certbot_acme_server and cannot be combined with certbot_staging.
     quiet: true
 
 - name: validate the list and mapping inputs
@@ -86,6 +105,10 @@
       - certbot_renew_args is sequence
       - certbot_renew_args is not string
       - certbot_renew_args | select('string') | list | length == certbot_renew_args | length
+      - certbot_dns_provider is string
+      - >-
+        certbot_dns_provider | length == 0
+        or certbot_dns_provider is ansible.builtin.match('^[a-z0-9][a-z0-9-]*$')
       - certbot_dns_credentials is mapping
       - certbot_cli_ini_extra is mapping
       - certbot_eab is mapping
@@ -95,7 +118,8 @@
       - certbot_acmedns_storage_path is string
     fail_msg: >-
       certbot_certificates, certbot_deploy_hooks and certbot_renew_args must
-      be lists; certbot_dns_credentials, certbot_cli_ini_extra, certbot_eab,
+      be lists; certbot_dns_provider must be empty or a lowercase plugin name;
+      certbot_dns_credentials, certbot_cli_ini_extra, certbot_eab,
       certbot_acmedns_accounts and certbot_acmedns_cloudflare_zones must be
       mappings; certbot_acmedns_server_url and certbot_acmedns_storage_path
       must be strings.
@@ -175,6 +199,10 @@
       - cert.name is not defined or cert.name | trim | length > 0
       - "'/' not in (cert.name | default('', true))"
       - >-
+        certbot_challenge != 'http-01'
+        or (cert.domains | select('string')
+            | select('ansible.builtin.match', '^[*][.]') | list | length == 0)
+      - >-
         cert.extra_args is not defined
         or (cert.extra_args is sequence and cert.extra_args is not string)
       - >-
@@ -238,8 +266,18 @@
       - >-
         _certbot_cert_names | select('string') | list | length
         == _certbot_cert_names | length
+      - >-
+        _certbot_cert_names | select('string')
+        | select('ansible.builtin.search', '/') | list | length == 0
+      - >-
+        _certbot_cert_names | select('string')
+        | select('ansible.builtin.search', '\\.\\.') | list | length == 0
+      - >-
+        _certbot_cert_names | select('string')
+        | select('ansible.builtin.match', '^\\.{1,2}$') | list | length == 0
       - _certbot_cert_names | ansible.builtin.unique | length == _certbot_cert_names | length
     fail_msg: >-
-      every certificate must resolve to a unique lineage name; set `name`
-      explicitly when two certificates share their first domain.
+      every certificate must resolve to a unique lineage name without path
+      separators or '..'; set `name` explicitly when two certificates share
+      their first domain.
     quiet: true

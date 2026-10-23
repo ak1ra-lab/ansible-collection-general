@@ -12,19 +12,29 @@ configured by their own roles and can reload after a renewal through the global
 
 | Source | Behavior |
 | --- | --- |
-| `apt` (default) | Installs `certbot` and `python3-certbot-dns-<provider>` from the distribution. Security updates come from apt; Debian 12 ships certbot 2.1 and Debian 13 ships 4.0. |
-| `pypi` | Installs `certbot` and `certbot-dns-<provider>` into an isolated virtualenv through `ak1ra_lab.general.pyproject_install` (`/var/lib/certbot/venv` by default). Useful for a newer certbot than the distribution provides. |
-| `none` | Uses an externally provided certbot (snap, image, ...); set `certbot_bin`. The role does not manage the units or timer in this mode. |
+| `apt` (default) | Installs `certbot` and `python3-certbot-dns-<provider>` from the distribution. Security updates come from apt; Debian 12 ships certbot 2.1 and Debian 13 ships 4.0. The role writes its own systemd units under `/etc/systemd/system`, shadowing the distribution units. |
+| `pypi` | Installs `certbot` and `certbot-dns-<provider>` into an isolated virtualenv through `ak1ra_lab.general.pyproject_install` (`/var/lib/certbot/venv` by default). Useful for a newer certbot than the distribution provides. The role writes the systemd units. |
+| `none` | Uses an externally provided certbot (snap, image, ...); set `certbot_bin`. The role does not manage units or the timer by default; set `certbot_manage_timer: true` to opt in. |
 
 The role never mixes the two binaries: the systemd unit, the issuance command
 and the renewal timer all use `certbot_bin` (the distribution path, the venv
 path, or the explicit path). A leftover `/usr/bin/certbot` is reported as a
 warning when `pypi` is selected.
 
-The distribution package already ships the systemd units, `cli.ini` and
-logrotate configuration. The role only renders its own copies for `pypi`
-installs, when the certbot directories are relocated, or when the
-corresponding `certbot_manage_*` flag is enabled explicitly.
+For `apt` and `pypi`, the role always renders its own
+`/etc/systemd/system/certbot.service` and `certbot.timer` with a
+`Managed by ak1ra_lab.general.certbot` marker. This shadows the distribution
+units and keeps `certbot_bin`, the explicit `--config-dir`/`--work-dir`/
+`--logs-dir` paths, `certbot_renew_args` and `certbot_no_verify_ssl`
+consistent across install sources. Switching between apt and pypi only
+re-renders the units; it does not leave a stale unit pointing at the old
+binary.
+
+`cli.ini` and logrotate are optional: the role writes them for `pypi` by
+default and removes its own marked copies when the corresponding
+`certbot_manage_*` flag is disabled. The role does not delete
+`/etc/letsencrypt/credentials/<provider>.ini`, the acme-dns registry or the
+acme-dns auth hook automatically: existing lineages may still reference them.
 
 ## Certificates
 
@@ -130,6 +140,12 @@ instance profile (for example `route53`), leave the mapping empty and the
 
 `certbot_dns_propagation_seconds` (default `30`) is passed as
 `--dns-<provider>-propagation-seconds`.
+
+Credentials are additive. The role writes the current provider's file and
+does not delete files for other providers, the acme-dns registry or the
+acme-dns auth hook. Existing lineages may still reference them from their
+renewal configuration; remove them manually only after deleting or
+reissuing those lineages.
 
 ### Cloudflare
 
@@ -262,11 +278,25 @@ cannot issue wildcard certificates.
 ## Renewal
 
 The role enables `certbot.timer` (twice daily with a randomized delay and
-`Persistent=true`). The managed unit's command is equivalent to:
+`Persistent=true`). `certbot_manage_timer` defaults to true for apt/pypi and
+false for `none`. The managed unit's command is equivalent to:
 
 ```shell
 /var/lib/certbot/venv/bin/certbot -q renew --no-random-sleep-on-renew
 ```
+
+### Renewal parameter changes
+
+The role only reissues a lineage when it does not exist, when `force: true` is
+set, or when the requested SAN set differs from the existing certificate.
+Changing `certbot_acme_ca` / `certbot_acme_server`, `certbot_challenge`,
+`certbot_dns_provider`, or the key type/curve does **not** modify an existing
+lineage; its renewal configuration keeps the old parameters. This is
+intentional: it avoids unexpected reissuance and ACME rate-limit consumption.
+
+Set `force: true` on the certificate (or delete the lineage with
+`certbot delete --cert-name ...` and re-run the role) when you intend to apply
+new renewal parameters to an existing certificate.
 
 ### Hook scope and lineage
 
@@ -385,10 +415,12 @@ group.
   Staging and production share the lineage name, so
   switching the CA on an existing lineage requires a forced re-issuance
   (`force: true` or a changed domain set).
-- `certbot_no_verify_ssl: true` is for test/private ACME endpoints. On `pypi`
-  installs the role also writes `no-verify-ssl = True` to `cli.ini` so
-  renewals keep working; on an apt install set `certbot_manage_cli_ini: true`
-  or manage `cli.ini` yourself.
+- `certbot_no_verify_ssl: true` is for test/private ACME endpoints. For apt
+  and pypi the role-managed unit passes `--no-verify-ssl` to `renew`, so
+  `cli.ini` is optional. For `none`, make sure the external timer passes it.
+- Drift detection reads existing SANs with the `openssl` CLI. A host with an
+  existing lineage must have `openssl` available; the role fails with a clear
+  message instead of reissuing every run when it is missing.
 
 ## Paths
 
@@ -401,9 +433,10 @@ group.
 | `certbot_dns_credentials_dir` | `<config_dir>/credentials` |
 
 The certbot commands receive `--config-dir`, `--work-dir` and `--logs-dir`
-explicitly, so relocating the directories works consistently. For an apt
-install with relocated paths the role deploys its own systemd units (shadowing
-the package units in `/etc/systemd/system`).
+explicitly, so relocating the directories works consistently. For apt and
+pypi the role always deploys its own systemd units (shadowing the package
+units in `/etc/systemd/system`); for `none` it does so only when
+`certbot_manage_timer: true`.
 
 ## Nginx composition
 
@@ -437,10 +470,15 @@ copy the files with the required ownership/mode.
 
 ## Package files
 
-The systemd unit, `cli.ini` and logrotate snippets are independently written
-equivalents of the Debian 13 package files (the cron job is intentionally not
-carried over). No certbot or Debian source files are copied into this
-collection; the collection remains MIT licensed.
+The role-managed systemd units, `cli.ini` and logrotate snippets are
+independently written equivalents of the Debian 13 package files (the cron
+job is intentionally not carried over). The units are always managed for apt
+and pypi; the other two files are optional and carry a
+`Managed by ak1ra_lab.general.certbot` marker. The role removes its own marked
+`cli.ini`/logrotate copies when the corresponding flag is disabled, and its
+own marked units when it no longer manages them (for example after switching
+to `none`). No certbot or Debian source files are copied into this collection;
+the collection remains MIT licensed.
 
 ## Testing
 

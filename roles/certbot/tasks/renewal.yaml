@@ -40,3 +40,35 @@
     owner: root
     group: root
     mode: "0644"
+
+- name: remove configuration files the role no longer manages
+  when: >-
+    not (certbot_manage_cli_ini | ansible.builtin.bool)
+    or not (certbot_manage_logrotate | ansible.builtin.bool)
+  block:
+    - name: collect the role-managed configuration files
+      ansible.builtin.slurp:
+        src: "{{ item.path }}"
+      register: _certbot_existing_config
+      failed_when: false
+      loop:
+        - path: "{{ certbot_config_dir }}/cli.ini"
+          managed: "{{ certbot_manage_cli_ini | ansible.builtin.bool }}"
+        - path: /etc/logrotate.d/certbot
+          managed: "{{ certbot_manage_logrotate | ansible.builtin.bool }}"
+      loop_control:
+        label: "{{ item.path }}"
+
+    - name: remove the role-managed configuration files
+      when:
+        - not (item.item.managed | ansible.builtin.bool)
+        - item.content is defined
+        - >-
+          'Managed by ak1ra_lab.general.certbot'
+          in (item.content | b64decode)
+      ansible.builtin.file:
+        path: "{{ item.item.path }}"
+        state: absent
+      loop: "{{ _certbot_existing_config.results }}"
+      loop_control:
+        label: "{{ item.item.path }}"

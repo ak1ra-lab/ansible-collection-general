@@ -28,6 +28,18 @@
   failed_when: false
   register: _certbot_cert_sans
 
+- name: validate the existing certificate domains are readable
+  when: _certbot_cert_stat.stat.exists
+  ansible.builtin.assert:
+    that:
+      - _certbot_cert_sans.rc == 0
+    fail_msg: >-
+      cannot read the SANs from
+      {{ certbot_config_dir }}/live/{{ _certbot_cert_name }}/cert.pem
+      (openssl rc {{ _certbot_cert_sans.rc }}).  Install openssl or set
+      force: true on this certificate to reissue it.
+    quiet: true
+
 - name: compare the existing and requested domains
   when: _certbot_cert_stat.stat.exists
   ansible.builtin.set_fact:
@@ -48,6 +60,7 @@
          or (_certbot_cert_domains_changed | ansible.builtin.bool) }}
 
 - name: build the certbot arguments
+  no_log: "{{ certbot_eab | length > 0 }}"
   ansible.builtin.set_fact:
     # --cert-name with the complete domain list updates an existing lineage,
     # including adding or removing SANs.  This is certbot's recommended
@@ -71,9 +84,23 @@
 
 - name: obtain the certificate
   when: _certbot_cert_needs_issue | ansible.builtin.bool
+  no_log: "{{ certbot_eab | length > 0 }}"
   ansible.builtin.command:
     argv: "{{ _certbot_cert_args }}"
   changed_when: true
+  failed_when: false
+  register: _certbot_cert_result
+
+- name: validate the certbot issuance result
+  when: _certbot_cert_needs_issue | ansible.builtin.bool
+  ansible.builtin.assert:
+    that:
+      - _certbot_cert_result.rc == 0
+    fail_msg: >-
+      certbot certonly failed for {{ _certbot_cert_name }} (rc
+      {{ _certbot_cert_result.rc }}).  The command output may be hidden because
+      the command line can contain the EAB HMAC key; check the certbot logs.
+    quiet: true
 
 - name: report the issued certificate
   when: _certbot_cert_needs_issue | ansible.builtin.bool

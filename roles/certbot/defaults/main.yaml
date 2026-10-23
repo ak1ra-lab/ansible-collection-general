@@ -20,6 +20,7 @@
 # pypi  - isolated virtualenv managed by ak1ra_lab.general.pyproject_install
 # none  - certbot is provided externally (snap, container image, ...)
 certbot_install_source: apt
+# apt only: present keeps the installed package, latest also upgrades it.
 certbot_package_state: present
 
 # pypi only: target virtualenv, optional shared version pin (e.g. "4.0.0")
@@ -158,12 +159,16 @@ certbot_webroot_path: /var/www/html
 # the RENEWED_LINEAGE environment variable.
 certbot_deploy_hooks: []
 
+# apt/pypi default to the role-managed timer; none defaults to false because
+# the external package (snap, container image, ...) usually ships its own.
 certbot_manage_timer: "{{ certbot_install_source in ['apt', 'pypi'] }}"
 certbot_timer_enabled: true
 certbot_timer_on_calendar: "*-*-* 00,12:00:00"
 certbot_timer_randomized_delay_sec: "12h"
 
-# Arguments used by the managed systemd unit's `certbot renew` command.
+# Arguments used by the role-managed systemd unit's `certbot renew` command.
+# apt and pypi always use the role-managed unit; none uses it only when
+# certbot_manage_timer is true.
 certbot_renew_args: >-
   {{- ['-q'] + (['--no-verify-ssl'] if certbot_no_verify_ssl | ansible.builtin.bool else []) -}}
 
@@ -173,8 +178,10 @@ certbot_config_dir: /etc/letsencrypt
 certbot_work_dir: /var/lib/letsencrypt
 certbot_log_dir: /var/log/letsencrypt
 
-# cli.ini and logrotate are shipped by the distribution package; manage them
-# only when certbot is installed from PyPI (or when explicitly requested).
+# cli.ini and logrotate are optional: apt/pypi always use the role-managed
+# systemd units, so they are not required for renewal to be consistent.  The
+# role writes them for pypi by default and removes its own marked copies when
+# a flag is turned off.
 certbot_manage_cli_ini: "{{ certbot_install_source == 'pypi' }}"
 certbot_manage_logrotate: "{{ certbot_install_source == 'pypi' }}"
 # Extra cli.ini options, e.g. {no-verify-ssl: true} for a private ACME CA.

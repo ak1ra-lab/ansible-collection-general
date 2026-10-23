@@ -2,6 +2,8 @@
 #
 # logrotate owns rotation; disable certbot's internal log rotation.
 max-log-backups = 0
+# Match the distribution cli.ini: renewal is preconfigured by the timer.
+preconfigured-renewal = True
 {% for key, value in _certbot_cli_ini_effective.items() %}
 {{ key }} = {{ value }}
 {% endfor %}

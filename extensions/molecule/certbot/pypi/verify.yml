@@ -106,6 +106,7 @@
     - name: assert the managed unit uses the virtualenv certbot
       ansible.builtin.assert:
         that:
+          - "'Managed by ak1ra_lab.general.certbot' in (_certbot_verify_unit.content | b64decode)"
           - "'/var/lib/certbot/venv/bin/certbot' in (_certbot_verify_unit.content | b64decode)"
           - "'renew --no-random-sleep-on-renew' in (_certbot_verify_unit.content | b64decode)"
         fail_msg: "certbot.service does not use the virtualenv binary"

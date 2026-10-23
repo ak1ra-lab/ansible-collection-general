@@ -34,14 +34,15 @@ _certbot_base_args:
   - --logs-dir
   - "{{ certbot_log_dir }}"
 
-# The distribution units use the default paths.  Shadow them only when the
-# paths are relocated, or when certbot comes from PyPI.
+# The role always ships its own units for apt and pypi: they shadow the
+# distribution units in /etc/systemd/system, keep certbot_bin, the explicit
+# --config-dir/--work-dir/--logs-dir paths, certbot_renew_args and
+# certbot_no_verify_ssl consistent, and make switching install sources a
+# re-render instead of a stale-unit cleanup.  An external certbot (none) is
+# managed only when the caller explicitly opts in with certbot_manage_timer.
 _certbot_manage_units: >-
-  {{- certbot_install_source == 'pypi'
-      or (certbot_install_source == 'apt'
-          and (certbot_config_dir != '/etc/letsencrypt'
-               or certbot_work_dir != '/var/lib/letsencrypt'
-               or certbot_log_dir != '/var/log/letsencrypt')) -}}
+  {{- certbot_install_source in ['apt', 'pypi']
+      or certbot_manage_timer | ansible.builtin.bool -}}
 
 # ── ACME CA presets ─────────────────────────────────────────────────────────
 

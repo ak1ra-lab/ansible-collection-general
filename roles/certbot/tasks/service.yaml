@@ -1,4 +1,55 @@
 ---
+- name: remove the units from a previous install source
+  when: not (_certbot_manage_units | ansible.builtin.bool)
+  block:
+    - name: collect the previously rendered systemd units
+      ansible.builtin.slurp:
+        src: "/etc/systemd/system/{{ _certbot_existing_unit }}"
+      register: _certbot_existing_units
+      failed_when: false
+      loop:
+        - certbot.service
+        - certbot.timer
+      loop_control:
+        loop_var: _certbot_existing_unit
+        label: "{{ _certbot_existing_unit }}"
+
+    - name: select the role-managed systemd units
+      ansible.builtin.set_fact:
+        _certbot_stale_units: >-
+          {{ _certbot_stale_units | default([])
+             + ([item._certbot_existing_unit]
+                if (item.content is defined
+                    and 'Managed by ak1ra_lab.general.certbot'
+                        in (item.content | b64decode))
+                else []) }}
+      loop: "{{ _certbot_existing_units.results }}"
+      loop_control:
+        label: "{{ item._certbot_existing_unit }}"
+
+    - name: stop the previously managed certbot timer
+      when: "'certbot.timer' in _certbot_stale_units"
+      ansible.builtin.systemd_service:
+        name: certbot.timer
+        enabled: false
+        state: stopped
+      failed_when: false
+
+    - name: remove the role-managed systemd units
+      when: _certbot_stale_units | length > 0
+      ansible.builtin.file:
+        path: "/etc/systemd/system/{{ _certbot_stale_unit }}"
+        state: absent
+      loop: "{{ _certbot_stale_units }}"
+      loop_control:
+        loop_var: _certbot_stale_unit
+        label: "{{ _certbot_stale_unit }}"
+
+    - name: reload systemd after removing the managed units
+      when: _certbot_stale_units | length > 0
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+
 - name: render the systemd units
   when: _certbot_manage_units | ansible.builtin.bool
   ansible.builtin.template:

@@ -175,6 +175,20 @@
           {{ _certbot_verify_timer_active.stdout }}
         quiet: true
 
+    - name: read the managed service unit
+      ansible.builtin.slurp:
+        src: /etc/systemd/system/certbot.service
+      register: _certbot_verify_unit
+
+    - name: assert the role-managed apt unit is in use
+      ansible.builtin.assert:
+        that:
+          - "'Managed by ak1ra_lab.general.certbot' in (_certbot_verify_unit.content | b64decode)"
+          - "'/usr/bin/certbot' in (_certbot_verify_unit.content | b64decode)"
+          - "'renew --no-random-sleep-on-renew' in (_certbot_verify_unit.content | b64decode)"
+        fail_msg: "the role-managed certbot.service was not rendered for apt"
+        quiet: true
+
     - name: list the certificates known to certbot
       ansible.builtin.command:
         argv: [/usr/bin/certbot, certificates]
