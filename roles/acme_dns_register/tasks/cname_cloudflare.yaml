@@ -6,6 +6,7 @@
 - name: derive the Cloudflare API token
   become: false
   delegate_to: localhost
+  no_log: true
   ansible.builtin.set_fact:
     # Prefer the zone-scoped token (least-privilege); fall back to the account token.
     _acme_dns_register_cf_api_token: >-
@@ -30,7 +31,9 @@
       {{ _acme_dns_register_cloudflare_records
          + [{'domain': item.domain,
              'zone': zone,
-             'record': item.name | ansible.builtin.regex_replace('\.' + zone + '$', ''),
+             'record': item.name
+                       | ansible.builtin.regex_replace(
+                           '\.' + (zone | ansible.builtin.regex_escape) + '$', ''),
              'target': item.target}] }}
   loop: "{{ _acme_dns_register_cnames }}"
   loop_control:
@@ -55,6 +58,7 @@
 - name: add the _acme-challenge CNAME records
   become: false
   delegate_to: localhost
+  no_log: true
   community.general.cloudflare_dns:
     api_token: "{{ _acme_dns_register_cf_api_token }}"
     zone: "{{ item.zone }}"

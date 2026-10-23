@@ -109,4 +109,8 @@ the role, so the input-named facts cannot be relied on for the result. Read the
 - Without a Cloudflare token, the manual prompt is unsuitable for
   non-interactive runs; create the CNAMEs by another mechanism and set
   `acme_dns_register_manual_prompt: false`.
+- The role is additive: removing a validation domain from
+  `acme_dns_register_acme_domains` does not delete its persisted account or
+  Cloudflare CNAME. Remove those deliberately after the dependent certificates
+  no longer renew.
 - Credential handling is marked `no_log`; keep `-v` runs out of shared logs.
