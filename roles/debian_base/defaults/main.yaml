@@ -106,7 +106,7 @@ debian_base_custom_sshd_config_entries:
   - regexp: "^#?AllowStreamLocalForwarding"
     line: "AllowStreamLocalForwarding yes"
 
-# bool: 是否设置自定义 sysctl.conf
+# bool: 是否设置自定义 sysctl 条目（写入 role 自有的 sysctl.d drop-in）
 # 我并不完全理解下面这些值的作用, 因此此项默认值为 false
 debian_base_custom_sysctl_conf_enabled: false
 debian_base_custom_sysctl_conf_entries:

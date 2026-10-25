@@ -1,0 +1,6 @@
+---
+# Role-owned sysctl drop-in.  Keep every debian_base sysctl here instead of
+# writing to /etc/sysctl.conf: the file is easy to audit, has a stable path
+# for host-level tooling, and shares the 90-ansible-* naming used by the other
+# roles.  Host-specific 99-* files still load later and win by design.
+_debian_base_sysctl_file: /etc/sysctl.d/90-ansible-debian-base.conf

@@ -14,6 +14,9 @@
     name: "{{ item.name }}"
     value: "{{ item.value }}"
     state: present
+    sysctl_file: "{{ _debian_base_sysctl_file }}"
+    reload: true
+    ignoreerrors: true
   loop:
     # default 'pfifo_fast'
     - name: net.core.default_qdisc

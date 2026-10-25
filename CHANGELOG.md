@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project does not currently guarantee stable backward compatibility.
 
+## [Unreleased]
+
+### Fixed
+
+- `debian_base` now writes every sysctl it manages to the role-owned
+  `/etc/sysctl.d/90-ansible-debian-base.conf` instead of the deprecated
+  `/etc/sysctl.conf`: the TCP BBR, `net.ipv4.ip_forward` and custom sysctl
+  tasks all set `ansible.posix.sysctl`'s `sysctl_file`, so the baseline has a
+  stable path for auditing and host-specific `99-*` files can still override
+  it by design.  The TCP BBR branch also uses the `ansible.builtin.version`
+  test instead of lexicographic string comparison, so kernels such as `4.10`
+  are recognized correctly.
+
 ## [0.3.0] - 2026-10-25
 
 ### Added

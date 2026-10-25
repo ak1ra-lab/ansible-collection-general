@@ -23,7 +23,7 @@
 
 - name: enable tcp_bbr
   when:
-    - ansible_facts['kernel'] >= '4.9.0'
+    - ansible_facts['kernel'] is ansible.builtin.version('4.9.0', '>=')
     - (debian_base_tcp_bbr_enabled | ansible.builtin.bool)
   ansible.builtin.include_tasks: tcp_bbr.yaml
 
@@ -34,6 +34,8 @@
     name: net.ipv4.ip_forward
     value: 1
     state: present
+    sysctl_file: "{{ _debian_base_sysctl_file }}"
+    reload: true
     ignoreerrors: true
 
 - name: update /etc/ssh/sshd_config entries
@@ -48,12 +50,14 @@
   loop_control:
     loop_var: entry
 
-- name: update /etc/sysctl.conf
+- name: apply the custom sysctl entries
   when: debian_base_custom_sysctl_conf_enabled
   ansible.posix.sysctl:
     name: "{{ entry.name }}"
     value: "{{ entry.value }}"
     state: present
+    sysctl_file: "{{ _debian_base_sysctl_file }}"
+    reload: true
     ignoreerrors: true
   loop: "{{ debian_base_custom_sysctl_conf_entries }}"
   loop_control:

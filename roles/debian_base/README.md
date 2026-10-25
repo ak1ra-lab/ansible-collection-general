@@ -19,7 +19,8 @@ Targets Debian 12/13 only (`ansible_facts['distribution'] == 'debian'`).
 - Grants the `sudo` group passwordless sudo via `community.general.sudoers`.
 - Optionally enables TCP BBR (`community.general.modprobe` + `ansible.posix.sysctl`),
   `net.ipv4.ip_forward`, custom `sshd_config` entries, custom sysctl entries,
-  and the `qemu-guest-agent` service.
+  and the `qemu-guest-agent` service.  All role-managed sysctls go to
+  `/etc/sysctl.d/90-ansible-debian-base.conf`, never to `/etc/sysctl.conf`.
 
 ## Variables
 
@@ -38,11 +39,11 @@ Targets Debian 12/13 only (`ansible_facts['distribution'] == 'debian'`).
 | `debian_base_unattended_upgrade_automatic_reboot_enabled` | `false` | Unattended-upgrades automatic reboot |
 | `debian_base_unattended_upgrade_automatic_reboot_time` | `02:00` | Automatic reboot time |
 | `debian_base_apt_force_ipv4_enabled` | `true` | Write `/etc/apt/apt.conf.d/99force-ipv4` |
-| `debian_base_tcp_bbr_enabled` | `false` | Load `tcp_bbr` and set the BBR sysctls |
-| `debian_base_ip_forward_enabled` | `false` | Set `net.ipv4.ip_forward=1` |
+| `debian_base_tcp_bbr_enabled` | `false` | Load `tcp_bbr` and write the BBR sysctls to the role drop-in |
+| `debian_base_ip_forward_enabled` | `false` | Set `net.ipv4.ip_forward=1` in the role drop-in |
 | `debian_base_qemu_guest_agent_enabled` | `true` | Install and enable `qemu-guest-agent` |
 | `debian_base_custom_sshd_config_enabled` | `false` | Apply `debian_base_custom_sshd_config_entries` |
-| `debian_base_custom_sysctl_conf_enabled` | `false` | Apply `debian_base_custom_sysctl_conf_entries` |
+| `debian_base_custom_sysctl_conf_enabled` | `false` | Apply `debian_base_custom_sysctl_conf_entries` to the role drop-in |
 | `debian_base_apt_packages` | curated list | Packages installed as the baseline |
 
 ## Notes
@@ -54,3 +55,7 @@ Targets Debian 12/13 only (`ansible_facts['distribution'] == 'debian'`).
   refreshes the APT index after the DEB822 sources and the backports suite are
   written, so packages from a newly enabled suite are upgraded in the same run.
   Repeat runs report no change once the system is up to date.
+- Sysctls managed by this role live in
+  `/etc/sysctl.d/90-ansible-debian-base.conf`.  Host-specific `99-*` drop-ins
+  load later and intentionally take precedence; remove an old hand-managed
+  file such as `99-bbr-network.conf` if the role should be authoritative.
