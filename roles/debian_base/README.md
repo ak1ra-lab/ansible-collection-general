@@ -18,7 +18,7 @@ Targets Debian 12/13 only (`ansible_facts['distribution'] == 'debian'`).
   `debian-backports` pinning file.
 - Grants the `sudo` group passwordless sudo via `community.general.sudoers`.
 - Optionally enables TCP BBR (`community.general.modprobe` + `ansible.posix.sysctl`),
-  `net.ipv4.ip_forward`, custom `sshd_config` entries, custom sysctl entries,
+  `net.ipv4.ip_forward`, a role-owned sshd drop-in, custom sysctl entries,
   and the `qemu-guest-agent` service.  All role-managed sysctls go to
   `/etc/sysctl.d/90-ansible-debian-base.conf`, never to `/etc/sysctl.conf`.
 
@@ -42,7 +42,7 @@ Targets Debian 12/13 only (`ansible_facts['distribution'] == 'debian'`).
 | `debian_base_tcp_bbr_enabled` | `false` | Load `tcp_bbr` and write the BBR sysctls to the role drop-in |
 | `debian_base_ip_forward_enabled` | `false` | Set `net.ipv4.ip_forward=1` in the role drop-in |
 | `debian_base_qemu_guest_agent_enabled` | `true` | Install and enable `qemu-guest-agent` |
-| `debian_base_custom_sshd_config_enabled` | `false` | Apply `debian_base_custom_sshd_config_entries` |
+| `debian_base_custom_sshd_config_enabled` | `false` | Render `debian_base_custom_sshd_config_entries` into `/etc/ssh/sshd_config.d/00-ansible-debian-base.conf` |
 | `debian_base_custom_sysctl_conf_enabled` | `false` | Apply `debian_base_custom_sysctl_conf_entries` to the role drop-in |
 | `debian_base_apt_packages` | curated list | Packages installed as the baseline |
 
@@ -64,3 +64,18 @@ Targets Debian 12/13 only (`ansible_facts['distribution'] == 'debian'`).
   document their trade-offs; benchmark the target workload before enabling
   them.  TCP buffer and dirty-page settings are deliberately left to the
   RAM- and workload-dependent kernel defaults, with commented examples.
+- The custom sshd entries disable both `PasswordAuthentication` and
+  `KbdInteractiveAuthentication` (PAM keyboard-interactive can otherwise still
+  prompt for a password).  They are rendered into the role-owned
+  `/etc/ssh/sshd_config.d/00-ansible-debian-base.conf`, validated with
+  `sshd -t`, and notify a reload of `ssh.service`.  The `00-` prefix makes it
+  the first drop-in; OpenSSH keeps the first obtained value.  Directives
+  already present in `/etc/ssh/sshd_config` before its `Include` line still win
+  and must be reconciled manually; verify the effective values with `sshd -T`.
+  Entries are plain sshd_config lines rendered in order; they no longer use
+  `regexp`/`lineinfile`.  Lines written into `/etc/ssh/sshd_config` by earlier
+  versions of this role are not removed automatically.
+- The package list intentionally uses `bind9-dnsutils`, `7zip` and `gnupg`
+  instead of the removed/transitional `dnsutils`, `p7zip`/`p7zip-full` and
+  `gnupg2` names.  `systemd-cron` conflicts with `cron`/`anacron`, so hosts
+  that already run a classic cron daemon will have it replaced.

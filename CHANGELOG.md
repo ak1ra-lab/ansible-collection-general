@@ -15,6 +15,15 @@ The format is based on Keep a Changelog, and this project does not currently gua
   `vm.dirty_background_ratio` values; the remaining entries document their
   actual trade-offs.  The list is still disabled by default, and the
   commented TCP buffer/dirty-page examples are opt-in starting points.
+- `debian_base` now uses `bind9-dnsutils`, `7zip` and `gnupg` instead of the
+  removed/transitional `dnsutils`, `p7zip`/`p7zip-full` and `gnupg2` package
+  names; `dnsutils` has no candidate on Debian 13, so a fresh baseline install
+  would fail.  The custom sshd entries now render into the role-owned
+  `/etc/ssh/sshd_config.d/00-ansible-debian-base.conf` instead of editing
+  `/etc/ssh/sshd_config`, disable `KbdInteractiveAuthentication` (otherwise
+  PAM can still prompt for a password), validate with `sshd -t`, and notify a
+  reload of `ssh.service`.  Entries are plain sshd_config lines rendered by a
+  template; the old `{regexp, line}` shape is no longer used.
 
 ### Fixed
 

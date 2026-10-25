@@ -3,3 +3,8 @@
   ansible.builtin.systemd_service:
     name: qemu-guest-agent
     enabled: true
+
+- name: reload ssh
+  ansible.builtin.service:
+    name: ssh
+    state: reloaded

@@ -87,24 +87,31 @@ debian_base_ip_forward_enabled: false
 # bool: 是否安装 qemu-guest-agent
 debian_base_qemu_guest_agent_enabled: true
 
-# bool: 是否设置自定义 /etc/ssh/sshd_config
+# bool: 是否写入 role 自有的 sshd drop-in
+# The entries are rendered, in order, into
+# /etc/ssh/sshd_config.d/00-ansible-debian-base.conf.  The 00- prefix makes
+# this file the first drop-in; OpenSSH keeps the first obtained value, so it
+# wins among sshd_config.d entries.  Directives already present in
+# /etc/ssh/sshd_config before the Include line still win and must be
+# reconciled manually.  Verify the effective values with `sshd -T`.
 debian_base_custom_sshd_config_enabled: false
+# Plain sshd_config lines, rendered in order into the role-owned drop-in.
 debian_base_custom_sshd_config_entries:
   ## Specifies whether root can log in using ssh(1).
   ## The argument must be yes, prohibit-password, forced-commands-only, or no. The default is prohibit-password.
-  - regexp: "^#?PermitRootLogin"
-    line: "PermitRootLogin prohibit-password"
+  - "PermitRootLogin prohibit-password"
   ## Specifies whether password authentication is allowed. The default is yes.
-  - regexp: "^#?PasswordAuthentication"
-    line: "PasswordAuthentication no"
+  - "PasswordAuthentication no"
+  ## PasswordAuthentication only disables the password method; PAM
+  ## keyboard-interactive can still prompt for a password.  Disable both for
+  ## key-only SSH.  The default is yes.
+  - "KbdInteractiveAuthentication no"
   ## Specifies whether TCP forwarding is permitted. The default is yes.
   ## vscode: remote.SSH extension makes use of an SSH tunnel to facilitate communication with the host.
-  - regexp: "^#?AllowTcpForwarding"
-    line: "AllowTcpForwarding yes"
+  - "AllowTcpForwarding yes"
   ## Specifies whether forwarding Unix domain sockets is permitted. The default is yes.
   ## vscode: `remote.SSH.remoteServerListenOnSocket` requires this to be yes.
-  - regexp: "^#?AllowStreamLocalForwarding"
-    line: "AllowStreamLocalForwarding yes"
+  - "AllowStreamLocalForwarding yes"
 
 # bool: 是否设置自定义 sysctl 条目（写入 role 自有的 sysctl.d drop-in）
 # 下面是一组可选示例, 不是通用推荐值. 每项都有代价或依赖具体负载;
@@ -165,6 +172,7 @@ debian_base_custom_sysctl_conf_entries:
   # (20/10 on our Debian 13 test) unless the workload has been benchmarked.
 
 debian_base_apt_packages:
+  - 7zip
   - bash-completion
   - bat
   - bc
@@ -172,13 +180,13 @@ debian_base_apt_packages:
   - bzip2
   - conntrack
   - curl
-  - dnsutils
+  - bind9-dnsutils
   - dos2unix
   - file
   - gawk
   - git
   - git-lfs
-  - gnupg2
+  - gnupg
   - htop
   - iftop
   - iotop
@@ -189,8 +197,6 @@ debian_base_apt_packages:
   - mtr
   - ncdu
   - nfs-common
-  - p7zip
-  - p7zip-full
   - parallel
   - parted
   - pipx

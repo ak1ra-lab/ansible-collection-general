@@ -4,3 +4,9 @@
 # for host-level tooling, and shares the 90-ansible-* naming used by the other
 # roles.  Host-specific 99-* files still load later and win by design.
 _debian_base_sysctl_file: /etc/sysctl.d/90-ansible-debian-base.conf
+
+# Role-owned sshd drop-in.  The 00- prefix makes it the first drop-in in
+# sshd_config.d, so its values win among the drop-ins (OpenSSH keeps the first
+# obtained value).  Directives in sshd_config before the Include still win and
+# must be reconciled manually.
+_debian_base_sshd_config_file: /etc/ssh/sshd_config.d/00-ansible-debian-base.conf

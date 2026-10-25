@@ -38,17 +38,39 @@
     reload: true
     ignoreerrors: true
 
-- name: update /etc/ssh/sshd_config entries
+- name: write the role-owned sshd drop-in
   when:
     - (debian_base_custom_sshd_config_enabled | ansible.builtin.bool)
-  ansible.builtin.lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: "{{ entry.regexp }}"
-    line: "{{ entry.line }}"
-    state: present
-  loop: "{{ debian_base_custom_sshd_config_entries }}"
-  loop_control:
-    loop_var: entry
+  ansible.builtin.template:
+    src: etc/ssh/sshd_config.d/00-ansible-debian-base.conf.j2
+    dest: "{{ _debian_base_sshd_config_file }}"
+    owner: root
+    group: root
+    mode: "0644"
+    validate: /usr/sbin/sshd -t -f %s
+  register: _debian_base_sshd_dropin
+  notify:
+    - reload ssh
+
+- name: remove the role-owned sshd drop-in
+  when:
+    - not (debian_base_custom_sshd_config_enabled | ansible.builtin.bool)
+  ansible.builtin.file:
+    path: "{{ _debian_base_sshd_config_file }}"
+    state: absent
+  register: _debian_base_sshd_dropin_removed
+  notify:
+    - reload ssh
+
+- name: validate the effective sshd configuration
+  when: >-
+    (_debian_base_sshd_dropin is changed)
+    or (_debian_base_sshd_dropin_removed is changed)
+  ansible.builtin.command:
+    argv:
+      - /usr/sbin/sshd
+      - -t
+  changed_when: false
 
 - name: apply the custom sysctl entries
   when: debian_base_custom_sysctl_conf_enabled
