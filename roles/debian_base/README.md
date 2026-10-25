@@ -59,3 +59,8 @@ Targets Debian 12/13 only (`ansible_facts['distribution'] == 'debian'`).
   `/etc/sysctl.d/90-ansible-debian-base.conf`.  Host-specific `99-*` drop-ins
   load later and intentionally take precedence; remove an old hand-managed
   file such as `99-bbr-network.conf` if the role should be authoritative.
+- `debian_base_custom_sysctl_conf_entries` is a disabled-by-default set of
+  optional examples, not a universal tuning recommendation.  The entries
+  document their trade-offs; benchmark the target workload before enabling
+  them.  TCP buffer and dirty-page settings are deliberately left to the
+  RAM- and workload-dependent kernel defaults, with commented examples.

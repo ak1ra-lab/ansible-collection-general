@@ -6,6 +6,16 @@ The format is based on Keep a Changelog, and this project does not currently gua
 
 ## [Unreleased]
 
+### Changed
+
+- Re-audited `debian_base_custom_sysctl_conf_entries` against the kernel
+  documentation and Debian 12/13 defaults.  The example list no longer sets
+  the obsolete `net.core.optmem_max=20480` (modern default 128 KiB) or the
+  RAM/workload-dependent `tcp_rmem`, `tcp_wmem`, `vm.dirty_ratio` and
+  `vm.dirty_background_ratio` values; the remaining entries document their
+  actual trade-offs.  The list is still disabled by default, and the
+  commented TCP buffer/dirty-page examples are opt-in starting points.
+
 ### Fixed
 
 - `debian_base` now writes every sysctl it manages to the role-owned
