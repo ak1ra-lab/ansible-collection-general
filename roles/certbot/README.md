@@ -124,8 +124,9 @@ HS256, the algorithm used by ZeroSSL and cert-manager.
 ## DNS-01
 
 `certbot_dns_provider` selects the `certbot-dns-<provider>` plugin
-(`cloudflare` by default). The credentials are a plain mapping of plugin INI
-keys, so any certbot DNS plugin works without a per-provider template:
+(`cloudflare` by default). `certbot_dns_credentials` is a plain mapping of the
+plugin's INI keys, rendered verbatim, so plugins that use an INI credentials
+file need no per-provider template:
 
 ```yaml
 certbot_dns_credentials:
@@ -134,9 +135,21 @@ certbot_dns_credentials:
 
 The mapping is rendered to
 `/etc/letsencrypt/credentials/<provider>.ini` (mode `0600`); the directory is
-mode `0700`. For plugins that read credentials from the environment or an
-instance profile (for example `route53`), leave the mapping empty and the
-`--dns-<provider>-credentials` argument is omitted.
+mode `0700`. Keys differ by plugin: see the
+[Certbot DNS plugin list](https://eff-certbot.readthedocs.io/en/stable/using.html#dns-plugins)
+and each plugin's documentation. Common examples:
+
+| Provider | Typical INI keys | Documentation |
+| --- | --- | --- |
+| `cloudflare` | `dns_cloudflare_api_token` (recommended), or `dns_cloudflare_email` + `dns_cloudflare_api_key` for the legacy global API key | [certbot-dns-cloudflare](https://certbot-dns-cloudflare.readthedocs.io) |
+| `digitalocean` | `dns_digitalocean_token` | [certbot-dns-digitalocean](https://certbot-dns-digitalocean.readthedocs.io) |
+| `rfc2136` | `dns_rfc2136_server`, `dns_rfc2136_port`, `dns_rfc2136_name`, `dns_rfc2136_secret`, `dns_rfc2136_algorithm`, optional `dns_rfc2136_sign_query` | [certbot-dns-rfc2136](https://certbot-dns-rfc2136.readthedocs.io) |
+| `route53` | No INI file; use the AWS credential chain and leave the mapping empty | [certbot-dns-route53](https://certbot-dns-route53.readthedocs.io) |
+| `google` | No INI file; use Application Default Credentials and leave the mapping empty. A service-account JSON file is not supported by this mapping. | [certbot-dns-google](https://certbot-dns-google.readthedocs.io) |
+
+For plugins that read credentials from the environment or an instance profile,
+leave the mapping empty and the `--dns-<provider>-credentials` argument is
+omitted.
 
 `certbot_dns_propagation_seconds` (default `30`) is passed as
 `--dns-<provider>-propagation-seconds`.

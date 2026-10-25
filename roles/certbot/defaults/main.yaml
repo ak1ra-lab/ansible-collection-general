@@ -85,12 +85,33 @@ certbot_rsa_key_size: 4096
 # hooks, or to "" when only HTTP-01 is used.
 certbot_dns_provider: cloudflare
 
-# Raw plugin credentials rendered as an INI file.  Keys are plugin-specific;
-# for Cloudflare:
-#   certbot_dns_credentials:
+# Raw plugin credentials rendered as an INI file and passed verbatim to
+# --dns-<provider>-credentials.  Keys are plugin-specific and must match the
+# selected plugin's documented credentials file; the role does not translate
+# them.  Official plugin list:
+#   https://eff-certbot.readthedocs.io/en/stable/using.html#dns-plugins
+#
+# Common INI examples:
+#   cloudflare:
 #     dns_cloudflare_api_token: "{{ vault_cloudflare_api_token }}"
+#     # Legacy global API key: dns_cloudflare_email + dns_cloudflare_api_key
+#     # https://certbot-dns-cloudflare.readthedocs.io
+#   digitalocean:
+#     dns_digitalocean_token: "..."
+#     # https://certbot-dns-digitalocean.readthedocs.io
+#   rfc2136:
+#     dns_rfc2136_server: 192.0.2.1
+#     dns_rfc2136_port: 53
+#     dns_rfc2136_name: keyname.
+#     dns_rfc2136_secret: "..."
+#     dns_rfc2136_algorithm: HMAC-SHA512
+#     dns_rfc2136_sign_query: false  # optional
+#     # https://certbot-dns-rfc2136.readthedocs.io
+#
 # Leave empty for plugins that read credentials from the environment or an
-# instance profile (e.g. route53).
+# instance profile (for example route53, or Google ADC).  This mapping only
+# covers INI-style credential files; plugins that need another format, such
+# as the Google service-account JSON file, must be handled outside it.
 certbot_dns_credentials: {}
 certbot_dns_credentials_dir: "{{ certbot_config_dir }}/credentials"
 certbot_dns_credentials_file: "{{ certbot_dns_credentials_dir }}/{{ certbot_dns_provider }}.ini"
