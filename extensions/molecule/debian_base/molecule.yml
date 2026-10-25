@@ -6,9 +6,14 @@
 # The role has no absent contract: its changes are the baseline itself, so
 # the sequence stops after the idempotence and verify checks instead of
 # running the shared cleanup/absent-verify tail.
+#
+# The first-run verify runs before idempotence: it proves the first converge
+# refreshed the APT index after adding the backports source, which is the
+# behaviour that keeps the upgrade from being deferred to a later run.
 scenario:
   test_sequence:
     - prepare
     - converge
+    - verify first-run-verify.yml
     - idempotence
     - verify

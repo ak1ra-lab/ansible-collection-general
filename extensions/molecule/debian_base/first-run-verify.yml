@@ -1,0 +1,27 @@
+---
+# debian_base scenario - assert the first converge refreshed the APT index
+# after the DEB822 sources (including backports) were written.
+#
+# The role refreshes the index once while installing python3-debian, before
+# the repository tasks run.  The upgrade task must refresh it again after the
+# sources change; otherwise the first run silently uses the pre-backports
+# index and the next converge upgrades the backports packages instead.
+
+- name: verify the first converge fetched the backports index
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: collect the backports index files
+      ansible.builtin.find:
+        paths: /var/lib/apt/lists
+        patterns: "*backports*"
+      register: _debian_base_backports_lists
+
+    - name: assert the first converge fetched the backports index
+      ansible.builtin.assert:
+        that:
+          - _debian_base_backports_lists.matched > 0
+        fail_msg: >-
+          the first converge did not refresh the APT index after adding the
+          backports source; the next converge would upgrade packages instead
+        quiet: true

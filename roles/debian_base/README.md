@@ -50,6 +50,7 @@ Targets Debian 12/13 only (`ansible_facts['distribution'] == 'debian'`).
 - The `qemu-guest-agent` task notifies a handler that enables the service; on
   hardware without the virtio device the package still installs, but the service
   stays inactive.
-- The role is not idempotent on the first run by design: the `apt upgrade` may
-  upgrade packages. Repeat runs are cache-bounded (`cache_valid_time: 3600`) and
-  report no change once the system is up to date.
+- The first run reports changes because it runs `apt upgrade`. The upgrade task
+  refreshes the APT index after the DEB822 sources and the backports suite are
+  written, so packages from a newly enabled suite are upgraded in the same run.
+  Repeat runs report no change once the system is up to date.

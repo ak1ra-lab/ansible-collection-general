@@ -1,8 +1,9 @@
 ---
 # debian_base scenario - apply the baseline with the host-only facets
-# disabled and a one-package baseline list.  The backports suite and the
+# disabled and a small baseline list.  The backports suite and the
 # unattended-upgrades updates drop-in stay enabled so the optional branches
-# are exercised.
+# are exercised.  linux-libc-dev is the package the backports pin targets and
+# the one the stale-index regression used to defer to the next run.
 
 - name: apply the Debian baseline
   hosts: all
@@ -10,6 +11,7 @@
   vars:
     debian_base_apt_packages:
       - hello
+      - linux-libc-dev
 
     debian_base_apt_repo_debian_backports_enabled: true
 

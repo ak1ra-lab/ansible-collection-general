@@ -65,7 +65,7 @@ teardown verification.
 | --- | --- |
 | `apt_install/basic` | Third-party repository keyring URL, DEB822 source, origin pinning, unattended-upgrades, package install and hold, the revert switches, legacy `.list` removal |
 | `apt_install/variants` | Inline keyring content, release-based pinning, `any-version` suites, a keyring package with a pinned checksum |
-| `debian_base` | DEB822 archive/security sources, backports pinning, unattended-upgrades drop-ins, force-IPv4, baseline package, sudoers |
+| `debian_base` | DEB822 archive/security sources, backports pinning and first-run index refresh, unattended-upgrades drop-ins, force-IPv4, baseline package, sudoers |
 | `go_build` | Fixture git repository, binary build and stamp-based rebuild skip |
 | `pyproject_install/local` | `uv build --wheel` on the controller, wheel install into the target venv, remote wheel cleanup |
 | `pyproject_install/pypi` | PyPI install into a target venv, role-provided system packages |

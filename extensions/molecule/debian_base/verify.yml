@@ -105,6 +105,38 @@
           unexpected package status: {{ _debian_base_hello.stdout }}
         quiet: true
 
+    - name: collect the backports package status
+      ansible.builtin.command:
+        argv: [dpkg-query, -W, "-f=${Status}", linux-libc-dev]
+      changed_when: false
+      register: _debian_base_linux_libc_dev
+
+    - name: assert the backports package is installed
+      ansible.builtin.assert:
+        that:
+          - _debian_base_linux_libc_dev.stdout is search('ok installed')
+        fail_msg: >-
+          unexpected package status: {{ _debian_base_linux_libc_dev.stdout }}
+        quiet: true
+
+    - name: collect the backports package policy
+      ansible.builtin.command:
+        argv: [apt-cache, policy, linux-libc-dev]
+      changed_when: false
+      register: _debian_base_linux_libc_dev_policy
+
+    - name: assert the backports suite is available for the package
+      ansible.builtin.assert:
+        that:
+          - >-
+            _debian_base_linux_libc_dev_policy.stdout is search(
+              ansible_facts['distribution_release'] ~ '-backports/main'
+            )
+        fail_msg: >-
+          the backports suite is not available for linux-libc-dev:
+          {{ _debian_base_linux_libc_dev_policy.stdout }}
+        quiet: true
+
     - name: collect the sudoers rule
       ansible.builtin.slurp:
         src: /etc/sudoers.d/sudo
