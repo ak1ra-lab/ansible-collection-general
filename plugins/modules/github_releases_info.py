@@ -43,7 +43,6 @@ options:
     description:
       - Optional GitHub API token.
     type: str
-    no_log: true
   validate_certs:
     description:
       - Validate TLS certificates for GitHub API requests.

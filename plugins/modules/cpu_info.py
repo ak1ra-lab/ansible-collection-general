@@ -11,7 +11,7 @@ description:
   - Gathers CPU flags and standardized microarchitecture levels from the
     managed host and exposes them as facts under C(cpu).
   - On Linux the facts are parsed from C(/proc/cpuinfo); on other platforms
-    O(flags) and the microarchitecture fields are returned empty while the
+    RV(cpu.flags) and the microarchitecture fields are returned empty while the
     basic fields stay populated.
   - The C(flags) value is the intersection across all logical CPUs, so it is
     safe to treat as the capability set of the whole machine.
@@ -49,7 +49,7 @@ cpu:
   type: dict
   contains:
     architecture:
-      description: Machine architecture as reported by C(platform.machine()).
+      description: Machine architecture as reported by C(platform.machine).
       returned: always
       type: str
       sample: x86_64
