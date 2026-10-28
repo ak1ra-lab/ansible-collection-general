@@ -64,6 +64,19 @@ jobs:
           # ty resolves the ansible_collections imports from the
           # project-local collections path installed above.
           uv run ty check plugins/
+      - name: Lint collection documentation
+        env:
+          ANSIBLE_COLLECTIONS_PATH: ${{ github.workspace }}/.ansible/collections
+        run: >-
+          uv run --group lint antsibull-docs lint-collection-docs
+          --plugin-docs --validate-collection-refs self --skip-rstcheck .
+      - name: Check role documentation coverage
+        run: uv run --group docs python scripts/check_docs.py
+      - name: Build the documentation site
+        env:
+          ANSIBLE_COLLECTIONS_PATH: ${{ github.workspace }}/.ansible/collections
+          NO_MKDOCS_2_WARNING: "1"
+        run: uv run --group docs mkdocs build --strict
 
   molecule:
     name: Molecule
