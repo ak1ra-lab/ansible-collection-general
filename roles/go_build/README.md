@@ -33,6 +33,9 @@ found.
 | go_build_goos        | linux         | Target `GOOS`                                            |
 | go_build_goarch      | amd64         | Target `GOARCH`                                          |
 | go_build_base_dir    | /tmp/go-build | Base directory for source checkout, output, and caches   |
+| go_build_gopath      | `{{ go_build_base_dir }}/gopath` | `GOPATH` used on the controller |
+| go_build_gomodcache  | `{{ go_build_base_dir }}/pkg/mod` | `GOMODCACHE` used on the controller |
+| go_build_gocache     | `{{ go_build_base_dir }}/cache` | `GOCACHE` used on the controller |
 | go_build_repo_dir    | empty string  | Optional checkout directory override; empty derives `{{ go_build_base_dir }}/src/<git-server>/<org>/<project>` |
 
 ## Output Facts

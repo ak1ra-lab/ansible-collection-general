@@ -41,11 +41,17 @@ setup into a self-delegation.
 | `acme_dns_api_corsorigins` | `[]` | API CORS allowed origins |
 | `acme_dns_db_engine` | `sqlite` | `sqlite` or `postgres` (upstream v2.0+) |
 | `acme_dns_db_connection` | `acme-dns.db` | Database connection string |
-| `acme_dns_loglevel` / `acme_dns_logformat` | `info` / `json` | Log configuration |
+| `acme_dns_loglevel` / `acme_dns_logformat` | `info` / `json` | Log level and format |
+| `acme_dns_logtype` / `acme_dns_logfile` | `stdout` / `./acme-dns.log` | Log destination and file path (`logfile` is used when `logtype: file`) |
+| `acme_dns_debug` | `false` | Enable acme-dns debug messages |
+| `acme_dns_api_acme_cache_dir` | `acme` | Cache directory for the API certificate (Let's Encrypt TLS modes) |
+| `acme_dns_api_notification_email` | empty | Optional Let's Encrypt expiry notification address |
+| `acme_dns_api_disable_registration` | `false` | Disable the `/register` API endpoint |
+| `acme_dns_api_use_header` / `acme_dns_api_header_name` | `false` / `X-Forwarded-For` | Read the client IP from a reverse-proxy header |
 | `acme_dns_user` / `acme_dns_group` | `acme-dns` / `acme-dns` | Service user and group |
 | `acme_dns_home_dir` / `acme_dns_config_dir` | `/var/lib/acme-dns` / `/etc/acme-dns` | Data and config directories (derived from `acme_dns_user`) |
 | `acme_dns_install_dir` | `/usr/local/bin` | Binary install directory |
-| `acme_dns_go_build_repo_version` / `_goarch` / `_base_dir` | see defaults | Build overrides passed to `go_build` |
+| `acme_dns_go_build_repo_version` / `acme_dns_go_build_goarch` / `acme_dns_go_build_base_dir` | see defaults | Build overrides passed to `go_build` |
 
 The upstream repository URL, package path, static mode, target OS, and the
 systemd service/unit names are internal constants in `vars/main.yaml`.

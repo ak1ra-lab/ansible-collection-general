@@ -19,7 +19,7 @@ The role supports three sources:
 | `pyproject_install_source` | `local` | Install source: `local`, `pypi`, or `testpypi` |
 | `pyproject_install_package_extras` | empty string | Optional extras to install |
 | `pyproject_install_local_project_root` | `{{ playbook_dir | dirname }}` | Local project root used for `uv build --wheel` |
-| `pyproject_install_python_interpreter` | `{{ ansible_python_interpreter }}` | Python interpreter used for `python3 -m venv` |
+| `pyproject_install_python_interpreter` | `{{ ansible_python_interpreter | default('/usr/bin/python3') }}` | Python interpreter used for `python3 -m venv` |
 | `pyproject_install_venv_dir` | `/var/lib/<package>/venv` | Target virtual environment path |
 | `pyproject_install_venv_force` | `false` | Remove the venv before reinstalling |
 | `pyproject_install_remote_tmp_dir` | `/tmp` | Remote temporary directory for copied wheel files |

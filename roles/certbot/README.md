@@ -16,6 +16,13 @@ configured by their own roles and can reload after a renewal through the global
 | `pypi` | Installs `certbot` and `certbot-dns-<provider>` into an isolated virtualenv through `ak1ra_lab.general.pyproject_install` (`/var/lib/certbot/venv` by default). Useful for a newer certbot than the distribution provides. The role writes the systemd units. |
 | `none` | Uses an externally provided certbot (snap, image, ...); set `certbot_bin`. The role does not manage units or the timer by default; set `certbot_manage_timer: true` to opt in. |
 
+`certbot_install_source` selects the source (`apt` by default). For apt,
+`certbot_package_state` (`present` by default, or `latest`) controls whether an
+existing package is upgraded. For pypi, `certbot_pypi_version` pins the
+installed packages and `certbot_pypi_packages` (empty by default) replaces the
+derived `certbot` plus `certbot-dns-<provider>` list. `certbot_bin` overrides
+the executable path.
+
 The role never mixes the two binaries: the systemd unit, the issuance command
 and the renewal timer all use `certbot_bin` (the distribution path, the venv
 path, or the explicit path). A leftover `/usr/bin/certbot` is reported as a
@@ -68,7 +75,9 @@ certbot_certificates:
 ```
 
 `certbot_key_type` defaults to `ecdsa` (certbot's own default since 2.0). Set
-it to `rsa` to use `certbot_rsa_key_size` (4096) instead.
+it to `rsa` to use `certbot_rsa_key_size` (4096) instead. For ECDSA,
+`certbot_elliptic_curve` defaults to `secp256r1`; use another
+certbot-supported curve when required by the consumer or CA policy.
 
 ## ACME CA
 
@@ -133,9 +142,10 @@ certbot_dns_credentials:
   dns_cloudflare_api_token: "{{ vault_cloudflare_api_token }}"
 ```
 
-The mapping is rendered to
-`/etc/letsencrypt/credentials/<provider>.ini` (mode `0600`); the directory is
-mode `0700`. Keys differ by plugin: see the
+The mapping is rendered to `certbot_dns_credentials_file` (default
+`<certbot_dns_credentials_dir>/<provider>.ini`, for example
+`/etc/letsencrypt/credentials/cloudflare.ini`; mode `0600`). The credentials
+directory is mode `0700`. Keys differ by plugin: see the
 [Certbot DNS plugin list](https://eff-certbot.readthedocs.io/en/stable/using.html#dns-plugins)
 and each plugin's documentation. Common examples:
 
@@ -195,6 +205,11 @@ The registry is a domain -> account mapping:
 }
 ```
 
+The registry is written to `certbot_acmedns_storage_path` (default
+`/etc/letsencrypt/credentials/acmedns.json`). The controller-side persistence
+directory is `certbot_acmedns_credentials_dir`; when empty, the role uses
+`acme_dns_register`'s default (`<playbook_dir>/host_vars/<inventory_hostname>`).
+
 `example.com` and `*.example.com` share the `example.com` account because both
 use `_acme-challenge.example.com`; `www.example.com` gets its own account.
 Each acme-dns account has two TXT slots, so the base + wildcard pair fits
@@ -219,11 +234,16 @@ certbot_certificates:
       - www.example.com
 ```
 
+`certbot_acmedns_cloudflare_zone_token` is the least-privilege alternative to
+the account-level `certbot_acmedns_cloudflare_api_token`; the zone token takes
+precedence when both are set.
+
 With `certbot_acmedns_register: true`, the role registers one account per
 validation domain (`example.com` and `www.example.com`) and creates the
-corresponding CNAME records. `certbot_acmedns_cloudflare_zones` maps
-validation domains to zones when the last-two-labels heuristic is wrong or the
-domains span multiple zones:
+corresponding CNAME records. `certbot_acmedns_cloudflare_zone` sets one global
+zone fallback, and `certbot_acmedns_cloudflare_zones` maps validation domains
+to zones when the last-two-labels heuristic is wrong or the domains span
+multiple zones:
 
 ```yaml
 certbot_acmedns_cloudflare_zones:
@@ -292,7 +312,16 @@ cannot issue wildcard certificates.
 
 The role enables `certbot.timer` (twice daily with a randomized delay and
 `Persistent=true`). `certbot_manage_timer` defaults to true for apt/pypi and
-false for `none`. The managed unit's command is equivalent to:
+false for `none`. The timer knobs are:
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `certbot_manage_timer` | apt/pypi: `true`; none: `false` | Render and manage the role-owned timer |
+| `certbot_timer_enabled` | `true` | Enable and start the managed timer |
+| `certbot_timer_on_calendar` | `*-*-* 00,12:00:00` | systemd `OnCalendar` expression |
+| `certbot_timer_randomized_delay_sec` | `12h` | systemd `RandomizedDelaySec` value |
+
+The managed unit's command is equivalent to:
 
 ```shell
 /var/lib/certbot/venv/bin/certbot -q renew --no-random-sleep-on-renew
@@ -444,6 +473,9 @@ group.
 | `certbot_log_dir` | `/var/log/letsencrypt` |
 | `certbot_venv_dir` | `/var/lib/certbot/venv` |
 | `certbot_dns_credentials_dir` | `<config_dir>/credentials` |
+| `certbot_dns_credentials_file` | `<credentials_dir>/<provider>.ini` |
+| `certbot_acmedns_storage_path` | `<credentials_dir>/acmedns.json` |
+| `certbot_acmedns_credentials_dir` | empty; uses `acme_dns_register`'s default |
 
 The certbot commands receive `--config-dir`, `--work-dir` and `--logs-dir`
 explicitly, so relocating the directories works consistently. For apt and
@@ -487,11 +519,14 @@ The role-managed systemd units, `cli.ini` and logrotate snippets are
 independently written equivalents of the Debian 13 package files (the cron
 job is intentionally not carried over). The units are always managed for apt
 and pypi; the other two files are optional and carry a
-`Managed by ak1ra_lab.general.certbot` marker. The role removes its own marked
-`cli.ini`/logrotate copies when the corresponding flag is disabled, and its
-own marked units when it no longer manages them (for example after switching
-to `none`). No certbot or Debian source files are copied into this collection;
-the collection remains MIT licensed.
+`Managed by ak1ra_lab.general.certbot` marker. `certbot_manage_cli_ini` and
+`certbot_manage_logrotate` default to true for pypi and false otherwise;
+`certbot_cli_ini_extra` (empty by default) adds arbitrary `cli.ini` options.
+The role removes its own marked `cli.ini`/logrotate copies when the
+corresponding flag is disabled, and its own marked units when it no longer
+manages them (for example after switching to `none`). No certbot or Debian
+source files are copied into this collection; the collection remains MIT
+licensed.
 
 ## Testing
 

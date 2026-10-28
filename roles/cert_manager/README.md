@@ -248,10 +248,14 @@ See `defaults/main.yaml` for the full list. The most important ones:
 | `cert_manager_version` | empty | Release to install (`v1.21.2`); empty resolves the latest stable release |
 | `cert_manager_manifest_url` | empty | Override the resolved asset URL (mirror/air-gapped) |
 | `cert_manager_manifest_checksum` | empty | Override the resolved GitHub asset digest |
+| `cert_manager_manifest_cache_dir` | `$HOME/.cache/cert-manager` | Manifest cache on the delegate host |
+| `cert_manager_install_wait` | `true` | Wait for the webhook deployment and ClusterIssuer CRD after install |
 | `cert_manager_github_token` | empty | Optional GitHub API token for release resolution |
 | `cert_manager_apply` | `true` | Apply the managed solver/EAB Secrets and ClusterIssuers |
 | `cert_manager_manifest_dir` | empty | Optional rendered-manifest output directory |
 | `cert_manager_delegate_to` | `localhost` | Host that runs the k8s modules |
+| `cert_manager_kubeconfig` | empty | Explicit kubeconfig; empty uses `KUBECONFIG` or `~/.kube/config` |
+| `cert_manager_context` | empty | Optional kubeconfig context |
 | `cert_manager_namespace` | `cert-manager` | Controller namespace |
 | `cert_manager_cluster_resource_namespace` | `cert_manager_namespace` | Namespace for ClusterIssuer Secret references |
 | `cert_manager_acme_email` | empty | Default ACME account email; issuers can override it |

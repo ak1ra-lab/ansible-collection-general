@@ -26,11 +26,14 @@ Targets Debian 12/13 only (`ansible_facts['distribution'] == 'debian'`).
 
 | Variable | Default | Description |
 | --- | --- | --- |
+| `debian_base_apt_repo_debian_types` | `[deb]` | Archive DEB822 types |
 | `debian_base_apt_repo_debian_uris` | `[https://deb.debian.org/debian/]` | Debian archive mirrors |
 | `debian_base_apt_repo_debian_suites` | release + `-updates` | Archive suites |
 | `debian_base_apt_repo_debian_components` | main/contrib/non-free/non-free-firmware | Archive components |
+| `debian_base_apt_repo_debian_security_types` | `[deb]` | Security DEB822 types |
 | `debian_base_apt_repo_debian_security_uris` | `[https://deb.debian.org/debian-security/]` | Security mirrors |
 | `debian_base_apt_repo_debian_security_suites` | release + `-security` | Security suites |
+| `debian_base_apt_repo_debian_security_components` | main/contrib/non-free/non-free-firmware | Security components |
 | `debian_base_apt_repo_debian_backports_enabled` | `false` | Add the backports suite and pinning file |
 | `debian_base_apt_repo_debian_backports_preferences_package` | `linux-* initramfs-tools` | Backports pinning `Package:` glob |
 | `debian_base_apt_repo_debian_backports_preferences_pin_priority` | `500` | Backports pin priority |
@@ -43,7 +46,9 @@ Targets Debian 12/13 only (`ansible_facts['distribution'] == 'debian'`).
 | `debian_base_ip_forward_enabled` | `false` | Set `net.ipv4.ip_forward=1` in the role drop-in |
 | `debian_base_qemu_guest_agent_enabled` | `true` | Install and enable `qemu-guest-agent` |
 | `debian_base_custom_sshd_config_enabled` | `false` | Render `debian_base_custom_sshd_config_entries` into `/etc/ssh/sshd_config.d/00-ansible-debian-base.conf` |
+| `debian_base_custom_sshd_config_entries` | key-only SSH examples | Plain sshd_config lines rendered in order |
 | `debian_base_custom_sysctl_conf_enabled` | `false` | Apply `debian_base_custom_sysctl_conf_entries` to the role drop-in |
+| `debian_base_custom_sysctl_conf_entries` | optional examples | Sysctl entries rendered into the role drop-in |
 | `debian_base_apt_packages` | curated list | Packages installed as the baseline |
 
 ## Notes
