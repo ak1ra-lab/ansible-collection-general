@@ -27,7 +27,7 @@ dependencies:
   community.general: ">=8.0.0"
   kubernetes.core: ">=6.0.0"
 repository: https://github.com/ak1ra-lab/ansible-collection-general
-documentation: https://github.com/ak1ra-lab/ansible-collection-general
+documentation: https://ak1ra-lab.github.io/ansible-collection-general/
 homepage: https://github.com/ak1ra-lab/ansible-collection-general
 issues: https://github.com/ak1ra-lab/ansible-collection-general/issues
 # https://setuptools.pypa.io/en/latest/userguide/miscellaneous.html

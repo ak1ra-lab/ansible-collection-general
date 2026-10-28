@@ -1,0 +1,81 @@
+---
+site_name: ak1ra_lab.general
+site_description: Shared Ansible roles and custom modules for ak1ra-lab repositories
+site_url: https://ak1ra-lab.github.io/ansible-collection-general/
+site_author: ak1ra
+copyright: "(c) 2026 ak1ra"
+repo_url: https://github.com/ak1ra-lab/ansible-collection-general
+repo_name: ak1ra-lab/ansible-collection-general
+docs_dir: docs
+site_dir: site
+dev_addr: 127.0.0.1:8000
+
+nav:
+  - Home: index.md
+  - Getting Started: installation.md
+  - Architecture: architecture.md
+  - Playbooks: playbooks.md
+  - Roles:
+      - roles/index.md
+      - acme_dns: roles/acme_dns.md
+      - acme_dns_register: roles/acme_dns_register.md
+      - apt_install: roles/apt_install.md
+      - certbot: roles/certbot.md
+      - cert_manager: roles/cert_manager.md
+      - debian_base: roles/debian_base.md
+      - docker: roles/docker.md
+      - go_build: roles/go_build.md
+      - pyproject_install: roles/pyproject_install.md
+  - Modules:
+      - Overview: modules.md
+      - Reference: ak1ra_lab.general
+  - Project:
+      - Contributing: contributing.md
+      - Changelog: changelog.md
+
+theme:
+  name: material
+  language: en
+  features:
+    - content.code.copy
+    - navigation.footer
+    - navigation.sections
+    - navigation.top
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets:
+      base_path:
+        - .
+      check_paths: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+  - ansible-collection:
+      collections:
+        - fqcn: ak1ra_lab.general
+  - htmlproofer:
+      validate_external_urls: false
+      raise_error_after_finish: true
+
+hooks:
+  - hooks/ansible_markup.py
+
+watch:
+  - roles
+  - hooks
+  - CONTRIBUTING.md
+  - CHANGELOG.md
+  - README.md
