@@ -28,9 +28,16 @@
         - /var/log/letsencrypt
         - "{{ _certbot_acmedns_dir }}"
 
+# The controller directory is shared by every managed node.  Removing it
+# with delegate_to from the per-host play makes both delegated tasks race
+# on the same localhost rmtree; run it once in its own localhost play.
+- name: remove the persisted acme-dns controller credentials
+  hosts: localhost
+  gather_facts: false
+  vars:
+    _certbot_acmedns_dir: /tmp/molecule-ak1ra-general-certbot-acmedns
+  tasks:
     - name: remove the persisted controller credentials
       ansible.builtin.file:
-        path: /tmp/molecule-ak1ra-general-certbot-acmedns
+        path: "{{ _certbot_acmedns_dir }}"
         state: absent
-      delegate_to: localhost
-      become: false
