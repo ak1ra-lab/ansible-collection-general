@@ -50,8 +50,9 @@ def main() -> int:
         page = DOCS_ROLES / f"{role}.md"
         if not page.is_file():
             continue
-        if SNIPPET.format(role=role) not in page.read_text(encoding="utf-8"):
-            errors.append(f"docs/roles/{role}.md must contain {SNIPPET.format(role=role)!r}")
+        expected = SNIPPET.format(role=role)
+        if page.read_text(encoding="utf-8").strip() != expected:
+            errors.append(f"docs/roles/{role}.md must contain only {expected!r}")
         if f"roles/{role}.md" not in nav:
             errors.append(f"mkdocs.yaml nav is missing roles/{role}.md")
         if f"({role}.md)" not in index:

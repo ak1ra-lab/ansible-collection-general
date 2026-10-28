@@ -56,9 +56,11 @@ them as `ansible_facts['cpu']` (also returned under the `cpu` key):
   `x86-64-v4`)
 - `microarch_level`: the highest supported level
 
-On Linux the facts are parsed from `/proc/cpuinfo`; other platforms return
-empty flags and microarchitecture fields. Facts from third-party collections
-are not part of `ansible.builtin.setup`, so run `cpu_info` explicitly:
+On Linux the facts are parsed from `/proc/cpuinfo`. On other platforms
+`architecture` is still reported, while `vendor`, `model`, `logical_cpus`,
+`flags`, and the microarchitecture fields are empty or zero. Facts from
+third-party collections are not part of `ansible.builtin.setup`, so run
+`cpu_info` explicitly:
 
 ```yaml
 - name: Collect CPU capability facts
@@ -75,6 +77,9 @@ are not part of `ansible.builtin.setup`, so run `cpu_info` explicitly:
 
 - [`github_releases_info` reference](ak1ra_lab.general/module/github_releases_info.md)
 - [`cpu_info` reference](ak1ra_lab.general/module/cpu_info.md)
+
+The generated `cpu_info` page lists the top-level `cpu` return; its nested
+fields are documented above.
 
 The same reference is available offline with
 `ansible-doc ak1ra_lab.general.<module>` against an installed collection.

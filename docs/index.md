@@ -32,7 +32,7 @@ controller-side Go and Python build helpers.
 ## Design at a glance
 
 The collection is a set of roles with explicit variable contracts; playbooks
-compose them.
+compose them, and a few roles use another role internally for implementation.
 
 - `debian_base`, `apt_install`, and `docker` establish a Debian host baseline.
 - `acme_dns`, `acme_dns_register`, and `certbot` provide the DNS-01 ACME

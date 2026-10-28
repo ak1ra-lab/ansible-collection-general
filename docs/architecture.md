@@ -55,8 +55,10 @@ The ACME roles cover two different deployment shapes:
 
 A typical DNS-01 flow is: deploy `acme_dns`, register client accounts and
 CNAMEs with `acme_dns_register`, then configure `certbot` with the acme-dns
-auth hook. The ACME roles do not call each other; the site playbook composes
-them.
+auth hook. `certbot` can invoke `acme_dns_register` itself when
+`certbot_acmedns_register` is true; otherwise a site playbook composes the
+roles. The `acme_dns`, `acme_dns_register`, and `certbot` roles do not list
+each other in `meta/main.yaml`.
 
 ## Build and install
 

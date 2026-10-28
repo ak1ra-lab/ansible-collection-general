@@ -10,9 +10,10 @@ short_description: Collect CPU capability facts for the managed host
 description:
   - Gathers CPU flags and standardized microarchitecture levels from the
     managed host and exposes them as facts under C(cpu).
-  - On Linux the facts are parsed from C(/proc/cpuinfo); on other platforms
-    RV(cpu.flags) and the microarchitecture fields are returned empty while the
-    basic fields stay populated.
+  - On Linux the facts are parsed from C(/proc/cpuinfo). On other platforms,
+    RV(cpu.architecture) is still reported; RV(cpu.vendor), RV(cpu.model),
+    RV(cpu.logical_cpus), RV(cpu.flags), and the microarchitecture fields are
+    empty or zero.
   - The C(flags) value is the intersection across all logical CPUs, so it is
     safe to treat as the capability set of the whole machine.
 options: {}
