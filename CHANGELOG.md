@@ -6,7 +6,17 @@ The format is based on Keep a Changelog, and this project does not currently gua
 
 ## [Unreleased]
 
+### Added
+
+- Add the MkDocs Material documentation site under `docs/`, rendered from the
+  role READMEs and generated module reference, with `just docs-serve` and
+  `just docs-build` recipes, docs linting, role coverage checks, and GitHub
+  Pages publishing.
+
 ### Changed
+
+- Split the README into a consumer landing page and `CONTRIBUTING.md`, which
+  now owns the development, testing, and documentation workflow.
 
 - Re-audited `debian_base_custom_sysctl_conf_entries` against the kernel
   documentation and Debian 12/13 defaults.  The example list no longer sets
@@ -27,6 +37,9 @@ The format is based on Keep a Changelog, and this project does not currently gua
 
 ### Fixed
 
+- Correct the `cpu_info` return-value reference for `flags` and remove the
+  invalid `no_log` field from the `github_releases_info` `token` option
+  documentation.
 - `debian_base` now writes every sysctl it manages to the role-owned
   `/etc/sysctl.d/90-ansible-debian-base.conf` instead of the deprecated
   `/etc/sysctl.conf`: the TCP BBR, `net.ipv4.ip_forward` and custom sysctl
