@@ -4,11 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project does not currently guarantee stable backward compatibility.
 
-## [Unreleased]
+## [0.3.1] - 2026-10-28
 
 ### Added
 
-- Add the MkDocs Material documentation site under `docs/`, rendered from the
+- Added the MkDocs Material documentation site under `docs/`, rendered from the
   role READMEs and generated module reference, with `just docs-serve` and
   `just docs-build` recipes, docs linting, role coverage checks, and GitHub
   Pages publishing.
@@ -17,9 +17,8 @@ The format is based on Keep a Changelog, and this project does not currently gua
 
 - Split the README into a consumer landing page and `CONTRIBUTING.md`, which
   now owns the development, testing, and documentation workflow.
-- Document the remaining public role variables and clarify the non-Linux
+- Documented the remaining public role variables and clarified the non-Linux
   `cpu_info` behavior in the role and module docs.
-
 - Re-audited `debian_base_custom_sysctl_conf_entries` against the kernel
   documentation and Debian 12/13 defaults.  The example list no longer sets
   the obsolete `net.core.optmem_max=20480` (modern default 128 KiB) or the
@@ -39,7 +38,7 @@ The format is based on Keep a Changelog, and this project does not currently gua
 
 ### Fixed
 
-- Correct the `cpu_info` return-value reference for `flags` and remove the
+- Corrected the `cpu_info` return-value reference for `flags` and removed the
   invalid `no_log` field from the `github_releases_info` `token` option
   documentation.
 - `debian_base` now writes every sysctl it manages to the role-owned
