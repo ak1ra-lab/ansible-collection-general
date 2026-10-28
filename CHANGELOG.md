@@ -17,6 +17,8 @@ The format is based on Keep a Changelog, and this project does not currently gua
 
 - Split the README into a consumer landing page and `CONTRIBUTING.md`, which
   now owns the development, testing, and documentation workflow.
+- Document the remaining public role variables and clarify the non-Linux
+  `cpu_info` behavior in the role and module docs.
 
 - Re-audited `debian_base_custom_sysctl_conf_entries` against the kernel
   documentation and Debian 12/13 defaults.  The example list no longer sets
