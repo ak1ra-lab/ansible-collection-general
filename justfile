@@ -3,7 +3,7 @@ default:
     @just --list --unsorted
 
 # Run all available recipes
-all: lint typecheck ansible-lint
+all: lint typecheck ansible-lint docs-lint docs-build
 
 # Sync development dependencies (may update uv.lock if pyproject.toml changed)
 sync *ARGS:
@@ -33,6 +33,22 @@ ansible-requirements-install:
 ansible-lint:
     ansible-lint
 
+# Lint module and plugin documentation with antsibull-docs
+docs-lint: ansible-collection-install
+    uv run --group lint antsibull-docs lint-collection-docs --plugin-docs --validate-collection-refs self --skip-rstcheck .
+
+# Check that every role has a docs page, nav entry, and index link
+docs-check:
+    uv run --group docs python scripts/check_docs.py
+
+# Build the documentation site into site/
+docs-build: ansible-collection-install docs-check
+    ANSIBLE_COLLECTIONS_PATH="$PWD/.ansible/collections" NO_MKDOCS_2_WARNING=1 uv run --group docs mkdocs build --strict
+
+# Serve the documentation site locally
+docs-serve: ansible-collection-install docs-check
+    ANSIBLE_COLLECTIONS_PATH="$PWD/.ansible/collections" NO_MKDOCS_2_WARNING=1 uv run --group docs mkdocs serve
+
 # Run every Molecule scenario (nested scenarios need the recursive glob)
 molecule-test: ansible-collection-install ansible-requirements-install
     MOLECULE_GLOB='extensions/molecule/**/molecule.yml' molecule test --all
@@ -55,6 +71,6 @@ molecule-destroy:
 
 # Remove build artifacts
 clean:
-    rm -rf .ansible/ .molecule/ .cache/ .ruff_cache/
+    rm -rf .ansible/ .molecule/ .cache/ .ruff_cache/ site/
     find plugins/ -type f -name "*.pyc" -delete
     find plugins/ -type d -name "__pycache__" -delete

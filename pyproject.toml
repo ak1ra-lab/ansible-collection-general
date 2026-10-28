@@ -16,10 +16,20 @@ root = [".ansible/collections"]
 [dependency-groups]
 lint = [
     "ansible-core>=2.19.12",
+    "antsibull-docs>=2.28,<3",
     "ruff>=0.17.0",
     "ty>=0.0.40",
 ]
+docs = [
+    "antsibull-docs-parser>=1.2.3,<2",
+    "mkdocs>=1.6,<2",
+    "mkdocs-ansible-collection>=1.1.0",
+    "mkdocs-htmlproofer-plugin>=1.6,<2",
+    "mkdocs-material>=9.7.7,<10",
+    "pymdown-extensions>=12.3,<13",
+]
 dev = [
     { include-group = "lint" },
+    { include-group = "docs" },
     "pre-commit>=4.2.0",
 ]
