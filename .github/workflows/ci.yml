@@ -107,6 +107,11 @@ jobs:
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: stable
+          # There is no go.mod at the repository root: the go_build scenario
+          # creates its fixture module under /tmp during prepare, so the Go
+          # module cache has nothing to key on and setup-go's restore step
+          # warns that no dependency file was found.
+          cache: false
       # The scenarios search the project-local collections path
       # (ANSIBLE_COLLECTIONS_PATH in extensions/molecule/config.yml), and
       # the shared default scenario's create/destroy run before
