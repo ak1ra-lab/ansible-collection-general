@@ -7,7 +7,8 @@ namespace/name), not a consumer of it. Content: reusable roles under `roles/`
 `github_releases_info` and `cpu_info` (`plugins/modules/` + shared logic in
 `plugins/module_utils/`). No `src/` or pytest suite; Ansible behavior is covered
 by Molecule scenarios (see Testing).
-See `README.md` for the consume/deploy workflow.
+See `README.md` for the consume/deploy workflow and `CONTRIBUTING.md` for the
+human contributor workflow.
 
 ## Tooling - use these, not the defaults
 
@@ -16,8 +17,9 @@ See `README.md` for the consume/deploy workflow.
 underlying command directly - the two are equivalent.
 
 - Env/deps: **uv** (`just sync` = `uv sync --group dev`). Never `pip`/`poetry`.
-  Dep group: `lint` (ruff, ty, ansible-core), pulled into `dev` together with
-  `pre-commit`.
+  Dep groups: `lint` (ruff, ty, ansible-core, antsibull-docs) and `docs`
+  (MkDocs Material, mkdocs-ansible-collection, markup parser, link checker),
+  pulled into `dev` together with `pre-commit`.
 - Lint+format: **ruff**, scoped to `plugins/` only (`just lint` =
   `uv run ruff check --fix plugins/` then `uv run ruff format plugins/`). Never
   `black`/`isort`/`flake8`.
@@ -29,6 +31,9 @@ underlying command directly - the two are equivalent.
 - Molecule: `just molecule-test` / `molecule-test-one <scenario>` /
   `molecule-list`; the scenarios live under `extensions/molecule/` (see
   Testing below).
+- Docs: `just docs-build` (role coverage check plus `mkdocs build --strict`),
+  `just docs-serve`, `just docs-check`, and `just docs-lint` (antsibull-docs
+  collection lint). `mkdocs.yaml` is excluded from ansible-lint.
 
 Python changes to `plugins/` MUST pass ruff lint+format (and ty) before commit.
 
@@ -61,44 +66,47 @@ just ansible-collection-install   # = ansible-galaxy collection install --force 
   disables `var-naming[no-role-prefix]` for the role. Role variables use the
   `<role>_*` prefix (see `roles/apt_install/README.md`).
 
+## Documentation (single source)
+
+The MkDocs site is a presentation layer, not a second source of truth.
+
+- Role contracts live in `roles/<role>/README.md`; `docs/roles/<role>.md` is a
+  one-line `--8<--` snippet. Never copy role content into the docs page.
+- Module reference is generated from `plugins/modules/*.py` `DOCUMENTATION`,
+  `EXAMPLES`, and `RETURN`. `hooks/ansible_markup.py` renders Ansible markup in
+  the generated pages.
+- `docs/contributing.md` and `docs/changelog.md` include `CONTRIBUTING.md` and
+  `CHANGELOG.md`; edit the source files.
+- Hand-written pages are `docs/index.md`, `docs/installation.md`,
+  `docs/architecture.md`, `docs/playbooks.md`, and `docs/modules.md`.
+- Adding a role requires the role README, the docs stub, the `Roles` nav entry,
+  and the `docs/roles/index.md` table entry. `just docs-check` enforces this.
+- Do not add hand-maintained translated siblings; keep the site English-only
+  unless a translation workflow is added.
+- Included Markdown must use absolute URLs for repository file links; relative
+  file links resolve against the including docs page.
+
+Docs changes MUST pass `just docs-check` and `just docs-build`; module
+documentation changes MUST also pass `just docs-lint`.
+
 ## Testing (Molecule)
 
 Ansible behavior is covered by ansible-native Molecule scenarios under
-`extensions/molecule/` (collection-testing layout; there is no `tests/` tree
-and no pytest recipe - don't invent one).
+`extensions/molecule/` (collection-testing layout). See `CONTRIBUTING.md` for
+the scenario matrix, container runtime, and prerequisites. There is no
+`tests/` tree and no pytest recipe - do not invent one.
 
-- `config.yml` - shared config: the project inventory, the project-local
-  collections path, `shared_state: true`, and the component test sequence
-  (cleanup, prepare, converge, idempotence, verify, cleanup, verify
-  `absent-verify.yml`).
-- `default/` - the only lifecycle manager (`create` / `destroy`); it creates
-  the shared Debian 12/13 systemd containers from
-  `ghcr.io/ak1ra-lab/docker-systemd`.
-- `<role>/...` - one scenario directory per role, nested where a role needs
-  several scenarios (`apt_install/basic`, `apt_install/variants`,
-  `pyproject_install/local`, `pyproject_install/pypi`). Nested scenario
-  prepare playbooks import the shared preparation with
-  `../../shared/prepare.yml`.
-- Containers run on Podman by default; set `MOLECULE_CONTAINER_RUNTIME=docker`
-  for a rootful Docker daemon.
+Agent-specific constraints:
 
-Prerequisites: `just ansible-collection-install` and
-`just ansible-requirements-install` (Molecule's dependency action is disabled,
-because the shared lifecycle scenario runs before ansible-compat's prerun).
-`go` and `uv` must be on the controller `PATH` for the `go_build` and
-`pyproject_install` scenarios.
-
-```shell
-just molecule-test                        # every scenario
-just molecule-test-one apt_install/basic  # one scenario
-just molecule-list
-```
-
-The molecule recipes reinstall the collection under test first; when invoking
-`molecule` directly, run `just ansible-collection-install` after editing a
-role, or the scenario tests the previously installed copy. Molecule caches
-scenario state, so a changed `molecule.yml` needs `molecule reset` (or
-`destroy`).
+- The `default` scenario owns the shared container lifecycle; component
+  scenarios reuse the containers. `config.yml` sets `shared_state: true` and
+  the component sequence (cleanup, prepare, converge, idempotence, verify,
+  cleanup, verify `absent-verify.yml`).
+- The recipes install the collection under test before every run. When
+  invoking `molecule` directly, run `just ansible-collection-install` after
+  editing a role, or the scenario tests the previously installed copy.
+- Molecule caches scenario state, so a changed `molecule.yml` needs
+  `molecule reset` (or `destroy`).
 
 Ansible changes MUST pass `ansible-lint` and the Molecule suite before commit.
 
