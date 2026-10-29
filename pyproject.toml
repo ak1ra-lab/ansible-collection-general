@@ -14,13 +14,21 @@ package = false
 root = [".ansible/collections"]
 
 [dependency-groups]
-lint = [
+# Shared Ansible runtime: ansible-galaxy reads the galaxy.yml manifest through
+# distlib when installing the collection from source.
+ansible = [
     "ansible-core>=2.19.12",
+    "distlib>=0.4.4",
+]
+lint = [
+    { include-group = "ansible" },
+    "ansible-lint>=26.8.0",
     "antsibull-docs>=2.28,<3",
     "ruff>=0.17.0",
     "ty>=0.0.40",
 ]
 docs = [
+    { include-group = "ansible" },
     "antsibull-docs-parser>=1.2.3,<2",
     "mkdocs>=1.6,<2",
     "mkdocs-ansible-collection>=1.1.0",
@@ -28,8 +36,13 @@ docs = [
     "mkdocs-material>=9.7.7,<10",
     "pymdown-extensions>=12.3,<13",
 ]
+molecule = [
+    { include-group = "ansible" },
+    "molecule>=26.8.0",
+]
 dev = [
     { include-group = "lint" },
     { include-group = "docs" },
+    { include-group = "molecule" },
     "pre-commit>=4.2.0",
 ]

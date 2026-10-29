@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project does not currently guarantee stable backward compatibility.
 
+## [Unreleased]
+
+### Changed
+
+- CI installs ansible-lint and Molecule from the uv dependency groups and
+  runs every Python tool through `uv run`, matching the local just recipes.
+
 ## [0.3.1] - 2026-10-28
 
 ### Added

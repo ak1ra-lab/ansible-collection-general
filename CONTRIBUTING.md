@@ -12,10 +12,11 @@ just ansible-requirements-install
 ```
 
 `just sync` installs the `dev` dependency group (ruff, ty, ansible-core,
-pre-commit, MkDocs). `just ansible-collection-install` installs the collection
-into `.ansible/collections` so FQCN role references and the modules'
-`module_utils` imports resolve. `just ansible-requirements-install` installs
-the collections listed in `requirements.yaml`.
+ansible-lint, Molecule, pre-commit, MkDocs). `just ansible-collection-install`
+installs the collection into `.ansible/collections` so FQCN role references
+and the modules' `module_utils` imports resolve.
+`just ansible-requirements-install` installs the collections listed in
+`requirements.yaml`.
 
 The repository's `ansible.cfg` pins `roles_path=./roles` and
 `collections_path=./.ansible/collections`; it does not read user-level or
