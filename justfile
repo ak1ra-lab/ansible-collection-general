@@ -3,21 +3,33 @@ default:
     @just --list --unsorted
 
 # Run all available recipes
-all: lint typecheck ansible-lint docs-lint docs-build
+all: lint typecheck unit-test ansible-lint docs-lint docs-build
 
 # Sync development dependencies (may update uv.lock if pyproject.toml changed)
 sync *ARGS:
     uv sync {{ARGS}} --group dev
 
-# Lint and format collection Python plugins
+# Lint and format collection Python plugins and tests
 lint:
-    uv run ruff check --fix plugins/
-    uv run ruff format plugins/
+    uv run ruff check --fix plugins/ tests/
+    uv run ruff format plugins/ tests/
 
-# Run static type checks with Astral ty
+# Run static type checks with mypy
 # Resolving the collection-namespace imports requires a fresh install
 typecheck: ansible-collection-install
-    uv run ty check plugins/
+    uv run mypy plugins/ tests/
+
+# Show the tox-ansible environment matrix
+tox-list:
+    uv run tox list --ansible
+
+# Run one tox-ansible environment, e.g. `just tox sanity-py3.13-2.21`
+tox env='sanity-py3.13-2.21':
+    uv run tox -e {{env}} --ansible
+
+# Run the unit tests in an isolated tox-ansible environment
+unit-test:
+    uv run tox -e unit-py3.13-2.21 --ansible
 
 # Install project-local Ansible collection
 ansible-collection-install:

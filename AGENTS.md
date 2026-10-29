@@ -17,17 +17,24 @@ human contributor workflow.
 underlying command directly - the two are equivalent.
 
 - Env/deps: **uv** (`just sync` = `uv sync --group dev`). Never `pip`/`poetry`.
-  Dep groups: `lint` (ruff, ty, ansible-core, antsibull-docs) and `docs`
-  (MkDocs Material, mkdocs-ansible-collection, markup parser, link checker),
-  pulled into `dev` together with `pre-commit`.
-- Lint+format: **ruff**, scoped to `plugins/` only (`just lint` =
-  `uv run ruff check --fix plugins/` then `uv run ruff format plugins/`). Never
-  `black`/`isort`/`flake8`.
-- Typecheck: **ty** (astral-sh/ty), `plugins/` only (`just typecheck` =
-  `uv run ty check plugins/`). Never `mypy`. ty resolves the
-  `ansible_collections...` self-imports from `.ansible/collections` (`[tool.ty.environment]`
-  in `pyproject.toml`), and the recipe reinstalls the collection first so the
-  snapshot is fresh.
+  Dep groups: `lint` (ruff, mypy, ansible-lint, ansible-core, antsibull-docs,
+  galaxy-importer), `test` (tox, tox-ansible), and `docs` (MkDocs Material,
+  mkdocs-ansible-collection, markup parser, link checker), pulled into `dev`
+  together with `pre-commit`.
+- Lint+format: **ruff**, scoped to `plugins/` and `tests/` (`just lint` =
+  `uv run ruff check --fix plugins/ tests/` then
+  `uv run ruff format plugins/ tests/`). Never `black`/`isort`/`flake8`.
+- Typecheck: **mypy** with the pragmatic config in `pyproject.toml`
+  (`just typecheck` = `uv run mypy plugins/ tests/`). The recipe reinstalls the
+  collection into `.ansible/collections` first so the
+  `ansible_collections.ak1ra_lab.general...` self-imports resolve
+  (`mypy_path` in `pyproject.toml`). `ansible-test sanity` remains the
+  authoritative gate.
+- Test harness: **tox-ansible**. `just tox-list` lists the matrix;
+  `just tox <env>` runs one environment, for example
+  `just tox sanity-py3.13-2.21`. `just unit-test` runs
+  `unit-py3.13-2.21` through `ansible-test units`. Do not add a `ty`/pytest
+  path as a second test harness.
 - Molecule: `just molecule-test` / `molecule-test-one <scenario>` /
   `molecule-list`; the scenarios live under `extensions/molecule/` (see
   Testing below).
@@ -35,7 +42,8 @@ underlying command directly - the two are equivalent.
   `just docs-serve`, `just docs-check`, and `just docs-lint` (antsibull-docs
   collection lint). `mkdocs.yaml` is excluded from ansible-lint.
 
-Python changes to `plugins/` MUST pass ruff lint+format (and ty) before commit.
+Python changes to `plugins/` and `tests/` MUST pass ruff lint+format and mypy
+before commit; the unit tests must pass through tox-ansible.
 
 ## Ansible (self-contained layout)
 
@@ -45,7 +53,7 @@ and never reaches user-level/parent paths.
 Because the modules (`github_releases_info`, `cpu_info`) import their own
 `module_utils` via the absolute path
 `ansible_collections.ak1ra_lab.general.plugins.module_utils...`,
-the collection must be **installed into itself** for the modules (ty and
+the collection must be **installed into itself** for the modules (mypy and
 ansible-lint) to resolve. Install the collection before typechecking, linting,
 or running playbooks:
 
@@ -93,10 +101,17 @@ documentation changes MUST also pass `just docs-lint`.
 ## Testing (Molecule)
 
 Ansible behavior is covered by ansible-native Molecule scenarios under
-`extensions/molecule/` (collection-testing layout). Lookup plugins are covered
-by pytest-based unit tests under `tests/unit/`, run through
-`ansible-test units`. See `CONTRIBUTING.md` for the scenario matrix, container
-runtime, and prerequisites.
+`extensions/molecule/` (collection-testing layout). Python plugins and
+module_utils are covered by unit tests under `tests/unit/`, run through
+`ansible-test units` inside the tox-ansible `unit-*` environments. See
+`CONTRIBUTING.md` for the scenario matrix, container runtime, and
+prerequisites.
+
+The tox-ansible matrix is configured by `[tool.tox]`/`[tool.tox-ansible]` in
+`pyproject.toml` and follows the upstream ansible-core support matrix
+(2.19/2.20/2.21 plus weekly devel/milestone). Test-only collections are
+declared in `tests/molecule/requirements.yml`; tox-ansible installs them with
+`ade`, so do not pre-install into `.ansible/collections` for test runs.
 
 Agent-specific constraints:
 

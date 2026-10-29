@@ -11,12 +11,14 @@ just ansible-collection-install
 just ansible-requirements-install
 ```
 
-`just sync` installs the `dev` dependency group (ruff, ty, ansible-core,
-ansible-lint, Molecule, pre-commit, MkDocs). `just ansible-collection-install`
-installs the collection into `.ansible/collections` so FQCN role references
-and the modules' `module_utils` imports resolve.
+`just sync` installs the `dev` dependency group (ruff, mypy, ansible-core,
+ansible-lint, tox-ansible, Molecule, pre-commit, MkDocs).
+`just ansible-collection-install` installs the collection into
+`.ansible/collections` so FQCN role references and the modules' `module_utils`
+imports resolve for lint, mypy, and docs. Test runs use the isolated
+tox-ansible environments instead and do not depend on that local install.
 `just ansible-requirements-install` installs the collections listed in
-`requirements.yaml`.
+`requirements.yaml` for the legacy Molecule recipes.
 
 The repository's `ansible.cfg` pins `roles_path=./roles` and
 `collections_path=./.ansible/collections`; it does not read user-level or
@@ -25,19 +27,28 @@ parent paths.
 ## Checks
 
 ```shell
-just lint          # ruff check --fix + ruff format over plugins/
-just typecheck     # ty check over plugins/
+just lint          # ruff check --fix + ruff format over plugins/ and tests/
+just typecheck     # mypy over plugins/ and tests/
+just unit-test     # ansible-test units in the tox-ansible unit-py3.13-2.21 env
+just tox-list      # show the tox-ansible ansible-core/Python matrix
 just ansible-lint  # ansible-lint (profile: production)
 just docs-lint     # antsibull-docs lint-collection-docs
 just docs-build    # role coverage check + mkdocs build --strict
 ```
 
-`just all` runs lint, typecheck, ansible-lint, docs lint, and the docs build.
-Molecule is separate because it needs a container runtime.
+`just all` runs lint, typecheck, unit tests, ansible-lint, docs lint, and the
+docs build. Molecule is separate because it needs a container runtime.
 
-Python changes under `plugins/` must pass ruff lint, ruff format, and ty.
-Ansible changes must pass ansible-lint and the Molecule scenarios. Docs
-changes must pass `just docs-build`.
+Run one matrix entry with `just tox sanity-py3.13-2.21` (or any environment
+shown by `just tox-list`). `ansible-test sanity` is the authoritative
+Ansible/Python gate; mypy is the fast local typecheck. The matrix follows
+ansible-core 2.19/2.20/2.21 plus the weekly devel/milestone environments, and
+`tox-ansible` installs test collections from `tests/molecule/requirements.yml`
+through `ade` - do not pre-install them into `.ansible/collections`.
+
+Python changes under `plugins/` and `tests/` must pass ruff lint, ruff format,
+mypy, and the unit tests. Ansible changes must pass ansible-lint and the
+Molecule scenarios. Docs changes must pass `just docs-build`.
 
 ## Testing with Molecule
 

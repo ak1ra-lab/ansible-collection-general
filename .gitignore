@@ -328,6 +328,8 @@ __marimo__/
 
 # Ansible
 .ansible/
+# ADE scratch collection root created by tox-ansible.
+collections/
 .molecule/
 
 inventory/*.yaml
