@@ -347,4 +347,5 @@ credentials.yaml
 examples/*
 
 ## LLM
+.agents/plans/*
 .agents/sessions/*
