@@ -1,0 +1,7 @@
+---
+# Controller-side requirements for an ansible-builder execution environment.
+# ak1ra_lab.general has no controller-side Python requirements; the
+# collection dependencies in galaxy.yml are listed in requirements.yml.
+version: 3
+dependencies:
+  galaxy: requirements.yml

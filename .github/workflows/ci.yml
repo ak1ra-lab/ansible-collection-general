@@ -111,7 +111,7 @@ jobs:
           assert galaxy["license"] == ["GPL-3.0-or-later"], galaxy["license"]
           PY
           tarball=$(ls dist/*.tar.gz)
-          for required in meta/runtime.yml README.md LICENSE CHANGELOG.md; do
+          for required in meta/runtime.yml meta/execution-environment.yml README.md LICENSE CHANGELOG.md; do
             tar -tzf "$tarball" | grep -qx "$required"
           done
           if tar -tzf "$tarball" | grep -Eq '^(\.agents|\.ansible|\.venv|site|tests/output|playbooks/(host|group)_vars|config)(/|$)'; then

@@ -1,0 +1,10 @@
+---
+# Runtime collection dependencies for an ansible-builder execution
+# environment. Keep in sync with galaxy.yml.
+# Test-only collections live in requirements.yaml (legacy Molecule recipes)
+# and tests/molecule/requirements.yml (tox-ansible/ade).
+collections:
+  - name: ansible.posix
+    version: ">=1.5.4"
+  - name: community.general
+    version: ">=8.0.0"

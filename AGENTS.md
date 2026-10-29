@@ -65,7 +65,9 @@ just ansible-collection-install   # = ansible-galaxy collection install --force 
   `containers.podman`, `community.docker`) provide the role runtime and the
   Molecule container lifecycle;
   `just ansible-requirements-install` installs them into the project-local
-  path.
+  path. `requirements.yml` plus `meta/execution-environment.yml` declare only
+  the runtime collection dependencies for ansible-builder; the collection has
+  no controller-side Python requirements.
 - `ansible-lint` runs with `profile: production` (`.ansible-lint`); in non-`offline`
   mode it auto-installs `requirements.yaml` into a cache dir computed by
   ansible-compat from the project dir, ignoring `ansible.cfg`'s `collections_path`.
