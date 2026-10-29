@@ -53,7 +53,7 @@ docs-serve: ansible-collection-install docs-check
 molecule-test: ansible-collection-install ansible-requirements-install
     MOLECULE_GLOB='extensions/molecule/**/molecule.yml' uv run molecule test --all
 
-# Run one Molecule scenario, e.g. `just molecule-test-one apt_install/basic`
+# Run one Molecule scenario, e.g. `just molecule-test-one apt_repository_basic`
 molecule-test-one scenario: ansible-collection-install ansible-requirements-install
     MOLECULE_GLOB='extensions/molecule/**/molecule.yml' uv run molecule test -s {{scenario}}
 

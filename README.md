@@ -43,6 +43,15 @@ offline with `ansible-doc ak1ra_lab.general.<module>`.
 See the [lookup guide](https://ak1ra-lab.github.io/ansible-collection-general/lookups/)
 for examples.
 
+## Requirements
+
+- Controller: `ansible-core >= 2.19.0`, Python `>= 3.11`.
+- Managed nodes: Debian 12/13 for the APT-based roles.
+- Collections: `ansible.posix >= 1.5.4` and `community.general >= 8.0.0`
+  (resolved from [`galaxy.yml`](galaxy.yml)).
+- `go` on the controller for `go_build`; `uv` for local
+  `pyproject_install` builds.
+
 ## Install
 
 Create a `requirements.yaml` in the consuming repository:
@@ -79,4 +88,4 @@ Molecule needs a rootful container runtime and is run separately. See
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+GPL-3.0-or-later. See [LICENSE](LICENSE).

@@ -1,45 +1,64 @@
 ---
+# See https://docs.ansible.com/ansible/latest/dev_guide/collections_galaxy_meta.html
+
 namespace: ak1ra_lab
 name: general
-version: 0.3.1
+version: 0.4.0
 readme: README.md
 authors:
   - ak1ra <ak1ra.komj@gmail.com>
-description: Shared Ansible roles for general build and packaging workflows.
-license_file: LICENSE
+description: General-purpose infrastructure roles, modules, and lookup plugins for ak1ra-lab.
+license:
+  - GPL-3.0-or-later
 tags:
+  - apt
   - automation
   - build
-  - certificates
-  - certbot
-  - certmanager
   - debian
   - docker
   - go
-  - kubernetes
-  - letsencrypt
   - linux
   - python
-  - tls
+  - secrets
   - tools
 dependencies:
   ansible.posix: ">=1.5.4"
   community.general: ">=8.0.0"
-  kubernetes.core: ">=6.0.0"
 repository: https://github.com/ak1ra-lab/ansible-collection-general
 documentation: https://ak1ra-lab.github.io/ansible-collection-general/
 homepage: https://github.com/ak1ra-lab/ansible-collection-general
 issues: https://github.com/ak1ra-lab/ansible-collection-general/issues
-# https://setuptools.pypa.io/en/latest/userguide/miscellaneous.html
-manifest:
-  omit_default_directives: true
-  directives:
-    - graft playbooks
-    - graft plugins
-    - graft roles
-    - recursive-exclude playbooks/host_vars *
-    - recursive-exclude playbooks/group_vars *
-    - recursive-exclude playbooks/scripts *
-    - recursive-exclude playbooks/templates *
-    - global-exclude *~ *.py[cod] __pycache__ *.bak *.swp *.tmp *.retry
-    - include requirements.yaml LICENSE README.md
+
+# Keep local development state, generated artifacts, and consumer inventory
+# out of the Galaxy artifact. `ansible-galaxy collection build` always excludes
+# galaxy.yml, .git and Python cache files.
+build_ignore:
+  - .agents
+  - .ansible
+  - .ansible-lint
+  - .cache
+  - .github
+  - .molecule
+  - .mypy_cache
+  - .pre-commit-config.yaml
+  - .pytest_cache
+  - .ruff_cache
+  - .tox
+  - .venv
+  - ansible.cfg
+  - config
+  - hooks
+  - justfile
+  - mkdocs.yaml
+  - playbooks/group_vars
+  - playbooks/host_vars
+  - pyproject.toml
+  - requirements.yaml
+  - ruff.toml
+  - scripts
+  - site
+  - tests/output
+  - uv.lock
+  - yamlfmt.yaml
+  - changelogs/.plugin-cache.yaml
+  - "*.tar.gz"
