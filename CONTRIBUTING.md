@@ -81,11 +81,13 @@ just molecule-test-one apt_install/basic
 just molecule-list
 ```
 
-Podman is required. Run it rootful (as the CI does): every container runs
-privileged because systemd needs the capabilities. A rootful Docker daemon is
-supported as an alternative; set `MOLECULE_CONTAINER_RUNTIME=docker` for every
-molecule invocation. The controller additionally needs `go` (the `go_build`
-scenario) and `uv` (the `pyproject_install` local scenario).
+Podman is required. The CI runs it rootful because every container runs
+privileged and systemd needs the capabilities, but no current scenario needs
+host root: the full suite passes with rootless Podman locally. A rootful
+Docker daemon is supported as an alternative; set
+`MOLECULE_CONTAINER_RUNTIME=docker` for every molecule invocation. The
+controller additionally needs `go` (the `go_build` scenario) and `uv` (the
+`pyproject_install` local scenario).
 
 When invoking `molecule` directly instead of through the just recipes, run
 `just ansible-collection-install` after editing a role or the scenario tests
