@@ -9,11 +9,7 @@ Documentation: <https://ak1ra-lab.github.io/ansible-collection-general/>
 
 | Role | Description |
 | --- | --- |
-| [`acme_dns`](roles/acme_dns/README.md) | Deploy an acme-dns server with the Go binary built on the controller and a systemd service. |
-| [`acme_dns_register`](roles/acme_dns_register/README.md) | Register one acme-dns account per validation domain and create `_acme-challenge` CNAMEs. |
 | [`apt_install`](roles/apt_install/README.md) | Add a third-party APT repository in DEB822 format with keyring, pinning, unattended upgrades, and package installation. Debian only. |
-| [`certbot`](roles/certbot/README.md) | Obtain and renew certificates with certbot from apt, PyPI, or an external binary. |
-| [`cert_manager`](roles/cert_manager/README.md) | Install cert-manager and declare ACME `ClusterIssuer` resources with per-issuer solvers. |
 | [`debian_base`](roles/debian_base/README.md) | Apply a Debian baseline with curated packages, apt defaults, unattended upgrades, and host bootstrap settings. Debian only. |
 | [`docker`](roles/docker/README.md) | Install Docker CE from the official repository and manage `daemon.json` and the `docker` group. Debian only. |
 | [`go_build`](roles/go_build/README.md) | Clone and build a Go project on `localhost` and expose the built binary path. |

@@ -1,1 +1,0 @@
---8<-- "roles/cert_manager/README.md"

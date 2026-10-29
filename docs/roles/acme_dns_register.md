@@ -1,1 +1,0 @@
---8<-- "roles/acme_dns_register/README.md"

@@ -15,7 +15,6 @@ dependency graph.
 ## Role families
 
 - **Host baseline and packages**: `debian_base`, `apt_install`, `docker`.
-- **ACME and TLS**: `acme_dns`, `acme_dns_register`, `certbot`, `cert_manager`.
 - **Build and install**: `go_build`, `pyproject_install`.
 
 Each role owns its files and units. Roles do not share a global state
@@ -33,32 +32,8 @@ and package installation or hold.
 repository, then manages `/etc/docker/daemon.json`, the `docker` group, and the
 Docker service. It does not duplicate the APT repository logic.
 
-## ACME and TLS
-
-The ACME roles cover two different deployment shapes:
-
-- `acme_dns` runs an acme-dns server. It builds the Go binary on the
-  controller through `go_build`, deploys the binary and configuration, and
-  runs the systemd service.
-- `acme_dns_register` registers one acme-dns account per validation domain,
-  persists the domain-to-account mapping, and creates the
-  `_acme-challenge` CNAME records through the Cloudflare API or a manual
-  prompt.
-- `certbot` obtains and renews certificates on a systemd host. DNS-01 is the
-  primary challenge type; HTTP-01 is available when the host has no DNS API
-  access. The role supports apt, PyPI, and externally provided certbot
-  binaries, and writes its own systemd units and timer.
-- `cert_manager` is independent of the certbot roles. It installs or upgrades
-  cert-manager from the official release manifest and declares ACME
-  `ClusterIssuer` resources with per-issuer solvers and credentials. It does
-  not create application `Ingress` or `Certificate` resources.
-
-A typical DNS-01 flow is: deploy `acme_dns`, register client accounts and
-CNAMEs with `acme_dns_register`, then configure `certbot` with the acme-dns
-auth hook. `certbot` can invoke `acme_dns_register` itself when
-`certbot_acmedns_register` is true; otherwise a site playbook composes the
-roles. The `acme_dns`, `acme_dns_register`, and `certbot` roles do not list
-each other in `meta/main.yaml`.
+The certificate lifecycle roles (`acme_dns`, `acme_dns_register`, `certbot`,
+and `cert_manager`) live in the separate `ak1ra_lab.certificate` collection.
 
 ## Build and install
 
@@ -72,9 +47,6 @@ environment. The `local` source builds a wheel on the controller with
 `uv build --wheel`, copies it to the managed host, installs it with `pip`, and
 removes the remote temporary wheel. The `pypi` and `testpypi` sources install
 directly from an index.
-
-`certbot` uses `pyproject_install` when `certbot_install_source: pypi`; the
-import is internal to the certbot role.
 
 ## Facts and outputs
 

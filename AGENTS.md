@@ -2,11 +2,11 @@
 
 This repo **is** the `ak1ra_lab.general` Ansible collection (`galaxy.yml`
 namespace/name), not a consumer of it. Content: reusable roles under `roles/`
-(`acme_dns`, `acme_dns_register`, `apt_install`, `cert_manager`, `certbot`,
-`debian_base`, `docker`, `go_build`, `pyproject_install`) plus Python modules
-`github_releases_info` and `cpu_info` (`plugins/modules/` + shared logic in
-`plugins/module_utils/`). No `src/` or pytest suite; Ansible behavior is covered
-by Molecule scenarios (see Testing).
+(`apt_install`, `debian_base`, `docker`, `go_build`, `pyproject_install`),
+Python modules `github_releases_info` and `cpu_info` (`plugins/modules/` plus
+shared logic in `plugins/module_utils/`), and the `random_*` lookup plugins
+(`plugins/lookup/`, unit-tested under `tests/unit/`). Ansible behavior is
+covered by Molecule scenarios (see Testing).
 See `README.md` for the consume/deploy workflow and `CONTRIBUTING.md` for the
 human contributor workflow.
 
@@ -54,8 +54,8 @@ just ansible-collection-install   # = ansible-galaxy collection install --force 
 ```
 
 - `requirements.yaml` deps (`ansible.posix`, `community.general`,
-  `containers.podman`, `community.docker`, `kubernetes.core`) provide the role
-  runtime and the Molecule container lifecycle;
+  `containers.podman`, `community.docker`) provide the role runtime and the
+  Molecule container lifecycle;
   `just ansible-requirements-install` installs them into the project-local
   path.
 - `ansible-lint` runs with `profile: production` (`.ansible-lint`); in non-`offline`

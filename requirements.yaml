@@ -8,11 +8,9 @@
 #                       used when MOLECULE_CONTAINER_RUNTIME=docker
 #   ansible.posix     - sysctl used by debian_base and the profile_tasks
 #                       callback enabled by ansible.cfg
-#   community.general - sudoers, modprobe and cloudflare_dns used by the roles
-#   kubernetes.core   - k8s modules used by cert_manager
+#   community.general - sudoers and modprobe used by the roles
 collections:
   - name: ansible.posix
   - name: community.general
   - name: containers.podman
   - name: community.docker
-  - name: kubernetes.core

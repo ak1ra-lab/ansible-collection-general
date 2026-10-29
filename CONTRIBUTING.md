@@ -51,11 +51,6 @@ teardown verification.
 | --- | --- |
 | `apt_install/basic` | Third-party repository keyring URL, DEB822 source, origin pinning, unattended-upgrades, package install and hold, the revert switches, legacy `.list` removal |
 | `apt_install/variants` | Inline keyring content, release-based pinning, `any-version` suites, a keyring package with a pinned checksum |
-| `cert_manager/render` | ClusterIssuer/Secret rendering, per-issuer Cloudflare and HTTP-01 solvers, EAB, shared/reference-only Secrets, manifest permissions (no cluster required) |
-| `certbot/apt` | apt install, Pebble ACME issuance via HTTP-01 with EAB, renewal configuration, role-managed unit, per-lineage deploy hook dispatch and timer |
-| `certbot/pypi` | PyPI install into the managed venv, Cloudflare plugin, credentials, hook, cli.ini, logrotate and systemd units |
-| `certbot/acmedns` | per-validation-domain acme-dns auth hook selection against a fake `/update` API |
-| `acme_dns_register/basic` | per-validation-domain acme-dns registration, mapping persistence and idempotence against a fake `/register` API |
 | `debian_base` | DEB822 archive/security sources, backports pinning and first-run index refresh, unattended-upgrades drop-ins, force-IPv4, baseline package, sudoers |
 | `go_build` | Fixture git repository, binary build and stamp-based rebuild skip |
 | `pyproject_install/local` | `uv build --wheel` on the controller, wheel install into the target venv, remote wheel cleanup |

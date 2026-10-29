@@ -17,8 +17,6 @@ the role READMEs.
 
 | Playbook | Behavior |
 | --- | --- |
-| [`acme-dns.yaml`](https://github.com/ak1ra-lab/ansible-collection-general/blob/master/playbooks/acme-dns.yaml) | Applies `acme_dns` to the `acme-dns` group by default. |
-| [`certbot.yaml`](https://github.com/ak1ra-lab/ansible-collection-general/blob/master/playbooks/certbot.yaml) | Applies `certbot` to the `certbot` group by default. |
 | [`debian-base-defaults.yaml`](https://github.com/ak1ra-lab/ansible-collection-general/blob/master/playbooks/debian-base-defaults.yaml) | Applies the `debian_base` defaults profile to `localhost`. |
 | [`debian-base-vps.yaml`](https://github.com/ak1ra-lab/ansible-collection-general/blob/master/playbooks/debian-base-vps.yaml) | Applies the VPS profile (BBR, automatic reboot) to `localhost`. |
 | [`docker-defaults.yaml`](https://github.com/ak1ra-lab/ansible-collection-general/blob/master/playbooks/docker-defaults.yaml) | Imports the defaults profile, then applies `docker`. |

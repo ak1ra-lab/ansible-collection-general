@@ -5,10 +5,9 @@ hide:
 
 # ak1ra_lab.general
 
-Shared Ansible collection for reusable roles and custom modules consumed across
-`ak1ra-lab` repositories. It covers Debian host baselines, APT and Docker
-installation, the ACME certificate workflow, Kubernetes cert-manager, and
-controller-side Go and Python build helpers.
+Shared Ansible collection for reusable roles, modules, and lookup plugins
+consumed across `ak1ra-lab` repositories. It covers Debian host baselines,
+APT and Docker installation, and controller-side Go and Python build helpers.
 
 ## Start here
 
@@ -35,10 +34,9 @@ The collection is a set of roles with explicit variable contracts; playbooks
 compose them, and a few roles use another role internally for implementation.
 
 - `debian_base`, `apt_install`, and `docker` establish a Debian host baseline.
-- `acme_dns`, `acme_dns_register`, and `certbot` provide the DNS-01 ACME
-  workflow; `cert_manager` manages cert-manager and ClusterIssuers in
-  Kubernetes.
 - `go_build` and `pyproject_install` build artifacts on the controller and
   install them into target environments.
+- `random_password`, `random_base64_key`, and `random_uuid` generate
+  controller-side secrets for composed playbooks.
 
 Role READMEs are the source of truth for variables and deployed artifacts.
