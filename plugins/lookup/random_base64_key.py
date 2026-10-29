@@ -1,10 +1,13 @@
+# -*- coding: utf-8 -*-
+# Copyright: (c) 2026, ak1ra <ak1ra.komj@gmail.com>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 """Lookup plugin: generate base64 key material on the control node.
 
-Used by ``ak1ra_lab.network.mihomo_server`` for the shadowsocks 2022
-pre-shared keys, whose decoded length must equal the cipher key length.
-The key bytes come from ``secrets.token_bytes`` (the operating system's
-cryptographically secure random number generator), so the decoded key has
-full entropy per byte.
+Useful for pre-shared keys whose decoded length must equal a cipher key
+length. The key bytes come from ``secrets.token_bytes`` (the operating
+system's cryptographically secure random number generator), so the decoded
+key has full entropy per byte.
 """
 
 from __future__ import annotations
@@ -43,7 +46,7 @@ author:
 EXAMPLES = r"""
 - name: Generate the base64 key for a 2022-blake3-aes-128-gcm cipher
   ansible.builtin.set_fact:
-    shadowsocks_password: "{{ lookup('ak1ra_lab.network.random_base64_key', bytes=16) }}"
+    shadowsocks_password: "{{ lookup('ak1ra_lab.general.random_base64_key', bytes=16) }}"
 """
 
 RETURN = r"""

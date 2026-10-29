@@ -1,7 +1,7 @@
 # ak1ra_lab.general
 
-Shared Ansible collection for reusable roles and custom modules consumed across
-multiple `ak1ra-lab` repositories.
+Shared Ansible collection for reusable roles, custom modules, and lookup
+plugins consumed across multiple `ak1ra-lab` repositories.
 
 Documentation: <https://ak1ra-lab.github.io/ansible-collection-general/>
 
@@ -31,6 +31,17 @@ See the [module guide](https://ak1ra-lab.github.io/ansible-collection-general/mo
 or the [generated reference](https://ak1ra-lab.github.io/ansible-collection-general/ak1ra_lab.general/)
 for options, return values, and examples. The same reference is available
 offline with `ansible-doc ak1ra_lab.general.<module>`.
+
+## Lookup plugins
+
+- `random_password`: cryptographically random password with a configurable
+  length and alphabet.
+- `random_base64_key`: base64-encoded random key material with a configurable
+  decoded byte length.
+- `random_uuid`: random RFC 4122 version 4 UUID.
+
+See the [lookup guide](https://ak1ra-lab.github.io/ansible-collection-general/lookups/)
+for examples.
 
 ## Install
 

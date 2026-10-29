@@ -24,6 +24,7 @@ nav:
       - pyproject_install: roles/pyproject_install.md
   - Modules:
       - Overview: modules.md
+      - Lookups: lookups.md
       - Reference: ak1ra_lab.general
   - Project:
       - Contributing: contributing.md

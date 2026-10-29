@@ -1,10 +1,18 @@
+# -*- coding: utf-8 -*-
+# Copyright: (c) 2026, ak1ra <ak1ra.komj@gmail.com>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 """Unit tests for plugins/lookup/random_password.py."""
 
 from __future__ import annotations
 
 import pytest
 from ansible.errors import AnsibleLookupError
-from random_password import DEFAULT_ALPHABET, DEFAULT_LENGTH, LookupModule
+from ansible_collections.ak1ra_lab.general.plugins.lookup.random_password import (
+    DEFAULT_ALPHABET,
+    DEFAULT_LENGTH,
+    LookupModule,
+)
 
 
 def generate(**kwargs: object) -> str:

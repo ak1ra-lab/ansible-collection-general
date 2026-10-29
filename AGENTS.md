@@ -78,7 +78,8 @@ The MkDocs site is a presentation layer, not a second source of truth.
 - `docs/contributing.md` and `docs/changelog.md` include `CONTRIBUTING.md` and
   `CHANGELOG.md`; edit the source files.
 - Hand-written pages are `docs/index.md`, `docs/installation.md`,
-  `docs/architecture.md`, `docs/playbooks.md`, and `docs/modules.md`.
+  `docs/architecture.md`, `docs/playbooks.md`, `docs/modules.md`, and
+  `docs/lookups.md`.
 - Adding a role requires the role README, the docs stub, the `Roles` nav entry,
   and the `docs/roles/index.md` table entry. `just docs-check` enforces this.
 - Do not add hand-maintained translated siblings; keep the site English-only
@@ -92,9 +93,10 @@ documentation changes MUST also pass `just docs-lint`.
 ## Testing (Molecule)
 
 Ansible behavior is covered by ansible-native Molecule scenarios under
-`extensions/molecule/` (collection-testing layout). See `CONTRIBUTING.md` for
-the scenario matrix, container runtime, and prerequisites. There is no
-`tests/` tree and no pytest recipe - do not invent one.
+`extensions/molecule/` (collection-testing layout). Lookup plugins are covered
+by pytest-based unit tests under `tests/unit/`, run through
+`ansible-test units`. See `CONTRIBUTING.md` for the scenario matrix, container
+runtime, and prerequisites.
 
 Agent-specific constraints:
 

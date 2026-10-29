@@ -83,3 +83,6 @@ fields are documented above.
 
 The same reference is available offline with
 `ansible-doc ak1ra_lab.general.<module>` against an installed collection.
+
+The collection also provides controller-side lookups for secret generation;
+see [Lookups](lookups.md).

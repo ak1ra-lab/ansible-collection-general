@@ -1,8 +1,11 @@
+# -*- coding: utf-8 -*-
+# Copyright: (c) 2026, ak1ra <ak1ra.komj@gmail.com>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 """Lookup plugin: generate a random UUID (version 4) on the control node.
 
-Used by ``ak1ra_lab.network.mihomo_server`` for the generated vless/tuic
-user identifiers.  ``secrets``-backed ``uuid.uuid4()`` values carry the
-RFC 4122 version and variant bits, unlike a reformatted random hex string.
+``secrets``-backed ``uuid.uuid4()`` values carry the RFC 4122 version and
+variant bits, unlike a reformatted random hex string.
 """
 
 from __future__ import annotations
@@ -31,7 +34,7 @@ author:
 EXAMPLES = r"""
 - name: Generate a UUID for a vless user
   ansible.builtin.set_fact:
-    vless_uuid: "{{ lookup('ak1ra_lab.network.random_uuid') }}"
+    vless_uuid: "{{ lookup('ak1ra_lab.general.random_uuid') }}"
 """
 
 RETURN = r"""

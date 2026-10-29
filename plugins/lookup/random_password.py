@@ -1,9 +1,12 @@
+# -*- coding: utf-8 -*-
+# Copyright: (c) 2026, ak1ra <ak1ra.komj@gmail.com>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 """Lookup plugin: generate a random password on the control node.
 
-Used by ``ak1ra_lab.network.mihomo_server`` for the generated listener
-credentials.  The characters are drawn from ``alphabet`` with
-``secrets.choice``, the operating system's cryptographically secure random
-number generator (not the predictable Mersenne-Twister ``random`` module).
+The characters are drawn from ``alphabet`` with ``secrets.choice``, the
+operating system's cryptographically secure random number generator (not the
+predictable Mersenne-Twister ``random`` module).
 """
 
 from __future__ import annotations
@@ -47,11 +50,11 @@ author:
 EXAMPLES = r"""
 - name: Generate a 24-character alphanumeric password
   ansible.builtin.set_fact:
-    generated_password: "{{ lookup('ak1ra_lab.network.random_password', length=24) }}"
+    generated_password: "{{ lookup('ak1ra_lab.general.random_password', length=24) }}"
 
 - name: Generate a password from a custom alphabet
   ansible.builtin.debug:
-    msg: "{{ lookup('ak1ra_lab.network.random_password', alphabet='0123456789abcdef') }}"
+    msg: "{{ lookup('ak1ra_lab.general.random_password', alphabet='0123456789abcdef') }}"
 """
 
 RETURN = r"""

@@ -17,6 +17,7 @@ APT and Docker installation, and controller-side Go and Python build helpers.
 - [Playbooks](playbooks.md) - bundled entry points and example invocations.
 - [Roles](roles/index.md) - the canonical role contracts.
 - [Modules](modules.md) - GitHub release selection and CPU capability facts.
+- [Lookups](lookups.md) - controller-side secret generation.
 - [Module reference](ak1ra_lab.general/index.md) - generated from the
   in-code documentation.
 - [Contributing](contributing.md) - development, testing, and docs workflow.
