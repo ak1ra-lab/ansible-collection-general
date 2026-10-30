@@ -2,23 +2,21 @@
 
 ## Setup
 
-Prerequisites: `uv`, a rootful Podman daemon (or a rootful Docker daemon),
+Prerequisites: `uv`, a Podman daemon (rootless is enough; CI uses rootful),
 and `go` on the controller for the `go_build` scenario.
 
 ```shell
 just sync
 just ansible-collection-install
-just ansible-requirements-install
 ```
 
 `just sync` installs the `dev` dependency group (ruff, mypy, ansible-core,
 ansible-lint, tox-ansible, Molecule, pre-commit, MkDocs).
 `just ansible-collection-install` installs the collection into
 `.ansible/collections` so FQCN role references and the modules' `module_utils`
-imports resolve for lint, mypy, and docs. Test runs use the isolated
-tox-ansible environments instead and do not depend on that local install.
-`just ansible-requirements-install` installs the collections listed in
-`requirements.yaml` for the legacy Molecule recipes.
+imports resolve for lint, mypy, and docs. Molecule does **not** use that copy:
+it installs the collection under test itself and reads its test collection
+requirements from `tests/molecule/requirements.yml`.
 
 The repository's `ansible.cfg` pins `roles_path=./roles` and
 `collections_path=./.ansible/collections`; it does not read user-level or
@@ -52,53 +50,45 @@ Molecule scenarios. Docs changes must pass `just docs-build`.
 
 ## Testing with Molecule
 
-Molecule scenarios live under `extensions/molecule/` (collection-testing
-layout). The `default` scenario owns the shared container lifecycle
-(`shared_state: true`); the component scenarios reuse the same containers and
-each run prepare, converge, idempotence, verify, the scenario teardown, and a
-teardown verification.
+Molecule scenarios live flat under `extensions/molecule/<name>/`. Each
+scenario owns its containers: the shared `create.yml`/`destroy.yml` playbooks
+build names from the scenario name and a checkout hash, so scenarios and
+parallel checkouts cannot collide. There is no shared `default` lifecycle
+scenario and no `shared_state`.
 
 | Scenario | Coverage |
 | --- | --- |
-| `apt_install/basic` | Third-party repository keyring URL, DEB822 source, origin pinning, unattended-upgrades, package install and hold, the revert switches, legacy `.list` removal |
-| `apt_install/variants` | Inline keyring content, release-based pinning, `any-version` suites, a keyring package with a pinned checksum |
+| `apt_install_basic` | Third-party repository keyring URL, DEB822 source, origin pinning, unattended-upgrades, package install and hold, the revert switches, legacy `.list` removal |
+| `apt_install_variants` | Inline keyring content, release-based pinning, `any-version` suites, a keyring package with a pinned checksum |
 | `debian_base` | DEB822 archive/security sources, backports pinning and first-run index refresh, unattended-upgrades drop-ins, force-IPv4, baseline package, sudoers |
 | `go_build` | Fixture git repository, binary build and stamp-based rebuild skip |
-| `pyproject_install/local` | `uv build --wheel` on the controller, wheel install into the target venv, remote wheel cleanup |
-| `pyproject_install/pypi` | PyPI install into a target venv, role-provided system packages |
+| `pyproject_install_local` | `uv build --wheel` on the controller, wheel install into the target venv, remote wheel cleanup |
+| `pyproject_install_pypi` | PyPI install into a target venv, role-provided system packages |
 
 The managed nodes are the Debian 12/13 systemd images from
 [ak1ra-lab/docker-systemd](https://github.com/ak1ra-lab/docker-systemd); the
 APT-based roles are Debian-only by contract.
 
 ```shell
-# First run only: the scenarios search the project-local collections path
-# (ANSIBLE_COLLECTIONS_PATH in extensions/molecule/config.yml), and the
-# default scenario creates the shared containers before Molecule installs
-# anything itself.
-just ansible-collection-install
-just ansible-requirements-install
-
-# Molecule's dependency action is disabled because the shared lifecycle
-# scenario runs before ansible-compat's prerun; install the collection and
-# requirements explicitly as above.
-just molecule-test                   # every scenario (recursive glob)
-just molecule-test-one apt_install/basic
+just molecule-test                   # every scenario
+just molecule-test-one apt_install_basic
+just molecule-syntax                 # syntax-check converge playbooks
 just molecule-list
 ```
 
-Podman is required. The CI runs it rootful because every container runs
-privileged and systemd needs the capabilities, but no current scenario needs
-host root: the full suite passes with rootless Podman locally. A rootful
-Docker daemon is supported as an alternative; set
-`MOLECULE_CONTAINER_RUNTIME=docker` for every molecule invocation. The
-controller additionally needs `go` (the `go_build` scenario) and `uv` (the
-`pyproject_install` local scenario).
+Molecule's dependency action installs `tests/molecule/requirements.yml`
+(`containers.podman`, `community.docker`); ansible-compat's prerun installs
+the collection under test and its `galaxy.yml` dependencies. Do not pre-install
+the collection or test collections into `.ansible/collections` for Molecule.
 
-When invoking `molecule` directly instead of through the just recipes, run
-`just ansible-collection-install` after editing a role or the scenario tests
-the previously installed copy. Molecule caches scenario state, so a changed
-`molecule.yml` needs `molecule reset` (or `destroy`).
+Podman is required. Rootless Podman works for the whole general suite; CI uses
+rootful Podman for a uniform systemd container runtime. A Docker daemon is
+supported as an alternative; set `MOLECULE_CONTAINER_RUNTIME=docker` for every
+molecule invocation. The controller additionally needs `go` (the `go_build`
+scenario) and `uv` (the `pyproject_install` local scenario).
+
+Molecule caches scenario state, so a changed `molecule.yml` needs
+`molecule reset` (or `destroy`).
 
 ## Documentation
 

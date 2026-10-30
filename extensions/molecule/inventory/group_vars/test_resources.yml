@@ -1,16 +1,14 @@
 ---
-# Shared settings for the test_resources group; per-host values (container
-# name and image) live in hosts.yml.
+# Shared settings for the test_resources group; per-host images live in
+# hosts.yml.
 #
 # The container runtime is selectable through the environment so the same
-# scenarios run unchanged on Podman (default; CI uses rootful Podman) or on
-# a rootful Docker daemon:
+# scenarios run unchanged on Podman (default) or on a Docker daemon:
 #
-#   MOLECULE_CONTAINER_RUNTIME=docker \
-#     MOLECULE_GLOB='extensions/molecule/**/molecule.yml' molecule test --all
+#   MOLECULE_CONTAINER_RUNTIME=docker just molecule-test
 #
-# Docker needs the community.docker collection (root requirements.yaml) and
-# its Python SDK on the control node.  Both runtimes run the containers
+# Docker needs the community.docker collection (tests/molecule/requirements.yml)
+# and its Python SDK on the control node.  Both runtimes run the containers
 # privileged: systemd needs the capabilities anyway, and a privileged
 # container also gets the writable /sys that the systemd units and future
 # kernel-touching roles require.

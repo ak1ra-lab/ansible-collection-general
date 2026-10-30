@@ -48,13 +48,11 @@ jobs:
         uses: astral-sh/setup-uv@18d369b23da25a81e9458561248e1aafff6a70fa # v10.3.1
       - name: Sync the lint and docs dependencies
         run: uv sync --locked --no-dev --group lint --group docs
-      - name: Install the collection under test and the required collections
+      - name: Install the collection under test
         run: |
           mkdir -p .ansible/collections
           uv run --no-sync ansible-galaxy collection install \
             --force --collections-path .ansible/collections .
-          uv run --no-sync ansible-galaxy collection install \
-            -r requirements.yaml -p .ansible/collections
       - name: Run ansible-lint
         run: uv run --no-sync ansible-lint
       - name: Run ruff
@@ -254,18 +252,9 @@ jobs:
         with:
           go-version: stable
           cache: false
-      # WP-6 owns Molecule isolation and removing the manual collection
-      # install. Until then the shared default scenario lifecycle still reads
-      # the project-local collections path.
-      - name: Install the collection under test and scenario requirements
-        run: |
-          mkdir -p .ansible/collections
-          uv run --no-sync ansible-galaxy collection install \
-            --force --collections-path .ansible/collections .
-          uv run --no-sync ansible-galaxy collection install \
-            -r requirements.yaml -p .ansible/collections
+      # Molecule installs the collection under test (ansible-compat prerun)
+      # and tests/molecule/requirements.yml (dependency action) itself.
       - name: Run the Molecule scenarios
         run: >-
           sudo env "PATH=${GITHUB_WORKSPACE}/.venv/bin:${PATH}"
-          MOLECULE_GLOB='extensions/molecule/**/molecule.yml'
           molecule test --all

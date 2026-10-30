@@ -9,11 +9,17 @@
 #
 # The first-run verify runs before idempotence: it proves the first converge
 # refreshed the APT index after adding the backports source, which is the
-# behaviour that keeps the upgrade from being deferred to a later run.
+# behaviour that keeps the upgrade from being deferred to a later run.  The
+# final APT refresh is a side effect before verify, not part of verify.yml.
 scenario:
   test_sequence:
+    - dependency
+    - destroy
+    - create
     - prepare
     - converge
     - verify first-run-verify.yml
     - idempotence
+    - side_effect
     - verify
+    - destroy

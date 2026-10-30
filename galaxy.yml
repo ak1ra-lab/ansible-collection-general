@@ -55,7 +55,6 @@ build_ignore:
   - playbooks/group_vars
   - playbooks/host_vars
   - pyproject.toml
-  - requirements.yaml
   - ruff.toml
   - scripts
   - site

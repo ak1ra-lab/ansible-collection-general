@@ -1,0 +1,26 @@
+---
+# apt_install_variants scenario - the role's secondary branches, each on a
+# real repository:
+#
+#   * caddy: keyring from inline content (looked up on the controller),
+#     release-based pinning, an explicit unattended-upgrades origins pattern,
+#     `any-version`/`main` suite and components, and no packages installed.
+#   * deb-multimedia: keyring from a downloaded keyring package with a pinned
+#     checksum, and pinning/unattended-upgrades disabled.
+#
+# The sequence refreshes the APT index in a side effect before verify (rather
+# than mutating state inside verify.yml), then runs the shared cleanup and
+# teardown verification.
+scenario:
+  test_sequence:
+    - dependency
+    - destroy
+    - create
+    - prepare
+    - converge
+    - idempotence
+    - side_effect
+    - verify
+    - cleanup
+    - verify absent-verify.yml
+    - destroy

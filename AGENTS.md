@@ -61,16 +61,15 @@ or running playbooks:
 just ansible-collection-install   # = ansible-galaxy collection install --force -p .ansible/collections .
 ```
 
-- `requirements.yaml` deps (`ansible.posix`, `community.general`,
-  `containers.podman`, `community.docker`) provide the role runtime and the
-  Molecule container lifecycle;
-  `just ansible-requirements-install` installs them into the project-local
-  path. `requirements.yml` plus `meta/execution-environment.yml` declare only
-  the runtime collection dependencies for ansible-builder; the collection has
-  no controller-side Python requirements.
+- `requirements.yml` plus `meta/execution-environment.yml` declare only the
+  runtime collection dependencies for ansible-builder; the collection has no
+  controller-side Python requirements. Test-only collections live in
+  `tests/molecule/requirements.yml` and are installed by Molecule's dependency
+  action or tox-ansible/ade.
 - `ansible-lint` runs with `profile: production` (`.ansible-lint`); in non-`offline`
-  mode it auto-installs `requirements.yaml` into a cache dir computed by
-  ansible-compat from the project dir, ignoring `ansible.cfg`'s `collections_path`.
+  mode it auto-installs the `galaxy.yml` dependencies into a cache dir computed
+  by ansible-compat from the project dir, ignoring `ansible.cfg`'s
+  `collections_path`.
 - `.ansible-lint` intentionally has no `kinds:` mapping: remapping role
   `defaults/` (or `vars/`) files out of the default "vars" kind silently
   disables `var-naming[no-role-prefix]` for the role. Role variables use the
@@ -117,13 +116,17 @@ declared in `tests/molecule/requirements.yml`; tox-ansible installs them with
 
 Agent-specific constraints:
 
-- The `default` scenario owns the shared container lifecycle; component
-  scenarios reuse the containers. `config.yml` sets `shared_state: true` and
-  the component sequence (cleanup, prepare, converge, idempotence, verify,
-  cleanup, verify `absent-verify.yml`).
-- The recipes install the collection under test before every run. When
-  invoking `molecule` directly, run `just ansible-collection-install` after
-  editing a role, or the scenario tests the previously installed copy.
+- Scenarios are flat under `extensions/molecule/<name>/` and each one owns its
+  containers. `config.yml` maps the shared `create.yml`/`destroy.yml` playbooks
+  and the default sequence (dependency, destroy, create, prepare, converge,
+  idempotence, verify, cleanup, verify `absent-verify.yml`, destroy). Container
+  names include the scenario name and a checkout hash.
+- Do not pre-install the collection or test collections into
+  `.ansible/collections` for Molecule. The dependency action installs
+  `tests/molecule/requirements.yml` and ansible-compat's prerun installs the
+  collection under test and its `galaxy.yml` dependencies.
+- `just ansible-collection-install` remains the project-local install for lint,
+  mypy, and docs only.
 - Molecule caches scenario state, so a changed `molecule.yml` needs
   `molecule reset` (or `destroy`).
 

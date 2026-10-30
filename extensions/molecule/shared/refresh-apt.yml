@@ -1,0 +1,25 @@
+---
+# Shared side effect: refresh the APT index after converge.
+#
+# Verify playbooks assert state; they must not mutate it.  The apt_install
+# and debian_base scenarios add repositories during converge, so a side_effect
+# step refreshes the index before their verify playbook reads apt policy.
+
+- name: refresh the APT index
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: refresh the APT index
+      ansible.builtin.command:
+        argv: [apt-get, update]
+      changed_when: false
+      register: _molecule_apt_update
+
+    - name: assert the APT update succeeds
+      ansible.builtin.assert:
+        that:
+          - _molecule_apt_update.rc == 0
+        fail_msg: >-
+          apt-get update failed:
+          {{ _molecule_apt_update.stderr }}
+        quiet: true

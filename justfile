@@ -31,15 +31,11 @@ tox env='sanity-py3.13-2.21':
 unit-test:
     uv run tox -e unit-py3.13-2.21 --ansible
 
-# Install project-local Ansible collection
+# Install project-local Ansible collection (lint, mypy and docs only; Molecule
+# installs the collection and its test dependencies itself)
 ansible-collection-install:
     mkdir -p .ansible/collections
     uv run ansible-galaxy collection install --force --collections-path .ansible/collections .
-
-# Install the collections required by the Molecule scenarios
-ansible-requirements-install:
-    mkdir -p .ansible/collections
-    uv run ansible-galaxy collection install -r requirements.yaml -p .ansible/collections
 
 # Lint all Ansible content with ansible-lint (production profile)
 ansible-lint:
@@ -61,25 +57,22 @@ docs-build: ansible-collection-install docs-check
 docs-serve: ansible-collection-install docs-check
     ANSIBLE_COLLECTIONS_PATH="$PWD/.ansible/collections" NO_MKDOCS_2_WARNING=1 uv run --group docs mkdocs serve
 
-# Run every Molecule scenario (nested scenarios need the recursive glob)
-molecule-test: ansible-collection-install ansible-requirements-install
-    MOLECULE_GLOB='extensions/molecule/**/molecule.yml' uv run molecule test --all
+# Run every Molecule scenario.  Scenarios are flat and each one owns its
+# containers; no MOLECULE_GLOB or project-local collection pre-install.
+molecule-test:
+    uv run molecule test --all
 
-# Run one Molecule scenario, e.g. `just molecule-test-one apt_repository_basic`
-molecule-test-one scenario: ansible-collection-install ansible-requirements-install
-    MOLECULE_GLOB='extensions/molecule/**/molecule.yml' uv run molecule test -s {{scenario}}
+# Run one Molecule scenario, e.g. `just molecule-test-one apt_install_basic`
+molecule-test-one scenario:
+    uv run molecule test -s {{scenario}}
+
+# Syntax-check every scenario's converge playbook
+molecule-syntax:
+    uv run molecule syntax --all
 
 # List the Molecule scenarios
 molecule-list:
-    MOLECULE_GLOB='extensions/molecule/**/molecule.yml' uv run molecule list
-
-# Create the shared test containers used by every scenario
-molecule-create: ansible-collection-install ansible-requirements-install
-    uv run molecule create
-
-# Remove the shared test containers
-molecule-destroy:
-    uv run molecule destroy
+    uv run molecule list
 
 # Remove build artifacts
 clean:

@@ -166,18 +166,3 @@
           unexpected python3-debian status:
           {{ _debian_base_python3_debian.stdout }}
         quiet: true
-
-    - name: refresh the APT index against the rendered sources
-      ansible.builtin.command:
-        argv: [apt-get, update]
-      changed_when: false
-      register: _debian_base_update
-
-    - name: assert the APT update succeeds
-      ansible.builtin.assert:
-        that:
-          - _debian_base_update.rc == 0
-        fail_msg: >-
-          apt-get update failed:
-          {{ _debian_base_update.stderr }}
-        quiet: true
