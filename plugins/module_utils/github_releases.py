@@ -142,12 +142,11 @@ def ensure_string_list(value: Any) -> list[str]:
     if isinstance(value, str):
         stripped = value.strip()
         if stripped.startswith("[") and stripped.endswith("]"):
-            for parser in (lambda raw: ast.literal_eval(raw),):
-                try:
-                    parsed = parser(stripped)
-                except (SyntaxError, ValueError):
-                    continue
-
+            try:
+                parsed = ast.literal_eval(stripped)
+            except (SyntaxError, ValueError):
+                pass
+            else:
                 if isinstance(parsed, (list, tuple)):
                     return [str(item) for item in parsed]
         return [value]

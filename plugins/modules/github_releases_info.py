@@ -3,24 +3,6 @@
 
 from __future__ import annotations
 
-import json
-from typing import Any
-from urllib.error import HTTPError, URLError
-
-from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.urls import open_url
-from ansible_collections.ak1ra_lab.general.plugins.module_utils.github_releases import (
-    MICROARCH_LEVEL_ALIASES,
-    build_release_api_url,
-    build_request_headers,
-    normalize_asset,
-    normalize_release,
-    normalized_request_platform,
-    prepare_download_hints,
-    select_candidate_assets,
-    split_repo,
-)
-
 DOCUMENTATION = r"""
 ---
 module: github_releases_info
@@ -46,6 +28,7 @@ options:
     description:
       - Optional GitHub API token.
     type: str
+    default: ''
   validate_certs:
     description:
       - Validate TLS certificates for GitHub API requests.
@@ -137,7 +120,7 @@ notes:
   - Supports check mode; the API query runs in check mode as usual for info
     modules.
 author:
-  - ak1ra
+  - ak1ra (@ak1ra-lab)
 """
 
 EXAMPLES = r"""
@@ -243,6 +226,24 @@ requested_microarch:
   type: str
   sample: x86-64-v3
 """
+
+import json
+from typing import Any
+from urllib.error import HTTPError, URLError
+
+from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.urls import open_url
+from ansible_collections.ak1ra_lab.general.plugins.module_utils.github_releases import (
+    MICROARCH_LEVEL_ALIASES,
+    build_release_api_url,
+    build_request_headers,
+    normalize_asset,
+    normalize_release,
+    normalized_request_platform,
+    prepare_download_hints,
+    select_candidate_assets,
+    split_repo,
+)
 
 
 def fail_http_error(module: AnsibleModule, exc: Exception, context: str) -> Any:

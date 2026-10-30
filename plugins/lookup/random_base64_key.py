@@ -11,15 +11,6 @@ key has full entropy per byte.
 
 from __future__ import annotations
 
-import base64
-import secrets
-from typing import Any
-
-from ansible.errors import AnsibleLookupError
-from ansible.plugins.lookup import LookupBase
-
-DEFAULT_BYTES = 32
-
 DOCUMENTATION = r"""
 ---
 name: random_base64_key
@@ -39,7 +30,7 @@ options:
     type: int
     default: 32
 author:
-  - ak1ra
+  - ak1ra (@ak1ra-lab)
 """
 
 EXAMPLES = r"""
@@ -54,6 +45,15 @@ _raw:
   type: list
   elements: str
 """
+
+import base64
+import secrets
+from typing import Any
+
+from ansible.errors import AnsibleLookupError
+from ansible.plugins.lookup import LookupBase
+
+DEFAULT_BYTES = 32
 
 
 class LookupModule(LookupBase):

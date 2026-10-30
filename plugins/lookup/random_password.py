@@ -10,16 +10,6 @@ predictable Mersenne-Twister ``random`` module).
 
 from __future__ import annotations
 
-import secrets
-import string
-from typing import Any
-
-from ansible.errors import AnsibleLookupError
-from ansible.plugins.lookup import LookupBase
-
-DEFAULT_LENGTH = 32
-DEFAULT_ALPHABET = string.ascii_letters + string.digits
-
 DOCUMENTATION = r"""
 ---
 name: random_password
@@ -43,7 +33,7 @@ options:
     type: str
     default: ASCII letters and digits (a-z, A-Z, 0-9)
 author:
-  - ak1ra
+  - ak1ra (@ak1ra-lab)
 """
 
 EXAMPLES = r"""
@@ -62,6 +52,16 @@ _raw:
   type: list
   elements: str
 """
+
+import secrets
+import string
+from typing import Any
+
+from ansible.errors import AnsibleLookupError
+from ansible.plugins.lookup import LookupBase
+
+DEFAULT_LENGTH = 32
+DEFAULT_ALPHABET = string.ascii_letters + string.digits
 
 
 class LookupModule(LookupBase):
@@ -90,4 +90,4 @@ class LookupModule(LookupBase):
         if not isinstance(alphabet, str) or not alphabet:
             raise AnsibleLookupError(f"alphabet must be a non-empty string, got {alphabet!r}")
 
-        return ["".join(secrets.choice(alphabet) for _ in range(length))]
+        return ["".join(secrets.choice(alphabet) for _index in range(length))]

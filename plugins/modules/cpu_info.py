@@ -1,11 +1,6 @@
 # Copyright: (c) 2026, ak1ra <ak1ra.komj@gmail.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.ak1ra_lab.general.plugins.module_utils.cpu import (
-    collect_cpu_facts,
-)
-
 DOCUMENTATION = r"""
 ---
 module: cpu_info
@@ -28,7 +23,7 @@ notes:
     C(x86-64-v1) through C(x86-64-v4). The return shape is architecture
     agnostic, so other architectures can add their own level tables later.
 author:
-  - ak1ra
+  - ak1ra (@ak1ra-lab)
 """
 
 EXAMPLES = r"""
@@ -98,6 +93,11 @@ cpu:
       returned: always
       type: str
 """
+
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.ak1ra_lab.general.plugins.module_utils.cpu import (
+    collect_cpu_facts,
+)
 
 
 def main() -> None:

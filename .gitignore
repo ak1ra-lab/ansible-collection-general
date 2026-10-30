@@ -346,6 +346,10 @@ credentials/
 credentials.yaml
 examples/*
 
+# Collection build and import artifacts
+*.tar.gz
+importer_result.json
+
 ## LLM
 .agents/plans/*
 .agents/sessions/*

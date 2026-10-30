@@ -9,12 +9,6 @@ variant bits, unlike a reformatted random hex string.
 
 from __future__ import annotations
 
-import uuid
-from typing import Any
-
-from ansible.errors import AnsibleLookupError
-from ansible.plugins.lookup import LookupBase
-
 DOCUMENTATION = r"""
 ---
 name: random_uuid
@@ -27,7 +21,7 @@ description:
     (for example with the C(ansible.builtin.set_fact) module) when it must
     stay stable across template re-renders and repeated runs.
 author:
-  - ak1ra
+  - ak1ra (@ak1ra-lab)
 """
 
 EXAMPLES = r"""
@@ -42,6 +36,12 @@ _raw:
   type: list
   elements: str
 """
+
+import uuid
+from typing import Any
+
+from ansible.errors import AnsibleLookupError
+from ansible.plugins.lookup import LookupBase
 
 
 class LookupModule(LookupBase):
