@@ -15,8 +15,10 @@ Documentation: <https://ak1ra-lab.github.io/ansible-collection-general/>
 | [`go_build`](roles/go_build/README.md) | Clone and build a Go project on `localhost` and expose the built binary path. |
 | [`pyproject_install`](roles/pyproject_install/README.md) | Build or install a Python package into a target virtual environment from a local wheel or an index. |
 
-The role READMEs are the canonical variable contracts. The docs site renders
-them as the role reference.
+The role argument specs (`roles/<role>/meta/argument_specs.yml`) are the
+canonical variable contracts; the role READMEs keep narrative and deployed
+artifact details. The docs site renders the argument specs as the role
+reference.
 
 ## Modules
 
@@ -27,8 +29,8 @@ them as the role reference.
   detected x86-64 microarchitecture level, which can be fed into
   `github_releases_info` asset selection.
 
-See the [module guide](https://ak1ra-lab.github.io/ansible-collection-general/modules/)
-or the [generated reference](https://ak1ra-lab.github.io/ansible-collection-general/ak1ra_lab.general/)
+See the [module guide](https://ak1ra-lab.github.io/ansible-collection-general/modules.html)
+or the [generated reference](https://ak1ra-lab.github.io/ansible-collection-general/collection_index.html)
 for options, return values, and examples. The same reference is available
 offline with `ansible-doc ak1ra_lab.general.<module>`.
 
@@ -40,7 +42,7 @@ offline with `ansible-doc ak1ra_lab.general.<module>`.
   decoded byte length.
 - `random_uuid`: random RFC 4122 version 4 UUID.
 
-See the [lookup guide](https://ak1ra-lab.github.io/ansible-collection-general/lookups/)
+See the [lookup guide](https://ak1ra-lab.github.io/ansible-collection-general/lookups.html)
 for examples.
 
 ## Requirements
@@ -71,7 +73,7 @@ ansible-galaxy collection install -r requirements.yaml -p ./.ansible/collections
 
 This collection is intended to be consumed from `./.ansible/collections`, with
 the consumer repository's `ansible.cfg` including that path at the front of
-`collections_path`. See [Getting started](https://ak1ra-lab.github.io/ansible-collection-general/installation/)
+`collections_path`. See [Getting started](https://ak1ra-lab.github.io/ansible-collection-general/getting-started.html)
 for the control-node and managed-node requirements.
 
 ## Development

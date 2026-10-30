@@ -66,14 +66,11 @@ jobs:
           ANSIBLE_COLLECTIONS_PATH: ${{ github.workspace }}/.ansible/collections
         run: >-
           uv run --no-sync antsibull-docs lint-collection-docs
-          --plugin-docs --validate-collection-refs self --skip-rstcheck .
-      - name: Check role documentation coverage
-        run: uv run --no-sync python scripts/check_docs.py
-      - name: Build the documentation site
+          --plugin-docs --validate-collection-refs self .
+      - name: Build the Sphinx documentation site
         env:
           ANSIBLE_COLLECTIONS_PATH: ${{ github.workspace }}/.ansible/collections
-          NO_MKDOCS_2_WARNING: "1"
-        run: uv run --no-sync mkdocs build --strict
+        run: uv run --no-sync bash docs/docsite/build.sh
 
   build-import:
     name: Build and import

@@ -49,15 +49,14 @@ build_ignore:
   - .venv
   - ansible.cfg
   - config
-  - hooks
   - justfile
-  - mkdocs.yaml
   - playbooks/group_vars
   - playbooks/host_vars
   - pyproject.toml
   - ruff.toml
   - scripts
   - site
+  - docs/docsite/_build
   - tests/output
   - uv.lock
   - yamlfmt.yaml

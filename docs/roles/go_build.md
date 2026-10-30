@@ -1,1 +1,0 @@
---8<-- "roles/go_build/README.md"

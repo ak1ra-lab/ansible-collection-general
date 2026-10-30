@@ -12,8 +12,6 @@ profile: production
 exclude_paths:
   - .git/
   - .venv/
-  # MkDocs site configuration is documentation tooling, not Ansible source.
-  - mkdocs.yaml
   - playbooks/host_vars/
   - playbooks/group_vars/
   # An ansible-galaxy role requirements file, not a playbook.  Molecule's
