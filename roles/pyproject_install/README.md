@@ -1,30 +1,33 @@
 # pyproject_install
 
-> The canonical variable reference for this role is
-> [`meta/argument_specs.yml`](meta/argument_specs.yml). This README keeps the
-> narrative and deployed-artifact details; update both when the contract changes.
+> Role documentation generated from [`meta/argument_specs.yml`](meta/argument_specs.yml)
+> is the canonical variable reference. This README covers purpose, deployed
+> artifacts, and operational notes.
 
 Install a Python package into a target virtual environment.
 
 The role supports three sources:
 
-- `local`: build a wheel on `localhost` with `uv build --wheel`, copy it to the target host, and install it with `pip`
+- `local`: build a wheel on `localhost` with `uv build --wheel`, copy it to the
+  target host, and install it with `pip`
 - `pypi`: install from the public PyPI index
 - `testpypi`: install from TestPyPI with PyPI as an extra index
 
-## Required Variables
+## Requirements
 
-- `pyproject_install_package_name`
+`uv` must be available on the controller when using the `local` source. The
+target needs a Python interpreter with `venv` support; the role installs the
+distro packages needed by `ansible.builtin.pip` before creating the environment.
 
-## Common Variables
+## Variables
 
-| Variable | Default | Description |
-| --- | --- | --- |
-| `pyproject_install_source` | `local` | Install source: `local`, `pypi`, or `testpypi` |
-| `pyproject_install_package_extras` | empty string | Optional extras to install |
-| `pyproject_install_local_project_root` | `{{ playbook_dir | ansible.builtin.dirname }}` | Local project root used for `uv build --wheel` |
-| `pyproject_install_python_interpreter` | `{{ ansible_python_interpreter | default('/usr/bin/python3') }}` | Python interpreter used for `python3 -m venv` |
-| `pyproject_install_venv_dir` | `/var/lib/<package>/venv` | Target virtual environment path |
-| `pyproject_install_venv_force` | `false` | Remove the venv before reinstalling |
-| `pyproject_install_remote_tmp_dir` | `/tmp` | Remote temporary directory for copied wheel files |
-| `pyproject_install_system_packages` | OS-family map (`python3-pip`, `python3-packaging`, `python3-venv` on Debian) | System packages installed before venv creation; set to `[]` for a self-contained interpreter |
+The canonical variable reference is generated from `meta/argument_specs.yml` in
+the collection documentation.
+
+## Notes
+
+- The virtual environment is created at `pyproject_install_venv_dir` (by
+  default `/var/lib/<package>/venv`).
+- A locally built wheel is copied to the target temporary directory and removed
+  after installation. Local installs use force-reinstall so version bumps from
+  a git rebase are not skipped.

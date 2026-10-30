@@ -97,9 +97,10 @@ the role by its FQCN:
      roles:
        - ak1ra_lab.general.docker
 
-The role argument specs in ``roles/<role>/meta/argument_specs.yml`` and the
-role READMEs are the variable reference. :doc:`collection_index` renders the
-generated role and plugin reference.
+The role argument specs in ``roles/<role>/meta/argument_specs.yml`` generate
+the canonical variable reference. Role READMEs keep purpose, deployed
+artifacts, and examples. :doc:`collection_index` renders the generated role and
+plugin reference.
 
 Release order
 -------------

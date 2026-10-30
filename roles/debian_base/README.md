@@ -1,8 +1,8 @@
 # debian_base
 
-> The canonical variable reference for this role is
-> [`meta/argument_specs.yml`](meta/argument_specs.yml). This README keeps the
-> narrative and deployed-artifact details; update both when the contract changes.
+> Role documentation generated from [`meta/argument_specs.yml`](meta/argument_specs.yml)
+> is the canonical variable reference. This README covers purpose, deployed
+> artifacts, and operational notes.
 
 Applies a Debian baseline to freshly provisioned hosts: curated packages, DEB822
 archive and security sources, unattended-upgrades wiring, and common bootstrap
@@ -28,32 +28,8 @@ Targets Debian 12/13 only (`ansible_facts['distribution'] == 'debian'`).
 
 ## Variables
 
-| Variable | Default | Description |
-| --- | --- | --- |
-| `debian_base_apt_repo_debian_types` | `[deb]` | Archive DEB822 types |
-| `debian_base_apt_repo_debian_uris` | `[https://deb.debian.org/debian/]` | Debian archive mirrors |
-| `debian_base_apt_repo_debian_suites` | release + `-updates` | Archive suites |
-| `debian_base_apt_repo_debian_components` | main/contrib/non-free/non-free-firmware | Archive components |
-| `debian_base_apt_repo_debian_security_types` | `[deb]` | Security DEB822 types |
-| `debian_base_apt_repo_debian_security_uris` | `[https://deb.debian.org/debian-security/]` | Security mirrors |
-| `debian_base_apt_repo_debian_security_suites` | release + `-security` | Security suites |
-| `debian_base_apt_repo_debian_security_components` | main/contrib/non-free/non-free-firmware | Security components |
-| `debian_base_apt_repo_debian_backports_enabled` | `false` | Add the backports suite and pinning file |
-| `debian_base_apt_repo_debian_backports_preferences_package` | `linux-* initramfs-tools` | Backports pinning `Package:` glob |
-| `debian_base_apt_repo_debian_backports_preferences_pin_priority` | `500` | Backports pin priority |
-| `debian_base_unattended_upgrade_updates_enabled` | `false` | Unattended-upgrades for `<release>-updates` |
-| `debian_base_unattended_upgrade_backports_enabled` | `false` | Unattended-upgrades for backports |
-| `debian_base_unattended_upgrade_automatic_reboot_enabled` | `false` | Unattended-upgrades automatic reboot |
-| `debian_base_unattended_upgrade_automatic_reboot_time` | `02:00` | Automatic reboot time |
-| `debian_base_apt_force_ipv4_enabled` | `true` | Write `/etc/apt/apt.conf.d/99force-ipv4` |
-| `debian_base_tcp_bbr_enabled` | `false` | Load `tcp_bbr` and write the BBR sysctls to the role drop-in |
-| `debian_base_ip_forward_enabled` | `false` | Set `net.ipv4.ip_forward=1` in the role drop-in |
-| `debian_base_qemu_guest_agent_enabled` | `true` | Install and enable `qemu-guest-agent` |
-| `debian_base_custom_sshd_config_enabled` | `false` | Render `debian_base_custom_sshd_config_entries` into `/etc/ssh/sshd_config.d/00-ansible-debian-base.conf` |
-| `debian_base_custom_sshd_config_entries` | key-only SSH examples | Plain sshd_config lines rendered in order |
-| `debian_base_custom_sysctl_conf_enabled` | `false` | Apply `debian_base_custom_sysctl_conf_entries` to the role drop-in |
-| `debian_base_custom_sysctl_conf_entries` | optional examples | Sysctl entries rendered into the role drop-in |
-| `debian_base_apt_packages` | curated list | Packages installed as the baseline |
+The canonical variable reference is generated from `meta/argument_specs.yml` in
+the collection documentation.
 
 ## Notes
 

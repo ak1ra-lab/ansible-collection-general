@@ -17,10 +17,10 @@ Release notes: [CHANGELOG.rst](CHANGELOG.rst)
 | [`go_build`](roles/go_build/README.md) | Clone and build a Go project on `localhost` and expose the built binary path. |
 | [`pyproject_install`](roles/pyproject_install/README.md) | Build or install a Python package into a target virtual environment from a local wheel or an index. |
 
-The role argument specs (`roles/<role>/meta/argument_specs.yml`) are the
-canonical variable contracts; the role READMEs keep narrative and deployed
-artifact details. The docs site renders the argument specs as the role
-reference.
+The role argument specs (`roles/<role>/meta/argument_specs.yml`) are the source
+of the canonical variable reference; the docs site renders them as the
+generated role documentation. Role READMEs keep purpose, deployed artifacts,
+and examples.
 
 ## Modules
 

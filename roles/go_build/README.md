@@ -1,8 +1,8 @@
 # roles/go_build
 
-> The canonical variable reference for this role is
-> [`meta/argument_specs.yml`](meta/argument_specs.yml). This README keeps the
-> narrative and deployed-artifact details; update both when the contract changes.
+> Role documentation generated from [`meta/argument_specs.yml`](meta/argument_specs.yml)
+> is the canonical variable reference. This README covers purpose, deployed
+> artifacts, and operational notes.
 
 Ansible role that builds a Go command on **localhost** from a git repository with
 `git clone` and `go build`, keeping build work off remote hosts that may have
@@ -23,24 +23,10 @@ pointing to the built binary on localhost.
 `go` must be present in localhost `PATH`. The role fails immediately if it is not
 found.
 
-## Role Variables
+## Variables
 
-| Variable             | Default       | Description                                              |
-| -------------------- | ------------- | -------------------------------------------------------- |
-| go_build_repo_url    | empty string  | **(required)** Git repository URL                        |
-| go_build_output_name | empty string  | **(required)** Expected output binary filename           |
-| go_build_repo_version| HEAD          | Git branch, tag, or commit to check out                 |
-| go_build_package     | .             | Go package path passed to `go build`, e.g. `.` or `./cmd/app` |
-| go_build_chdir       | empty string  | Working directory for `go build`, relative to `go_build_repo_dir`. Empty means the repo root. Set to e.g. `cmd/caddy` for subdirectory builds. |
-| go_build_static      | true          | When true, sets `CGO_ENABLED=0` for a static binary      |
-| go_build_ldflags     | -s -w         | Extra linker flags passed through `-ldflags`             |
-| go_build_goos        | linux         | Target `GOOS`                                            |
-| go_build_goarch      | amd64         | Target `GOARCH`                                          |
-| go_build_base_dir    | /tmp/go-build | Base directory for source checkout, output, and caches   |
-| go_build_gopath      | `{{ go_build_base_dir }}/gopath` | `GOPATH` used on the controller |
-| go_build_gomodcache  | `{{ go_build_base_dir }}/pkg/mod` | `GOMODCACHE` used on the controller |
-| go_build_gocache     | `{{ go_build_base_dir }}/cache` | `GOCACHE` used on the controller |
-| go_build_repo_dir    | empty string  | Optional checkout directory override; empty derives `{{ go_build_base_dir }}/src/<git-server>/<org>/<project>` |
+The canonical variable reference is generated from `meta/argument_specs.yml` in
+the collection documentation.
 
 ## Output Facts
 

@@ -21,5 +21,6 @@ The external repository includes:
 
 Install ``ak1ra_lab.general`` from Galaxy as described in
 :doc:`getting-started`, then run the playbooks from that repository or from
-your own playbook project. The role argument specs in
-:doc:`collection_index` remain the variable reference.
+your own playbook project. The generated role reference in
+:doc:`collection_index` remains the canonical variable reference; role READMEs
+keep purpose, deployed artifacts, and examples.

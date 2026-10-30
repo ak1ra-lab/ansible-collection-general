@@ -63,8 +63,8 @@ Facts and outputs
 Documentation contract
 ----------------------
 
-The role argument specs in ``roles/<role>/meta/argument_specs.yml`` are the
-canonical variable reference. The role READMEs keep the narrative and deployed
-artifact descriptions. Generated role pages in :doc:`collection_index` come
+The role argument specs in ``roles/<role>/meta/argument_specs.yml`` generate
+the canonical variable reference. Role READMEs keep purpose, deployed
+artifacts, and examples. Generated role pages in :doc:`collection_index` come
 from the argument specs; plugin pages come from the in-code ``DOCUMENTATION``
 blocks.
