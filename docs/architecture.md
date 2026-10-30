@@ -32,9 +32,6 @@ and package installation or hold.
 repository, then manages `/etc/docker/daemon.json`, the `docker` group, and the
 Docker service. It does not duplicate the APT repository logic.
 
-The certificate lifecycle roles (`acme_dns`, `acme_dns_register`, `certbot`,
-and `cert_manager`) live in the separate `ak1ra_lab.certificate` collection.
-
 ## Build and install
 
 `go_build` runs on the controller by default (`hosts: localhost` in the
