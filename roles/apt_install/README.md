@@ -1,5 +1,9 @@
 # apt_install
 
+> The canonical variable reference for this role is
+> [`meta/argument_specs.yml`](meta/argument_specs.yml). This README keeps the
+> narrative and deployed-artifact details; update both when the contract changes.
+
 Adds a third-party APT repository in DEB822 format: a managed keyring, the
 sources file, optional pinning and unattended-upgrades origin patterns, and
 optional package installation.

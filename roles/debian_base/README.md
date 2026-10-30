@@ -1,5 +1,9 @@
 # debian_base
 
+> The canonical variable reference for this role is
+> [`meta/argument_specs.yml`](meta/argument_specs.yml). This README keeps the
+> narrative and deployed-artifact details; update both when the contract changes.
+
 Applies a Debian baseline to freshly provisioned hosts: curated packages, DEB822
 archive and security sources, unattended-upgrades wiring, and common bootstrap
 settings.

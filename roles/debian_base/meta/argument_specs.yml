@@ -1,0 +1,229 @@
+argument_specs:
+  main:
+    short_description: Apply a Debian host baseline
+    description:
+      - Configure the Debian archive and security APT sources, unattended upgrades, baseline packages, and optional SSH, sysctl,
+        BBR, IP forwarding, and QEMU guest agent settings.
+    options:
+      debian_base_apt_repo_debian_types:
+        description: Which types of packages to look for from a given source; either binary deb or source code deb-src.
+        type: list
+        default:
+          - deb
+        required: false
+        elements: str
+      debian_base_apt_repo_debian_uris:
+        description: Debian archive APT repository URIs and mirrors.
+        type: list
+        default:
+          - https://deb.debian.org/debian/
+        required: false
+        elements: str
+      debian_base_apt_repo_debian_suites:
+        description: Debian archive suites.
+        type: list
+        default:
+          - '{{ ansible_facts[''distribution_release''] }}'
+          - '{{ ansible_facts[''distribution_release''] }}-updates'
+        required: false
+        elements: str
+      debian_base_apt_repo_debian_components:
+        description: Debian archive components.
+        type: list
+        default:
+          - main
+          - contrib
+          - non-free
+          - non-free-firmware
+        required: false
+        elements: str
+      debian_base_apt_repo_debian_security_types:
+        description: Which types of packages to look for from a given source; either binary deb or source code deb-src.
+        type: list
+        default:
+          - deb
+        required: false
+        elements: str
+      debian_base_apt_repo_debian_security_uris:
+        description: 一般来说, 为了更及时地获得安全更新, 不推荐使用镜像站安全更新软件源, 因为镜像站往往有同步延迟. Encouraging the use of unofficial mirrors would add
+          extra complexity that is usually not needed and that can cause frustration if these mirrors are not kept up to date.
+          apt repo uris and mirrors.
+        type: list
+        default:
+          - https://deb.debian.org/debian-security/
+        required: false
+        elements: str
+      debian_base_apt_repo_debian_security_suites:
+        description: Debian security archive suites.
+        type: list
+        default:
+          - '{{ ansible_facts[''distribution_release''] }}-security'
+        required: false
+        elements: str
+      debian_base_apt_repo_debian_security_components:
+        description: Debian security archive components.
+        type: list
+        default:
+          - main
+          - contrib
+          - non-free
+          - non-free-firmware
+        required: false
+        elements: str
+      debian_base_apt_repo_debian_backports_enabled:
+        description: 是否启用 debian-backports.
+        type: bool
+        default: false
+        required: false
+      debian_base_apt_repo_debian_backports_preferences_package:
+        description: Package glob pinned from Debian backports.
+        type: str
+        default: linux-* initramfs-tools
+        required: false
+      debian_base_apt_repo_debian_backports_preferences_pin_priority:
+        description: APT pin priority for Debian backports.
+        type: int
+        default: 500
+        required: false
+      debian_base_unattended_upgrade_updates_enabled:
+        description: The default setup auto-updates packages in the main and security archives, which means that only stable
+          and security updates are applied. 是否启用 ${distro_codename}-updates 自动更新.
+        type: bool
+        default: false
+        required: false
+      debian_base_unattended_upgrade_backports_enabled:
+        description: 是否启用 ${distro_codename}-backports 自动更新.
+        type: bool
+        default: false
+        required: false
+      debian_base_unattended_upgrade_automatic_reboot_enabled:
+        description: 是否允许 unattended-upgrades 更新后自动重启.
+        type: bool
+        default: false
+        required: false
+      debian_base_unattended_upgrade_automatic_reboot_time:
+        description: systemctl cat apt-daily-upgrade.timer [Timer] OnCalendar=*-*-* 6:00 RandomizedDelaySec=60m Persistent=true.
+        type: str
+        default: 02:00
+        required: false
+      debian_base_apt_force_ipv4_enabled:
+        description: 强制 apt 使用 IPv4.
+        type: bool
+        default: true
+        required: false
+      debian_base_tcp_bbr_enabled:
+        description: 是否开启 TCP BBR 拥塞控制算法.
+        type: bool
+        default: false
+        required: false
+      debian_base_ip_forward_enabled:
+        description: 是否设置 IPv4 ip_forward.
+        type: bool
+        default: false
+        required: false
+      debian_base_qemu_guest_agent_enabled:
+        description: 是否安装 qemu-guest-agent.
+        type: bool
+        default: true
+        required: false
+      debian_base_custom_sshd_config_enabled:
+        description: 是否写入 role 自有的 sshd drop-in The entries are rendered, in order, into /etc/ssh/sshd_config.d/00-ansible-debian-base.conf.
+          The 00- prefix makes this file the first drop-in; OpenSSH keeps the first obtained value, so it wins among sshd_config.d
+          entries. Directives already present in /etc/ssh/sshd_config before the Include line still win and must be reconciled
+          manually. Verify the effective values with `sshd -T`.
+        type: bool
+        default: false
+        required: false
+      debian_base_custom_sshd_config_entries:
+        description: Plain sshd_config lines, rendered in order into the role-owned drop-in.
+        type: list
+        default:
+          - PermitRootLogin prohibit-password
+          - PasswordAuthentication no
+          - KbdInteractiveAuthentication no
+          - AllowTcpForwarding yes
+          - AllowStreamLocalForwarding yes
+        required: false
+        elements: str
+      debian_base_custom_sysctl_conf_enabled:
+        description: 是否设置自定义 sysctl 条目（写入 role 自有的 sysctl.d drop-in） 下面是一组可选示例, 不是通用推荐值. 每项都有代价或依赖具体负载; 启用前先理解其语义, 并在目标主机上验证.
+          大多数主机保持 false 即可.
+        type: bool
+        default: false
+        required: false
+      debian_base_custom_sysctl_conf_entries:
+        description: Custom sysctl entries (name/value mappings) written to the role-owned sysctl drop-in when debian_base_custom_sysctl_conf_enabled
+          is true.
+        type: list
+        default:
+          - name: net.core.busy_read
+            value: '50'
+          - name: net.core.busy_poll
+            value: '50'
+          - name: net.core.wmem_max
+            value: 8388608
+          - name: net.core.rmem_max
+            value: 8388608
+          - name: net.core.netdev_max_backlog
+            value: 5000
+          - name: net.ipv4.tcp_fastopen
+            value: '3'
+          - name: net.ipv4.tcp_slow_start_after_idle
+            value: '0'
+          - name: vm.swappiness
+            value: '30'
+        required: false
+        elements: dict
+      debian_base_apt_packages:
+        description: Baseline packages installed on the host.
+        type: list
+        default:
+          - 7zip
+          - bash-completion
+          - bat
+          - bc
+          - btop
+          - bzip2
+          - conntrack
+          - curl
+          - bind9-dnsutils
+          - dos2unix
+          - file
+          - gawk
+          - git
+          - git-lfs
+          - gnupg
+          - htop
+          - iftop
+          - iotop
+          - iperf3
+          - jq
+          - less
+          - logrotate
+          - mtr
+          - ncdu
+          - nfs-common
+          - parallel
+          - parted
+          - pipx
+          - plocate
+          - pv
+          - python3
+          - python3-pip
+          - rename
+          - ripgrep
+          - rsync
+          - screen
+          - shellcheck
+          - shfmt
+          - stow
+          - systemd-cron
+          - systemd-oomd
+          - telnet
+          - tmux
+          - tree
+          - unattended-upgrades
+          - vim
+          - xxd
+        required: false
+        elements: str

@@ -1,5 +1,9 @@
 # roles/go_build
 
+> The canonical variable reference for this role is
+> [`meta/argument_specs.yml`](meta/argument_specs.yml). This README keeps the
+> narrative and deployed-artifact details; update both when the contract changes.
+
 Ansible role that builds a Go command on **localhost** from a git repository with
 `git clone` and `go build`, keeping build work off remote hosts that may have
 limited CPU.

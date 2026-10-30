@@ -1,0 +1,86 @@
+argument_specs:
+  main:
+    short_description: Install Docker CE and manage the daemon configuration
+    description:
+      - Install Docker CE from the official Docker APT repository through ak1ra_lab.general.apt_install, install the Docker
+        packages, and manage /etc/docker/daemon.json and the docker group.
+    options:
+      docker_apt_keyrings_url:
+        description: Docker APT keyring URL.
+        type: str
+        default: https://download.docker.com/linux/debian/gpg
+        required: false
+      docker_apt_keyrings_dest:
+        description: Destination path for the Docker APT keyring.
+        type: str
+        default: /etc/apt/keyrings/docker-ce.asc
+        required: false
+      docker_apt_repo:
+        description: DEB822 repository name and legacy .list name for the Docker repository.
+        type: str
+        default: docker-ce
+        required: false
+      docker_apt_repo_uris:
+        description: Docker APT repository mirrors.
+        type: list
+        default:
+          - https://download.docker.com/linux/debian
+        required: false
+        elements: str
+      docker_apt_repo_suites:
+        description: Docker APT repository suite.
+        type: str
+        default: '{{ ansible_facts[''distribution_release''] }}'
+        required: false
+      docker_apt_repo_components:
+        description: Docker APT repository component.
+        type: str
+        default: stable
+        required: false
+      docker_apt_pinning:
+        description: Pin Docker packages from the official repository.
+        type: bool
+        default: true
+        required: false
+      docker_apt_pinning_package:
+        description: Package globs covered by the Docker pinning file.
+        type: str
+        default: docker-* containerd.io
+        required: false
+      docker_apt_unattended_upgrade:
+        description: Allow unattended upgrades of Docker packages.
+        type: bool
+        default: false
+        required: false
+      docker_apt_mark_hold:
+        description: Mark every Docker package in docker_apt_repo_packages as held after installation.
+        type: bool
+        default: false
+        required: false
+      docker_apt_pinning_pin_release:
+        description: 'Pin: release line for Docker packages. When empty, the role pins by origin.'
+        type: str
+        default: o=Docker,a={{ docker_apt_repo_suites }},c={{ docker_apt_repo_components }}
+        required: false
+      docker_apt_unattended_upgrade_origins_pattern:
+        description: Unattended-upgrades origins pattern for Docker packages.
+        type: str
+        default: origin=Docker,suite={{ docker_apt_repo_suites }},component={{ docker_apt_repo_components }}
+        required: false
+      docker_apt_repo_packages:
+        description: Docker packages installed after the repository is configured.
+        type: list
+        default:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+          - skopeo
+        required: false
+        elements: str
+      docker_daemon_registry_mirrors:
+        description: registry-mirrors entries written to /etc/docker/daemon.json.
+        type: list
+        default: []
+        required: false

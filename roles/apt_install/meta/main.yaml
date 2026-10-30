@@ -4,8 +4,8 @@
 galaxy_info:
   author: ak1ra
   description: Add a third-party APT repository in DEB822 format (keyring, pinning, unattended upgrades)
-  license: MIT
-  min_ansible_version: "2.18"
+  license: GPL-3.0-or-later
+  min_ansible_version: "2.19"
 
   platforms:
     - name: Debian

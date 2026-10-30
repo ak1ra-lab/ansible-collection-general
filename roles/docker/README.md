@@ -1,5 +1,9 @@
 # docker
 
+> The canonical variable reference for this role is
+> [`meta/argument_specs.yml`](meta/argument_specs.yml). This README keeps the
+> narrative and deployed-artifact details; update both when the contract changes.
+
 Installs Docker CE from the official Docker APT repository (through
 `ak1ra_lab.general.apt_install`), templates `/etc/docker/daemon.json`, adds
 regular users to the `docker` group, and starts and enables `docker.service`.

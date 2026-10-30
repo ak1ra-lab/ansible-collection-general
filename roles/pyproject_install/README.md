@@ -1,5 +1,9 @@
 # pyproject_install
 
+> The canonical variable reference for this role is
+> [`meta/argument_specs.yml`](meta/argument_specs.yml). This README keeps the
+> narrative and deployed-artifact details; update both when the contract changes.
+
 Install a Python package into a target virtual environment.
 
 The role supports three sources:

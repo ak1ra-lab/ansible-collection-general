@@ -1,0 +1,61 @@
+argument_specs:
+  main:
+    short_description: Build or install a Python package into a virtual environment
+    description:
+      - Build a wheel from a local project with uv, or install from PyPI or TestPyPI, then install the package into a target
+        virtual environment.
+    options:
+      pyproject_install_source:
+        description: 'Install source: build a local wheel, or install from PyPI or TestPyPI.'
+        type: str
+        choices:
+          - local
+          - pypi
+          - testpypi
+        default: local
+        required: false
+      pyproject_install_package_name:
+        description: PyPI package name. Required. Also used to derive the default virtual environment path.
+        type: str
+        required: true
+      pyproject_install_package_extras:
+        description: Optional extras to install with the package, for example security for requests[security]. Empty means
+          no extras.
+        type: str
+        default: ''
+        required: false
+      pyproject_install_local_project_root:
+        description: Local project root where uv build --wheel is executed when pyproject_install_source is local.
+        type: str
+        default: '{{ playbook_dir | ansible.builtin.dirname }}'
+        required: false
+      pyproject_install_python_interpreter:
+        description: Python interpreter used to create the virtual environment.
+        type: str
+        default: '{{ ansible_python_interpreter | default(''/usr/bin/python3'') }}'
+        required: false
+      pyproject_install_venv_dir:
+        description: Absolute path to the target virtual environment on the managed host.
+        type: str
+        default: /var/lib/{{ pyproject_install_package_name }}/venv
+        required: false
+      pyproject_install_venv_force:
+        description: Remove the virtual environment before reinstalling.
+        type: bool
+        default: false
+        required: false
+      pyproject_install_remote_tmp_dir:
+        description: Temporary directory on the managed host used to hold the wheel during transfer.
+        type: str
+        default: /tmp
+        required: false
+      pyproject_install_system_packages:
+        description: System packages installed before creating the virtual environment. Set to [] for a self-contained interpreter.
+        type: list
+        default: |-
+          {{-
+            _pyproject_install_system_packages_os_map[ansible_facts.os_family | lower]
+            | default(_pyproject_install_system_packages_os_map['default'])
+          }}
+        required: false
+        elements: str

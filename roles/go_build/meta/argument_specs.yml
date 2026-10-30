@@ -1,0 +1,75 @@
+argument_specs:
+  main:
+    short_description: Clone and build a Go project on the controller
+    description:
+      - Clone a Go project into a controller-local work tree, build a binary, and expose the built binary path for follow-up
+        copy or install tasks.
+    options:
+      go_build_repo_url:
+        description: Git repository URL to clone. Required.
+        type: str
+        required: true
+      go_build_repo_version:
+        description: Git branch, tag, or commit to check out.
+        type: str
+        default: HEAD
+        required: false
+      go_build_package:
+        description: Go package path passed to go build, for example . or ./cmd/app.
+        type: str
+        default: .
+        required: false
+      go_build_output_name:
+        description: Expected output binary filename. Required.
+        type: str
+        required: true
+      go_build_static:
+        description: Build a static binary with CGO_ENABLED=0.
+        type: bool
+        default: true
+        required: false
+      go_build_ldflags:
+        description: Linker flags passed through -ldflags.
+        type: str
+        default: -s -w
+        required: false
+      go_build_base_dir:
+        description: Base directory on the controller for the checkout, output, and caches.
+        type: str
+        default: /tmp/go-build
+        required: false
+      go_build_repo_dir:
+        description: Checkout directory override. When empty, it is derived from go_build_base_dir and go_build_repo_url.
+        type: str
+        default: ''
+        required: false
+      go_build_gopath:
+        description: GOPATH used on the controller.
+        type: str
+        default: '{{ go_build_base_dir }}/gopath'
+        required: false
+      go_build_gomodcache:
+        description: GOMODCACHE used on the controller.
+        type: str
+        default: '{{ go_build_base_dir }}/pkg/mod'
+        required: false
+      go_build_gocache:
+        description: GOCACHE used on the controller.
+        type: str
+        default: '{{ go_build_base_dir }}/cache'
+        required: false
+      go_build_chdir:
+        description: Working directory for go build, relative to go_build_repo_dir. Empty means the repository root.
+        type: str
+        default: ''
+        required: false
+      go_build_goos:
+        description: Target GOOS.
+        type: str
+        default: linux
+        required: false
+      go_build_goarch:
+        description: Target GOARCH.
+        type: str
+        default: amd64
+        required: false
