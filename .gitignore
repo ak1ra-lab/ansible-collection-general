@@ -326,38 +326,48 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# Ansible
+# ---------------------------------------------------------------------------
+# Project-specific rules (shared by the ak1ra_lab collection repositories)
+
+# Ansible controller state and test scratch space
 .ansible/
-# ADE scratch collection root created by tox-ansible.
-collections/
 .molecule/
+.cache/
+*.retry
 
-inventory/*.yaml
-!inventory/hosts.example.yaml
-
-playbooks/host_vars/**/*.yaml
-playbooks/group_vars/**/*.yaml
-
-# Ansible runtime scripts and templates
-playbooks/scripts/*
-playbooks/templates/*
-
-# General configuration file and examples folder
-config/*
-credentials/
-credentials.yaml
-examples/*
-
-# Collection build and import artifacts
-*.tar.gz
-importer_result.json
-
-## LLM
-.agents/plans/*
-.agents/sessions/*
+# ADE scratch collection root and adjacent collection symlink farm
+collections/
 
 # antsibull-changelog plugin cache
 changelogs/.plugin-cache.yaml
 
-# galaxy-importer local output
+# Galaxy build/import artifacts
 importer_result.json
+*.tar.gz
+
+# Ansible host_vars and group_vars
+**/host_vars/**/*.yml
+**/host_vars/**/*.yaml
+**/group_vars/**/*.yml
+**/group_vars/**/*.yaml
+
+# Local inventory and playbook variables
+inventory/*.yml
+inventory/*.yaml
+!inventory/hosts.example.yml
+!inventory/hosts.example.yaml
+playbooks/host_vars/
+playbooks/group_vars/
+playbooks/scripts/
+playbooks/templates/
+extensions/molecule/**/host_vars/
+
+# Local configuration, credentials, and examples
+config/
+credentials/
+credentials.yaml
+examples/
+
+# LLM session records
+.agents/plans/
+.agents/sessions/
