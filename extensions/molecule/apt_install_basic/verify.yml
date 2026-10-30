@@ -16,12 +16,12 @@
     - name: assert the sources file is enabled, signed, and carries the repo
       ansible.builtin.assert:
         that:
-          - "'Enabled: yes' in (_apt_install_sources.content | b64decode)"
-          - "'URIs: https://pkgs.tailscale.com/stable/debian' in (_apt_install_sources.content | b64decode)"
-          - "'Signed-By: /etc/apt/keyrings/tailscale-archive-keyring.gpg' in (_apt_install_sources.content | b64decode)"
+          - "'Enabled: yes' in (_apt_install_sources.content | ansible.builtin.b64decode)"
+          - "'URIs: https://pkgs.tailscale.com/stable/debian' in (_apt_install_sources.content | ansible.builtin.b64decode)"
+          - "'Signed-By: /etc/apt/keyrings/tailscale-archive-keyring.gpg' in (_apt_install_sources.content | ansible.builtin.b64decode)"
         fail_msg: >-
           unexpected sources file:
-          {{ _apt_install_sources.content | b64decode }}
+          {{ _apt_install_sources.content | ansible.builtin.b64decode }}
         quiet: true
 
     - name: collect the imported keyring
@@ -45,11 +45,11 @@
     - name: assert the default origin pinning is in place
       ansible.builtin.assert:
         that:
-          - "'Pin: origin pkgs.tailscale.com' in (_apt_install_pinning.content | b64decode)"
-          - "'Pin-Priority: 900' in (_apt_install_pinning.content | b64decode)"
+          - "'Pin: origin pkgs.tailscale.com' in (_apt_install_pinning.content | ansible.builtin.b64decode)"
+          - "'Pin-Priority: 900' in (_apt_install_pinning.content | ansible.builtin.b64decode)"
         fail_msg: >-
           unexpected pinning file:
-          {{ _apt_install_pinning.content | b64decode }}
+          {{ _apt_install_pinning.content | ansible.builtin.b64decode }}
         quiet: true
 
     - name: collect the unattended-upgrades file
@@ -60,10 +60,10 @@
     - name: assert the default site origins pattern is in place
       ansible.builtin.assert:
         that:
-          - "'site=pkgs.tailscale.com' in (_apt_install_unattended.content | b64decode)"
+          - "'site=pkgs.tailscale.com' in (_apt_install_unattended.content | ansible.builtin.b64decode)"
         fail_msg: >-
           unexpected unattended-upgrades file:
-          {{ _apt_install_unattended.content | b64decode }}
+          {{ _apt_install_unattended.content | ansible.builtin.b64decode }}
         quiet: true
 
     - name: assert the seeded legacy entry was removed
@@ -103,7 +103,7 @@
     - name: assert the package is installed from the new repository
       ansible.builtin.assert:
         that:
-          - _apt_install_status.stdout is search('ok installed')
+          - _apt_install_status.stdout is ansible.builtin.search('ok installed')
         fail_msg: >-
           unexpected package status: {{ _apt_install_status.stdout }}
         quiet: true
@@ -117,7 +117,7 @@
     - name: assert the package is held
       ansible.builtin.assert:
         that:
-          - _apt_install_selection.stdout is search('^tailscale\s+hold')
+          - _apt_install_selection.stdout is ansible.builtin.search('^tailscale\s+hold')
         fail_msg: >-
           the package must be held, got: {{ _apt_install_selection.stdout }}
         quiet: true

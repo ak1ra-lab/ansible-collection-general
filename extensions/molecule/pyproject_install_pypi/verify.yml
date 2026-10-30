@@ -34,7 +34,7 @@
       ansible.builtin.assert:
         that:
           - _pyproject_install_import.rc == 0
-          - _pyproject_install_import.stdout is search('^[0-9]+\.[0-9]+')
+          - _pyproject_install_import.stdout is ansible.builtin.search('^[0-9]+\.[0-9]+')
         fail_msg: >-
           unexpected import result: {{ _pyproject_install_import.stdout }}
           {{ _pyproject_install_import.stderr }}
@@ -53,7 +53,7 @@
     - name: assert the role's system packages are installed
       ansible.builtin.assert:
         that:
-          - item.stdout is search('ok installed')
+          - item.stdout is ansible.builtin.search('ok installed')
         fail_msg: >-
           {{ item.item }} is missing: {{ item.stdout }}
         quiet: true

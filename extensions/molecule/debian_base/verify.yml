@@ -15,10 +15,10 @@
     - name: assert the legacy sources.list is a placeholder
       ansible.builtin.assert:
         that:
-          - "'sources.list.d/debian.sources' in (_debian_base_placeholder.content | b64decode)"
+          - "'sources.list.d/debian.sources' in (_debian_base_placeholder.content | ansible.builtin.b64decode)"
         fail_msg: >-
           unexpected sources.list placeholder:
-          {{ _debian_base_placeholder.content | b64decode }}
+          {{ _debian_base_placeholder.content | ansible.builtin.b64decode }}
         quiet: true
 
     - name: collect the Debian archive source
@@ -29,12 +29,12 @@
     - name: assert the archive source carries the release suites and backports
       ansible.builtin.assert:
         that:
-          - "'URIs: https://deb.debian.org/debian/' in (_debian_base_sources.content | b64decode)"
-          - (ansible_facts['distribution_release'] ~ '-updates') in (_debian_base_sources.content | b64decode)
-          - (ansible_facts['distribution_release'] ~ '-backports') in (_debian_base_sources.content | b64decode)
+          - "'URIs: https://deb.debian.org/debian/' in (_debian_base_sources.content | ansible.builtin.b64decode)"
+          - (ansible_facts['distribution_release'] ~ '-updates') in (_debian_base_sources.content | ansible.builtin.b64decode)
+          - (ansible_facts['distribution_release'] ~ '-backports') in (_debian_base_sources.content | ansible.builtin.b64decode)
         fail_msg: >-
           unexpected debian.sources:
-          {{ _debian_base_sources.content | b64decode }}
+          {{ _debian_base_sources.content | ansible.builtin.b64decode }}
         quiet: true
 
     - name: collect the Debian security source
@@ -45,11 +45,11 @@
     - name: assert the security source is rendered
       ansible.builtin.assert:
         that:
-          - "'URIs: https://deb.debian.org/debian-security/' in (_debian_base_security.content | b64decode)"
-          - (ansible_facts['distribution_release'] ~ '-security') in (_debian_base_security.content | b64decode)
+          - "'URIs: https://deb.debian.org/debian-security/' in (_debian_base_security.content | ansible.builtin.b64decode)"
+          - (ansible_facts['distribution_release'] ~ '-security') in (_debian_base_security.content | ansible.builtin.b64decode)
         fail_msg: >-
           unexpected debian-security.sources:
-          {{ _debian_base_security.content | b64decode }}
+          {{ _debian_base_security.content | ansible.builtin.b64decode }}
         quiet: true
 
     - name: collect the backports pinning file
@@ -64,11 +64,11 @@
     - name: assert the backports pin is in place
       ansible.builtin.assert:
         that:
-          - _debian_base_backports_pin in (_debian_base_backports.content | b64decode)
-          - "'Pin-Priority: 500' in (_debian_base_backports.content | b64decode)"
+          - _debian_base_backports_pin in (_debian_base_backports.content | ansible.builtin.b64decode)
+          - "'Pin-Priority: 500' in (_debian_base_backports.content | ansible.builtin.b64decode)"
         fail_msg: >-
           unexpected backports pin:
-          {{ _debian_base_backports.content | b64decode }}
+          {{ _debian_base_backports.content | ansible.builtin.b64decode }}
         quiet: true
 
     - name: collect the unattended-upgrades drop-ins
@@ -100,7 +100,7 @@
     - name: assert the baseline package is installed
       ansible.builtin.assert:
         that:
-          - _debian_base_hello.stdout is search('ok installed')
+          - _debian_base_hello.stdout is ansible.builtin.search('ok installed')
         fail_msg: >-
           unexpected package status: {{ _debian_base_hello.stdout }}
         quiet: true
@@ -114,7 +114,7 @@
     - name: assert the backports package is installed
       ansible.builtin.assert:
         that:
-          - _debian_base_linux_libc_dev.stdout is search('ok installed')
+          - _debian_base_linux_libc_dev.stdout is ansible.builtin.search('ok installed')
         fail_msg: >-
           unexpected package status: {{ _debian_base_linux_libc_dev.stdout }}
         quiet: true
@@ -129,7 +129,7 @@
       ansible.builtin.assert:
         that:
           - >-
-            _debian_base_linux_libc_dev_policy.stdout is search(
+            _debian_base_linux_libc_dev_policy.stdout is ansible.builtin.search(
               ansible_facts['distribution_release'] ~ '-backports/main'
             )
         fail_msg: >-
@@ -145,11 +145,11 @@
     - name: assert passwordless sudo is granted to the sudo group
       ansible.builtin.assert:
         that:
-          - "'NOPASSWD' in (_debian_base_sudoers.content | b64decode)"
-          - "'%sudo' in (_debian_base_sudoers.content | b64decode)"
+          - "'NOPASSWD' in (_debian_base_sudoers.content | ansible.builtin.b64decode)"
+          - "'%sudo' in (_debian_base_sudoers.content | ansible.builtin.b64decode)"
         fail_msg: >-
           unexpected sudoers rule:
-          {{ _debian_base_sudoers.content | b64decode }}
+          {{ _debian_base_sudoers.content | ansible.builtin.b64decode }}
         quiet: true
 
     - name: collect the deb822 repository helper state
@@ -161,7 +161,7 @@
     - name: assert the deb822 repository helper is installed
       ansible.builtin.assert:
         that:
-          - _debian_base_python3_debian.stdout is search('ok installed')
+          - _debian_base_python3_debian.stdout is ansible.builtin.search('ok installed')
         fail_msg: >-
           unexpected python3-debian status:
           {{ _debian_base_python3_debian.stdout }}

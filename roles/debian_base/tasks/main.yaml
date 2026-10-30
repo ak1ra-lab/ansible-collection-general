@@ -64,8 +64,8 @@
 
 - name: validate the effective sshd configuration
   when: >-
-    (_debian_base_sshd_dropin is changed)
-    or (_debian_base_sshd_dropin_removed is changed)
+    (_debian_base_sshd_dropin is ansible.builtin.changed)
+    or (_debian_base_sshd_dropin_removed is ansible.builtin.changed)
   ansible.builtin.command:
     argv:
       - /usr/sbin/sshd

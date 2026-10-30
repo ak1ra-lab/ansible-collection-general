@@ -44,10 +44,10 @@
     - name: assert the stamp records the build inputs
       ansible.builtin.assert:
         that:
-          - "'repo_url=file:///tmp/molecule-ak1ra-general-go-build/fixture' in (_go_build_stamp_content.content | b64decode)"
-          - "'output=fixture' in (_go_build_stamp_content.content | b64decode)"
-          - "'goos=linux' in (_go_build_stamp_content.content | b64decode)"
+          - "'repo_url=file:///tmp/molecule-ak1ra-general-go-build/fixture' in (_go_build_stamp_content.content | ansible.builtin.b64decode)"
+          - "'output=fixture' in (_go_build_stamp_content.content | ansible.builtin.b64decode)"
+          - "'goos=linux' in (_go_build_stamp_content.content | ansible.builtin.b64decode)"
         fail_msg: >-
           unexpected build stamp:
-          {{ _go_build_stamp_content.content | b64decode }}
+          {{ _go_build_stamp_content.content | ansible.builtin.b64decode }}
         quiet: true

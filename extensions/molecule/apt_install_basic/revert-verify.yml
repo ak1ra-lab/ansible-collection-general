@@ -15,10 +15,10 @@
     - name: assert the source is rendered as disabled
       ansible.builtin.assert:
         that:
-          - "'Enabled: no' in (_apt_install_revert_sources.content | b64decode)"
+          - "'Enabled: no' in (_apt_install_revert_sources.content | ansible.builtin.b64decode)"
         fail_msg: >-
           the source must be disabled, got:
-          {{ _apt_install_revert_sources.content | b64decode }}
+          {{ _apt_install_revert_sources.content | ansible.builtin.b64decode }}
         quiet: true
 
     - name: collect the reverted artifact paths

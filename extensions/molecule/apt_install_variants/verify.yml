@@ -15,12 +15,12 @@
     - name: assert the caddy sources file carries the unusual suite
       ansible.builtin.assert:
         that:
-          - "'URIs: https://dl.cloudsmith.io/public/caddy/stable/deb/debian' in (_apt_install_caddy_sources.content | b64decode)"
-          - "'Suites: any-version' in (_apt_install_caddy_sources.content | b64decode)"
-          - "'Signed-By: /etc/apt/keyrings/caddy-stable-archive-keyring.asc' in (_apt_install_caddy_sources.content | b64decode)"
+          - "'URIs: https://dl.cloudsmith.io/public/caddy/stable/deb/debian' in (_apt_install_caddy_sources.content | ansible.builtin.b64decode)"
+          - "'Suites: any-version' in (_apt_install_caddy_sources.content | ansible.builtin.b64decode)"
+          - "'Signed-By: /etc/apt/keyrings/caddy-stable-archive-keyring.asc' in (_apt_install_caddy_sources.content | ansible.builtin.b64decode)"
         fail_msg: >-
           unexpected caddy sources file:
-          {{ _apt_install_caddy_sources.content | b64decode }}
+          {{ _apt_install_caddy_sources.content | ansible.builtin.b64decode }}
         quiet: true
 
     - name: collect the caddy pinning file
@@ -31,11 +31,11 @@
     - name: assert the release-based pinning is in place
       ansible.builtin.assert:
         that:
-          - "'Pin: release o=cloudsmith/caddy/stable,c=main,n=any-version' in (_apt_install_caddy_pinning.content | b64decode)"
-          - "'Pin-Priority: 900' in (_apt_install_caddy_pinning.content | b64decode)"
+          - "'Pin: release o=cloudsmith/caddy/stable,c=main,n=any-version' in (_apt_install_caddy_pinning.content | ansible.builtin.b64decode)"
+          - "'Pin-Priority: 900' in (_apt_install_caddy_pinning.content | ansible.builtin.b64decode)"
         fail_msg: >-
           unexpected caddy pinning file:
-          {{ _apt_install_caddy_pinning.content | b64decode }}
+          {{ _apt_install_caddy_pinning.content | ansible.builtin.b64decode }}
         quiet: true
 
     - name: collect the caddy unattended-upgrades file
@@ -46,10 +46,10 @@
     - name: assert the explicit origins pattern is in place
       ansible.builtin.assert:
         that:
-          - "'origin=cloudsmith/caddy/stable,component=main,codename=any-version' in (_apt_install_caddy_unattended.content | b64decode)"
+          - "'origin=cloudsmith/caddy/stable,component=main,codename=any-version' in (_apt_install_caddy_unattended.content | ansible.builtin.b64decode)"
         fail_msg: >-
           unexpected caddy unattended-upgrades file:
-          {{ _apt_install_caddy_unattended.content | b64decode }}
+          {{ _apt_install_caddy_unattended.content | ansible.builtin.b64decode }}
         quiet: true
 
     - name: collect the caddy policy
@@ -77,7 +77,7 @@
     - name: assert the keyring package is installed
       ansible.builtin.assert:
         that:
-          - _apt_install_dmo_package.stdout is search('ok installed')
+          - _apt_install_dmo_package.stdout is ansible.builtin.search('ok installed')
         fail_msg: >-
           unexpected keyring package status:
           {{ _apt_install_dmo_package.stdout }}
