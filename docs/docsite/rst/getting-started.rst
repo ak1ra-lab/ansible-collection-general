@@ -29,9 +29,7 @@ Or pin it in a consumer ``requirements.yml``:
 
 Galaxy resolves ``ansible.posix`` and ``community.general`` from
 ``galaxy.yml`` automatically. The ``0.4.0`` release is the first Galaxy
-release; until it is published, install from a Git tag or commit with a
-``git+https://github.com/ak1ra-lab/ansible-collection-general.git`` source and
-pin the revision instead of following a branch.
+release.
 
 Control-node requirements
 -------------------------

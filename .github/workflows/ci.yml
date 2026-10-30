@@ -16,8 +16,6 @@ on:
   push:
     branches:
       - master
-      - dev
-      - reorg/collections-2026-10
   schedule:
     # Weekly devel/milestone coverage (Monday 03:17 UTC).
     - cron: "17 3 * * 1"
