@@ -7,7 +7,7 @@ The collection is a library of independent roles with explicit variable
 contracts. Playbooks are consumer-side content: they live in the separate
 `ansible-playbooks-infra <https://github.com/ak1ra-lab/ansible-playbooks-infra>`_
 repository or in a consumer's own playbook project. The role
-``meta/main.yaml`` files keep ``dependencies: []`` so consumers control the
+``meta/main.yml`` files keep ``dependencies: []`` so consumers control the
 order. A role may still use ``ansible.builtin.import_role`` internally when one
 implementation builds on another; those imports are part of the role contract,
 not a collection-wide dependency graph.

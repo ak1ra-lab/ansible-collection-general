@@ -36,8 +36,8 @@
   loop_control:
     loop_var: directory
 
-- name: include_tasks apt_keyrings.yaml
-  ansible.builtin.include_tasks: apt_keyrings.yaml
+- name: include_tasks apt_keyrings.yml
+  ansible.builtin.include_tasks: apt_keyrings.yml
 
 - name: remove apt_install_repo in legacy format
   ansible.builtin.file:
@@ -74,11 +74,11 @@
   ansible.builtin.apt:
     update_cache: true
 
-- name: include_tasks apt_pinning.yaml
-  ansible.builtin.include_tasks: apt_pinning.yaml
+- name: include_tasks apt_pinning.yml
+  ansible.builtin.include_tasks: apt_pinning.yml
 
-- name: include_tasks unattended_upgrades.yaml
-  ansible.builtin.include_tasks: unattended_upgrades.yaml
+- name: include_tasks unattended_upgrades.yml
+  ansible.builtin.include_tasks: unattended_upgrades.yml
 
 - name: apt_install packages from apt_install_repo
   when:

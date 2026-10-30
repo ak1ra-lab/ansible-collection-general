@@ -25,7 +25,7 @@ on:
       - "pyproject.toml"
       - "uv.lock"
       - "galaxy.yml"
-      - ".github/workflows/docs.yaml"
+      - ".github/workflows/docs.yml"
   workflow_dispatch:
 
 permissions:

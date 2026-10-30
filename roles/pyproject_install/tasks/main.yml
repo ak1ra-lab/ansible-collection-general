@@ -22,8 +22,8 @@
 
 - name: install from local wheel
   when: pyproject_install_source == 'local'
-  ansible.builtin.import_tasks: local_wheel.yaml
+  ansible.builtin.import_tasks: local_wheel.yml
 
 - name: install from PyPI or TestPyPI
   when: pyproject_install_source in ['pypi', 'testpypi']
-  ansible.builtin.import_tasks: from_pypi.yaml
+  ansible.builtin.import_tasks: from_pypi.yml

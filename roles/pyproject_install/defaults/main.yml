@@ -33,7 +33,7 @@ pyproject_install_remote_tmp_dir: /tmp
 #
 # ansible.builtin.pip requires pip + packaging (or setuptools) in the
 # ansible_python_interpreter environment. Package names are resolved from
-# vars/main.yaml based on ansible_facts.os_family.
+# vars/main.yml based on ansible_facts.os_family.
 #
 # Set to [] when using a self-contained interpreter (python-build-standalone,
 # conda-forge, etc.) that has been bootstrapped with:

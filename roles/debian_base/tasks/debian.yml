@@ -57,14 +57,14 @@
     components: "{{ debian_base_apt_repo_debian_security_components | default(default_components) }}"
     signed_by: /usr/share/keyrings/debian-archive-keyring.gpg
 
-- name: include_tasks unattended-upgrades.yaml
-  ansible.builtin.include_tasks: unattended-upgrades.yaml
+- name: include_tasks unattended-upgrades.yml
+  ansible.builtin.include_tasks: unattended-upgrades.yml
 
-- name: include_tasks debian-backports.yaml
-  ansible.builtin.include_tasks: debian-backports.yaml
+- name: include_tasks debian-backports.yml
+  ansible.builtin.include_tasks: debian-backports.yml
 
-- name: include_tasks apt-force-ipv4.yaml
-  ansible.builtin.include_tasks: apt-force-ipv4.yaml
+- name: include_tasks apt-force-ipv4.yml
+  ansible.builtin.include_tasks: apt-force-ipv4.yml
 
 - name: apt update and apt upgrade
   ansible.builtin.apt:
