@@ -1,6 +1,6 @@
 ---
-# apt_install_basic scenario - apply the tailscale repository the way
-# playbooks/apt_install/tailscale.yaml does: keyring from the repository's
+# apt_install_basic scenario - apply the tailscale repository with the role
+# defaults: keyring from the repository's
 # GPG URL, default origin pinning, default site unattended-upgrades pattern,
 # and one package installed from the new repository and held.
 

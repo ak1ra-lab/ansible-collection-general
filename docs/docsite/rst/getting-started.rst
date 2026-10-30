@@ -77,20 +77,29 @@ container images from
      - A target Python environment; ``uv`` on the controller for local wheel
        builds.
 
-First playbooks
----------------
+Runnable examples
+-----------------
 
-The bundled entry points accept ``playbook_hosts``; each playbook's ``hosts``
-expression documents its default inventory group.
+This collection is a library and does not ship runnable playbooks. Runnable
+examples, inventory, and site playbooks live in the separate
+`ansible-playbooks-infra <https://github.com/ak1ra-lab/ansible-playbooks-infra>`_
+repository. Install the collection as above, then use that repository's
+playbooks to compose these roles; see :doc:`playbooks` for the catalog.
 
-.. code-block:: shell
+To use a role from your own playbook project, install the collection and call
+the role by its FQCN:
 
-   ansible-playbook playbooks/debian-base-defaults.yaml -e playbook_hosts=web
-   ansible-playbook playbooks/docker-vps.yaml -e playbook_hosts=web
+.. code-block:: yaml
 
-The example playbooks under ``playbooks/apt_install/`` and
-``playbooks/go_build/`` are runnable recipes for specific packages and build
-targets. See :doc:`playbooks` for the layout and examples.
+   - name: Apply the Docker profile
+     hosts: web
+     become: true
+     roles:
+       - ak1ra_lab.general.docker
+
+The role argument specs in ``roles/<role>/meta/argument_specs.yml`` and the
+role READMEs are the variable reference. :doc:`collection_index` renders the
+generated role and plugin reference.
 
 Release order
 -------------

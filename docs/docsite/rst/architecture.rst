@@ -3,12 +3,14 @@
 Architecture
 ============
 
-The collection is a set of independent roles with explicit variable contracts.
-Playbooks compose the roles; the role ``meta/main.yaml`` files keep
-``dependencies: []`` so consumers control the order. A role may still use
-``ansible.builtin.import_role`` internally when one implementation builds on
-another; those imports are part of the role contract, not a collection-wide
-dependency graph.
+The collection is a library of independent roles with explicit variable
+contracts. Playbooks are consumer-side content: they live in the separate
+`ansible-playbooks-infra <https://github.com/ak1ra-lab/ansible-playbooks-infra>`_
+repository or in a consumer's own playbook project. The role
+``meta/main.yaml`` files keep ``dependencies: []`` so consumers control the
+order. A role may still use ``ansible.builtin.import_role`` internally when one
+implementation builds on another; those imports are part of the role contract,
+not a collection-wide dependency graph.
 
 Role families
 -------------
@@ -37,8 +39,8 @@ repository logic.
 Build and install
 -----------------
 
-``go_build`` runs on the controller by default (``hosts: localhost`` in the
-example playbooks). It clones a repository into a controller-local work tree,
+``go_build`` runs on the controller by default (consumer playbooks use
+``hosts: localhost``). It clones a repository into a controller-local work tree,
 builds a Go binary, and exposes ``go_build_binary_path`` for a follow-up copy or
 install task. A metadata stamp makes repeated runs skip unchanged builds.
 

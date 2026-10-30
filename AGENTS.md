@@ -1,14 +1,19 @@
 # AGENTS.md
 
 This repo **is** the `ak1ra_lab.general` Ansible collection (`galaxy.yml`
-namespace/name), not a consumer of it. Content: reusable roles under `roles/`
-(`apt_install`, `debian_base`, `docker`, `go_build`, `pyproject_install`),
-Python modules `github_releases_info` and `cpu_info` (`plugins/modules/` plus
-shared logic in `plugins/module_utils/`), and the `random_*` lookup plugins
-(`plugins/lookup/`, unit-tested under `tests/unit/`). Ansible behavior is
-covered by Molecule scenarios (see Testing).
-See `README.md` for the consume/deploy workflow and `CONTRIBUTING.md` for the
-human contributor workflow.
+namespace/name), not a consumer of it. It is a library only: reusable roles
+under `roles/` (`apt_install`, `debian_base`, `docker`, `go_build`,
+`pyproject_install`), Python modules `github_releases_info` and `cpu_info`
+(`plugins/modules/` plus shared logic in `plugins/module_utils/`), and the
+`random_*` lookup plugins (`plugins/lookup/`, unit-tested under `tests/unit/`).
+Ansible behavior is covered by Molecule scenarios (see Testing).
+
+Operational playbooks, inventory, and helper scripts live in the separate
+`ansible-playbooks-infra` repository, not here. This collection ships no
+runnable playbooks.
+
+See `README.md` for library usage and `CONTRIBUTING.md` for the human
+contributor workflow.
 
 ## Tooling - use these, not the defaults
 
@@ -60,7 +65,7 @@ Because the modules (`github_releases_info`, `cpu_info`) import their own
 `ansible_collections.ak1ra_lab.general.plugins.module_utils...`,
 the collection must be **installed into itself** for the modules (mypy and
 ansible-lint) to resolve. Install the collection before typechecking, linting,
-or running playbooks:
+or building docs:
 
 ```shell
 just ansible-collection-install   # = ansible-galaxy collection install --force -p .ansible/collections .
@@ -94,7 +99,9 @@ plugin documentation; it is not a second source of truth.
   `EXAMPLES`, and `RETURN` blocks.
 - Hand-written guides live in `docs/docsite/rst/` (`index.rst`,
   `getting-started.rst`, `architecture.rst`, `playbooks.rst`, `modules.rst`,
-  `lookups.rst`, `contributing.rst`, `changelog.rst`).
+  `lookups.rst`, `contributing.rst`, `changelog.rst`). `playbooks.rst` is a
+  pointer to `ansible-playbooks-infra`; this repository has no playbook guide
+  of its own.
 - `docs/docsite/build.sh` regenerates the reference pages and runs
   `sphinx-build -W`; `collection_index.rst` is the generated collection index.
 - Adding a role requires `meta/argument_specs.yml` and a README; the generated

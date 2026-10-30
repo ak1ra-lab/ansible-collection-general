@@ -45,9 +45,25 @@ explicit checksum nor a GitHub-provided digest is available. The returned
        checksum: "{{ github_releases_result.download_checksum }}"
        mode: "0644"
 
-Use ``playbooks/github_releases/inspect-latest.yaml`` to inspect normalized
-release metadata without downloading. The playbook runs ``cpu_info`` first and
-passes the detected microarchitecture level.
+To inspect normalized metadata without downloading, call the module with
+``asset_name_regex`` (or ``asset_name_contains``) and read the returned
+``assets``, ``candidate_assets``, and ``selected_asset`` values:
+
+.. code-block:: yaml
+
+   - name: Inspect release assets matching a regex
+     ak1ra_lab.general.github_releases_info:
+       repo: sharkdp/bat
+       asset_name_regex: 'linux.*x86_64.*\.tar\.gz$'
+     register: bat_release
+
+   - name: Show all normalized assets and the selected asset
+     ansible.builtin.debug:
+       var: bat_release.assets
+
+The generated reference (:doc:`github_releases_info_module`) includes the full
+example sequence. For microarchitecture-aware selection, run ``cpu_info`` first
+and pass its ``microarch_level`` through ``asset_microarch`` as shown below.
 
 cpu_info
 --------

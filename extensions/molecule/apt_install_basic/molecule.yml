@@ -1,7 +1,7 @@
 ---
 # apt_install_basic scenario - the enabled happy path against a real
-# third-party repository (the same shape as
-# playbooks/apt_install/tailscale.yaml), followed by the role's revert
+# third-party repository (the same shape as the Tailscale recipe in
+# ansible-playbooks-infra), followed by the role's revert
 # switches and the scenario teardown.
 #
 # The sequence refreshes the APT index in a side effect before verify (rather

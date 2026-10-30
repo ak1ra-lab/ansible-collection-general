@@ -1,7 +1,8 @@
 # ak1ra_lab.general
 
-Shared Ansible collection for reusable roles, custom modules, and lookup
-plugins consumed across multiple `ak1ra-lab` repositories.
+Library-only Ansible collection for reusable roles, custom modules, and lookup
+plugins consumed across multiple `ak1ra-lab` repositories. Operational
+playbooks live in a separate repository (see [Playbooks](#playbooks)).
 
 Documentation: <https://ak1ra-lab.github.io/ansible-collection-general/>
 Release notes: [CHANGELOG.rst](CHANGELOG.rst)
@@ -45,6 +46,14 @@ offline with `ansible-doc ak1ra_lab.general.<module>`.
 
 See the [lookup guide](https://ak1ra-lab.github.io/ansible-collection-general/lookups.html)
 for examples.
+
+## Playbooks
+
+This collection is a library and does not ship runnable playbooks. Operational
+playbooks, inventory examples, and helper scripts live in
+[`ansible-playbooks-infra`](https://github.com/ak1ra-lab/ansible-playbooks-infra).
+Install the collection, then compose its roles from that repository or from
+your own playbook project.
 
 ## Requirements
 

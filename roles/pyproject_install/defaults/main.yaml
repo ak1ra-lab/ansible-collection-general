@@ -11,7 +11,8 @@ pyproject_install_package_name: ""
 pyproject_install_package_extras: ""
 
 # str: local project root directory where uv build --wheel is executed (source=local only)
-#      playbooks/ is a subdirectory of the project root, so we go one level up from playbook_dir
+#      When the calling playbook lives in a subdirectory of the project root,
+#      go one level up from playbook_dir.
 pyproject_install_local_project_root: "{{ playbook_dir | ansible.builtin.dirname }}"
 
 # str: python interpreter for virtualenv_command

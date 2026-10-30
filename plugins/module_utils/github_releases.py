@@ -470,17 +470,17 @@ def select_candidate_assets(
 
     if not candidates:
         raise LookupError(
-            f"No GitHub release assets matched for {repo}. Use playbooks/github_releases/inspect-latest.yaml "
-            "to inspect normalized assets or provide asset_name, asset_url, asset_name_regex, "
-            "or asset_name_contains."
+            f"No GitHub release assets matched for {repo}. Use the github_releases_info module's "
+            "asset_name_regex or asset_name_contains inputs to narrow the selection, or inspect the "
+            "returned assets and candidate_assets lists."
         )
 
     if len(candidates) != 1:
         candidate_names = ", ".join(str(asset.get("name") or "") for asset in candidates)
         raise RuntimeError(
             f"Multiple GitHub release assets matched for {repo}: {candidate_names}. Refine selection inputs "
-            "(e.g. asset_microarch, asset_name_regex) or inspect candidates with "
-            "playbooks/github_releases/inspect-latest.yaml."
+            "(e.g. asset_microarch, asset_name_regex, or asset_name_contains) or inspect the "
+            "candidate_assets output of the github_releases_info module."
         )
 
     return candidates, selected_family, candidates[0]

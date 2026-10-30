@@ -5,10 +5,8 @@
 #   min → basic → moderate → safety → shared → production
 profile: production
 
-# Paths to exclude from linting.  The playbooks/*_vars trees are local,
-# gitignored inventory data (some of it vault-encrypted), not collection
-# content; linting them only produces decryption warnings and formatting
-# noise from files that are not part of the repository.
+# Paths to exclude from linting.  Generated changelog metadata and
+# documentation tooling are not Ansible source.
 exclude_paths:
   - .git/
   - .venv/
@@ -16,8 +14,6 @@ exclude_paths:
   - changelogs/
   # Sphinx/antsibull-docs configuration is documentation tooling.
   - docs/
-  - playbooks/host_vars/
-  - playbooks/group_vars/
   # An ansible-galaxy role requirements file, not a playbook.  Molecule's
   # dependency action reads it; the scenarios have no standalone role deps.
   - extensions/molecule/shared/roles-requirements.yml

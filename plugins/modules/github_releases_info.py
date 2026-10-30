@@ -128,6 +128,17 @@ EXAMPLES = r"""
   ak1ra_lab.general.github_releases_info:
     repo: sharkdp/bat
 
+- name: Inspect the assets of the latest release
+  ak1ra_lab.general.github_releases_info:
+    repo: sharkdp/bat
+  register: bat_release_metadata
+
+- name: Show normalized assets and the selected asset
+  ansible.builtin.debug:
+    var:
+      assets: "{{ bat_release_metadata.assets }}"
+      selected_asset: "{{ bat_release_metadata.selected_asset }}"
+
 - name: Select an asset and download it with get_url
   ak1ra_lab.general.github_releases_info:
     repo: sharkdp/bat
