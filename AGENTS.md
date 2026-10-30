@@ -1,159 +1,78 @@
 # AGENTS.md
 
-This repo **is** the `ak1ra_lab.general` Ansible collection (`galaxy.yml`
-namespace/name), not a consumer of it. It is a library only: reusable roles
-under `roles/` (`apt_install`, `debian_base`, `docker`, `go_build`,
-`pyproject_install`), Python modules `github_releases_info` and `cpu_info`
-(`plugins/modules/` plus shared logic in `plugins/module_utils/`), and the
-`random_*` lookup plugins (`plugins/lookup/`, unit-tested under `tests/unit/`).
-Ansible behavior is covered by Molecule scenarios (see Testing).
+## Project type
 
-Operational playbooks, inventory, and helper scripts live in the separate
-`ansible-playbooks-infra` repository, not here. This collection ships no
-runnable playbooks.
+This repository is the `ak1ra_lab.general` Ansible collection: a library of
+reusable roles and plugins, not a consumer or a playbook project. Operational
+playbooks, inventories, and helper scripts live in the separate
+`ansible-playbooks-infra` repository; this collection ships no runnable
+playbooks.
 
-See `README.md` for library usage and `CONTRIBUTING.md` for the human
-contributor workflow.
+## Skills
 
-## Tooling - use these, not the defaults
+Actively use the `developing-ansible` skill for Ansible work; load it before
+writing or reviewing playbooks, roles, plugins, inventory, Molecule, or
+collection metadata.
 
-`just <recipe>` is a convenience wrapper for humans; each recipe is a thin
-`uv run ...` / `ansible-galaxy ...` (see `justfile`). Agents can call the
-underlying command directly - the two are equivalent.
+Prefer a user-level installation of the skill. Agents that do not have it
+installed may bootstrap from
+`https://raw.githubusercontent.com/ak1ra-komj/agents-skills/refs/heads/master/skills/developing-ansible/SKILL.md`;
+the URL is a fallback, not the normal workflow.
 
-- Env/deps: **uv** (`just sync` = `uv sync --group dev`). Never `pip`/`poetry`.
-  Dep groups: `lint` (ruff, mypy, ansible-lint, antsibull-changelog,
-  ansible-core, galaxy-importer), `test` (tox, tox-ansible), and `docs`
-  (antsibull-docs, Sphinx, sphinx-ansible-theme), pulled into `dev` together
-  with `pre-commit`.
-- Lint+format: **ruff**, scoped to `plugins/` and `tests/` (`just lint` =
-  `uv run ruff check --fix plugins/ tests/` then
-  `uv run ruff format plugins/ tests/`). Never `black`/`isort`/`flake8`.
-- Typecheck: **mypy** with the pragmatic config in `pyproject.toml`
-  (`just typecheck` = `uv run mypy plugins/ tests/`). The recipe reinstalls the
-  collection into `.ansible/collections` first so the
-  `ansible_collections.ak1ra_lab.general...` self-imports resolve
-  (`mypy_path` in `pyproject.toml`). `ansible-test sanity` remains the
-  authoritative gate.
-- Test harness: **tox-ansible**. `just tox-list` lists the matrix;
-  `just tox <env>` runs one environment, for example
-  `just tox sanity-py3.13-2.21`. `just unit-test` runs
-  `unit-py3.13-2.21` through `ansible-test units`. Do not add a direct
-  pytest harness as a second test path.
-- Molecule: `just molecule-test` / `molecule-test-one <scenario>` /
-  `molecule-list`; the scenarios live under `extensions/molecule/` (see
-  Testing below).
-- Docs: `just docs-build` (regenerate role/plugin reference pages with
-  antsibull-docs, then `sphinx-build -W`), `just docs-serve`, and
-  `just docs-lint` (antsibull-docs collection lint). The Sphinx source is
-  `docs/docsite/rst/`; configuration is `docs/docsite/conf.py`.
-- Changelog: `just changelog-lint`, `just changelog-release X.Y.Z`, and
-  `just changelog-generate`. `CHANGELOG.rst` is generated from
-  `changelogs/fragments/` and must not be edited by hand. The pre-Galaxy
-  history stays in `CHANGELOG-LEGACY.md`.
+## Layout
 
-Python changes to `plugins/` and `tests/` MUST pass ruff lint+format and mypy
-before commit; the unit tests must pass through tox-ansible.
+- Roles: `apt_install`, `debian_base`, `docker`, `go_build`, and
+  `pyproject_install` under `roles/`.
+- Modules: `github_releases_info` and `cpu_info`, with shared logic in
+  `plugins/module_utils/`; lookup plugins are `random_*` under `plugins/lookup/`.
+- Unit tests live in `tests/unit/`; Molecule scenarios are flat under
+  `extensions/molecule/`; the Sphinx source is `docs/docsite/`.
+- `apt_install` keeps its published 0.4.0 behavior. Do not add playbooks or
+  operational inventories here.
 
-## Ansible (self-contained layout)
+## YAML and documentation
 
-`ansible.cfg` pins `roles_path=./roles` and `collections_path=./.ansible/collections`
-and never reaches user-level/parent paths.
+Use `.yml` for Ansible and repository YAML files. Unavoidable exceptions:
 
-Because the modules (`github_releases_info`, `cpu_info`) import their own
-`module_utils` via the absolute path
-`ansible_collections.ak1ra_lab.general.plugins.module_utils...`,
-the collection must be **installed into itself** for the modules (mypy and
-ansible-lint) to resolve. Install the collection before typechecking, linting,
-or building docs:
+- `galaxy.yml` already uses `.yml`.
+- `changelogs/config.yaml` is hardcoded by antsibull-changelog.
+- `.pre-commit-config.yaml` stays `.yaml` because pre-commit 4.7 discovers only
+  that name.
+- Generated or upstream filenames such as `*.proxies.yaml`, `host_vars/*.yaml`,
+  `50-cloud-init.yaml`, netplan files, and downloaded manifests keep their
+  existing names.
 
-```shell
-just ansible-collection-install   # = ansible-galaxy collection install --force -p .ansible/collections .
-```
+`roles/<role>/meta/argument_specs.yml` is the canonical role variable
+reference. Generated role docs come from argument specs; role READMEs are
+concise narrative (purpose, requirements, artifacts, examples, teardown) and
+must not duplicate variable tables. Module docs come from the plugin
+`DOCUMENTATION`, `EXAMPLES`, and `RETURN` blocks. Never edit generated
+`*_role.rst`, `*_module.rst`, or `*_lookup.rst` pages by hand.
 
-- `requirements.yml` plus `meta/execution-environment.yml` declare only the
-  runtime collection dependencies for ansible-builder; the collection has no
-  controller-side Python requirements. Test-only collections live in
-  `tests/molecule/requirements.yml` and are installed by Molecule's dependency
-  action or tox-ansible/ade.
-- `ansible-lint` runs with `profile: production` (`.ansible-lint`); in non-`offline`
-  mode it auto-installs the `galaxy.yml` dependencies into a cache dir computed
-  by ansible-compat from the project dir, ignoring `ansible.cfg`'s
-  `collections_path`.
-- `.ansible-lint` intentionally has no `kinds:` mapping: remapping role
-  `defaults/` (or `vars/`) files out of the default "vars" kind silently
-  disables `var-naming[no-role-prefix]` for the role. Role variables use the
-  `<role>_*` prefix (see `roles/apt_install/README.md`).
+## Tooling and validation
 
-## Documentation (single source)
+- Use **uv** and **just**; never `pip` or `poetry`. `just sync` installs the
+  `dev` group.
+- Python: **ruff** and **mypy** via `just lint` and `just typecheck`.
+  `ansible-test sanity` remains the authoritative gate.
+- Ansible: `just ansible-lint` (production profile) and **tox-ansible**
+  (`just tox <env>`, `just unit-test`).
+- Molecule: `just molecule-test`, `just molecule-test-one <scenario>`, or
+  `just molecule-syntax`. Molecule installs the collection and test
+  requirements itself; do not pre-install for it.
+- Docs and changelog: `just docs-lint`, `just docs-build`, and
+  `just changelog-lint`, using antsibull-docs/antsibull-changelog.
+  `CHANGELOG.rst` is generated and must not be edited by hand.
+- `just ansible-collection-install` is only for lint, mypy, and docs; the
+  modules import themselves through the collection namespace.
 
-The Sphinx site under `docs/docsite/` is generated from role argument specs and
-plugin documentation; it is not a second source of truth.
+## Workflow and safety
 
-- Role contracts live in `roles/<role>/meta/argument_specs.yml`; role READMEs
-  keep the narrative and deployed-artifact details.
-- Role reference pages (`*_role.rst`) and plugin reference pages
-  (`*_module.rst`, `*_lookup.rst`) are generated by `antsibull-docs`. Never
-  edit them by hand.
-- Module documentation comes from `plugins/modules/*.py` `DOCUMENTATION`,
-  `EXAMPLES`, and `RETURN` blocks.
-- Hand-written guides live in `docs/docsite/rst/` (`index.rst`,
-  `getting-started.rst`, `architecture.rst`, `playbooks.rst`, `modules.rst`,
-  `lookups.rst`, `contributing.rst`, `changelog.rst`). `playbooks.rst` is a
-  pointer to `ansible-playbooks-infra`; this repository has no playbook guide
-  of its own.
-- `docs/docsite/build.sh` regenerates the reference pages and runs
-  `sphinx-build -W`; `collection_index.rst` is the generated collection index.
-- Adding a role requires `meta/argument_specs.yml` and a README; the generated
-  index picks the role up automatically.
-- Do not add hand-maintained translated siblings; keep the site English-only
-  unless a translation workflow is added.
-
-Docs changes MUST pass `just docs-lint` and `just docs-build`.
-
-## Testing (Molecule)
-
-Ansible behavior is covered by ansible-native Molecule scenarios under
-`extensions/molecule/` (collection-testing layout). Python plugins and
-module_utils are covered by unit tests under `tests/unit/`, run through
-`ansible-test units` inside the tox-ansible `unit-*` environments. See
-`CONTRIBUTING.md` for the scenario matrix, container runtime, and
-prerequisites.
-
-The tox-ansible matrix is configured by `[tool.tox]`/`[tool.tox-ansible]` in
-`pyproject.toml` and follows the upstream ansible-core support matrix
-(2.19/2.20/2.21 plus weekly devel/milestone). Test-only collections are
-declared in `tests/molecule/requirements.yml`; tox-ansible installs them with
-`ade`, so do not pre-install into `.ansible/collections` for test runs.
-
-Agent-specific constraints:
-
-- Scenarios are flat under `extensions/molecule/<name>/` and each one owns its
-  containers. `config.yml` maps the shared `create.yml`/`destroy.yml` playbooks
-  and the default sequence (dependency, destroy, create, prepare, converge,
-  idempotence, verify, cleanup, verify `absent-verify.yml`, destroy). Container
-  names include the scenario name and a checkout hash.
-- Do not pre-install the collection or test collections into
-  `.ansible/collections` for Molecule. The dependency action installs
-  `tests/molecule/requirements.yml` and ansible-compat's prerun installs the
-  collection under test and its `galaxy.yml` dependencies.
-- `just ansible-collection-install` remains the project-local install for lint,
-  mypy, and docs only.
-- Molecule caches scenario state, so a changed `molecule.yml` needs
-  `molecule reset` (or `destroy`).
-
-Ansible changes MUST pass `ansible-lint` and the Molecule suite before commit.
-
-## Releases
-
-Release order: `ak1ra_lab.general 0.4.0`, then `ak1ra_lab.certificate 0.1.0`,
-then `ak1ra_lab.network 0.4.0`. The Git tag is `vX.Y.Z` and must match
-`galaxy.yml`.
-
-Before tagging: run `just all`, the supported sanity/unit environments, the
-release-scope Molecule scenarios, and `just docs-build`; build the artifact and
-run `galaxy-importer`; confirm `meta/runtime.yml` is in the tarball. The
-`Release` workflow publishes only from a published GitHub release in the
-protected `release` environment, using `ANSIBLE_GALAXY_API_KEY`; it does not
-create tags or releases. Never publish to Galaxy from a local shell.
-
+- Run `just all` plus the relevant Molecule scenarios before commit.
+- Preserve public behavior unless the task explicitly changes it; keep changes
+  consistent with the existing layout and naming.
+- Do not add unpublished-dependency workarounds to CI, tests, docs, or release.
+- Do not edit installed copies under `.ansible/`, `.tox/`, or `.venv/`.
+- Release order: `general 0.4.0`, `certificate 0.1.0`, `network 0.4.0`; tags
+  `vX.Y.Z` match `galaxy.yml`. Build and run `galaxy-importer`, then publish via
+  the protected `Release` workflow only.
