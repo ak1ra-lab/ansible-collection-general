@@ -1,0 +1,7 @@
+---
+minor_changes:
+  - Added the tox-ansible matrix for ansible-core 2.19/2.20/2.21 and the
+    weekly devel/milestone environments, plus mypy alongside ruff and
+    ansible-lint.
+  - Flattened the Molecule scenarios, gave each scenario its own containers,
+    and removed the shared lifecycle and ``MOLECULE_GLOB`` workflow.

@@ -17,10 +17,10 @@ human contributor workflow.
 underlying command directly - the two are equivalent.
 
 - Env/deps: **uv** (`just sync` = `uv sync --group dev`). Never `pip`/`poetry`.
-  Dep groups: `lint` (ruff, mypy, ansible-lint, ansible-core,
-  galaxy-importer), `test` (tox, tox-ansible), and `docs` (antsibull-docs,
-  Sphinx, sphinx-ansible-theme), pulled into `dev` together with
-  `pre-commit`.
+  Dep groups: `lint` (ruff, mypy, ansible-lint, antsibull-changelog,
+  ansible-core, galaxy-importer), `test` (tox, tox-ansible), and `docs`
+  (antsibull-docs, Sphinx, sphinx-ansible-theme), pulled into `dev` together
+  with `pre-commit`.
 - Lint+format: **ruff**, scoped to `plugins/` and `tests/` (`just lint` =
   `uv run ruff check --fix plugins/ tests/` then
   `uv run ruff format plugins/ tests/`). Never `black`/`isort`/`flake8`.
@@ -33,8 +33,8 @@ underlying command directly - the two are equivalent.
 - Test harness: **tox-ansible**. `just tox-list` lists the matrix;
   `just tox <env>` runs one environment, for example
   `just tox sanity-py3.13-2.21`. `just unit-test` runs
-  `unit-py3.13-2.21` through `ansible-test units`. Do not add a `ty`/pytest
-  path as a second test harness.
+  `unit-py3.13-2.21` through `ansible-test units`. Do not add a direct
+  pytest harness as a second test path.
 - Molecule: `just molecule-test` / `molecule-test-one <scenario>` /
   `molecule-list`; the scenarios live under `extensions/molecule/` (see
   Testing below).
@@ -42,6 +42,10 @@ underlying command directly - the two are equivalent.
   antsibull-docs, then `sphinx-build -W`), `just docs-serve`, and
   `just docs-lint` (antsibull-docs collection lint). The Sphinx source is
   `docs/docsite/rst/`; configuration is `docs/docsite/conf.py`.
+- Changelog: `just changelog-lint`, `just changelog-release X.Y.Z`, and
+  `just changelog-generate`. `CHANGELOG.rst` is generated from
+  `changelogs/fragments/` and must not be edited by hand. The pre-Galaxy
+  history stays in `CHANGELOG-LEGACY.md`.
 
 Python changes to `plugins/` and `tests/` MUST pass ruff lint+format and mypy
 before commit; the unit tests must pass through tox-ansible.
@@ -132,4 +136,17 @@ Agent-specific constraints:
   `molecule reset` (or `destroy`).
 
 Ansible changes MUST pass `ansible-lint` and the Molecule suite before commit.
+
+## Releases
+
+Release order: `ak1ra_lab.general 0.4.0`, then `ak1ra_lab.certificate 0.1.0`,
+then `ak1ra_lab.network 0.4.0`. The Git tag is `vX.Y.Z` and must match
+`galaxy.yml`.
+
+Before tagging: run `just all`, the supported sanity/unit environments, the
+release-scope Molecule scenarios, and `just docs-build`; build the artifact and
+run `galaxy-importer`; confirm `meta/runtime.yml` is in the tarball. The
+`Release` workflow publishes only from a published GitHub release in the
+protected `release` environment, using `ANSIBLE_GALAXY_API_KEY`; it does not
+create tags or releases. Never publish to Galaxy from a local shell.
 

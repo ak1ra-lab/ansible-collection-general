@@ -8,32 +8,41 @@ Getting started
 Install the collection
 ----------------------
 
-The collection is currently consumed from Git; it is not published to Galaxy.
-Create a ``requirements.yaml`` in the consuming repository:
+Install the released collection from Ansible Galaxy:
+
+.. code-block:: shell
+
+   ansible-galaxy collection install ak1ra_lab.general
+
+Or pin it in a consumer ``requirements.yml``:
 
 .. code-block:: yaml
 
    ---
    collections:
-     - name: git+https://github.com/ak1ra-lab/ansible-collection-general.git
-       version: master
-
-Install it into the project-local collections path:
+     - name: ak1ra_lab.general
+       version: ">=0.4.0"
 
 .. code-block:: shell
 
-   ansible-galaxy collection install -r requirements.yaml -p ./.ansible/collections
+   ansible-galaxy collection install -r requirements.yml
 
-The consuming repository's ``ansible.cfg`` should put that path at the front of
-``collections_path``. Pin a tag or commit instead of ``master`` for
-reproducible deployments.
+Galaxy resolves ``ansible.posix`` and ``community.general`` from
+``galaxy.yml`` automatically. The ``0.4.0`` release is the first Galaxy
+release; until it is published, install from a Git tag or commit with a
+``git+https://github.com/ak1ra-lab/ansible-collection-general.git`` source and
+pin the revision instead of following a branch.
 
 Control-node requirements
 -------------------------
 
-- ``ansible-core >= 2.19.0`` (``meta/runtime.yml``) and Python ``>= 3.11``.
+- ``ansible-core >= 2.19.0`` (``meta/runtime.yml``); tested with 2.19, 2.20,
+  and 2.21 plus the weekly ``devel``/``milestone`` builds.
+- Controller Python ``>= 3.11``; tested with 3.11, 3.12, and 3.13.
+  ansible-core 2.20 and 2.21 additionally support Python 3.12-3.14.
 - The collection dependencies are installed automatically by
-  ``ansible-galaxy``: ``ansible.posix`` and ``community.general``.
+  ``ansible-galaxy``: ``ansible.posix >= 1.5.4`` and
+  ``community.general >= 8.0.0``.
 - ``go`` is required on the controller for ``go_build``, which builds binaries
   on ``localhost``.
 - ``uv`` is required on the controller for ``pyproject_install`` when
@@ -42,8 +51,11 @@ Control-node requirements
 Managed-node requirements
 -------------------------
 
-The APT-based roles target Debian 12 and Debian 13. The Molecule scenarios use
-the systemd-enabled ``debian:12`` and ``debian:13`` container images from
+The APT-based roles target Debian 12 and Debian 13. Debian 12 ships target
+Python 3.11 and Debian 13 ships target Python 3.13; the roles use the managed
+node's ``/usr/bin/python3`` and do not require a newer interpreter. The
+Molecule scenarios use the systemd-enabled ``debian:12`` and ``debian:13``
+container images from
 `ak1ra-lab/docker-systemd <https://github.com/ak1ra-lab/docker-systemd>`_.
 
 .. list-table::
@@ -81,6 +93,13 @@ expression documents its default inventory group.
 The example playbooks under ``playbooks/apt_install/`` and
 ``playbooks/go_build/`` are runnable recipes for specific packages and build
 targets. See :doc:`playbooks` for the layout and examples.
+
+Release order
+-------------
+
+``ak1ra_lab.general`` is released first. ``ak1ra_lab.certificate 0.1.0`` and
+``ak1ra_lab.network 0.4.0`` both depend on ``ak1ra_lab.general >= 0.4.0`` and
+must be released after it. See :doc:`changelog` for release notes.
 
 Next steps
 ----------

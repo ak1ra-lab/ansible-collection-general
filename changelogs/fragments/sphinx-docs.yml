@@ -1,0 +1,5 @@
+---
+minor_changes:
+  - Migrated the documentation site to Sphinx and antsibull-docs. Role
+    reference pages are generated from ``meta/argument_specs.yml`` and plugin
+    reference pages from the plugin documentation, replacing MkDocs.

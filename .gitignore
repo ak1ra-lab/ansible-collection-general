@@ -355,3 +355,9 @@ importer_result.json
 ## LLM
 .agents/plans/*
 .agents/sessions/*
+
+# antsibull-changelog plugin cache
+changelogs/.plugin-cache.yaml
+
+# galaxy-importer local output
+importer_result.json

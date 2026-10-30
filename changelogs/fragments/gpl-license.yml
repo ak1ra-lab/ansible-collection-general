@@ -1,0 +1,5 @@
+---
+minor_changes:
+  - The collection, its roles and its Python sources are licensed under
+    GPL-3.0-or-later. ``galaxy.yml`` and the role metadata now declare that
+    license.

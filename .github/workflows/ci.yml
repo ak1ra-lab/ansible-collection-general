@@ -61,6 +61,8 @@ jobs:
           uv run --no-sync ruff format --check plugins/ tests/
       - name: Run mypy
         run: uv run --no-sync mypy plugins/ tests/
+      - name: Lint the changelog fragments
+        run: uv run --no-sync antsibull-changelog lint
       - name: Lint collection documentation
         env:
           ANSIBLE_COLLECTIONS_PATH: ${{ github.workspace }}/.ansible/collections
@@ -106,7 +108,7 @@ jobs:
           assert galaxy["license"] == ["GPL-3.0-or-later"], galaxy["license"]
           PY
           tarball=$(ls dist/*.tar.gz)
-          for required in meta/runtime.yml meta/execution-environment.yml README.md LICENSE CHANGELOG.md; do
+          for required in meta/runtime.yml meta/execution-environment.yml README.md LICENSE CODE_OF_CONDUCT.md CHANGELOG.rst; do
             tar -tzf "$tarball" | grep -qx "$required"
           done
           if tar -tzf "$tarball" | grep -Eq '^(\.agents|\.ansible|\.venv|site|tests/output|playbooks/(host|group)_vars|config)(/|$)'; then

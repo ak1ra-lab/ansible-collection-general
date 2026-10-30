@@ -1,0 +1,5 @@
+---
+minor_changes:
+  - The ``random_password``, ``random_base64_key`` and ``random_uuid`` lookup
+    plugins and their unit tests moved here from ``ak1ra_lab.network``. Use
+    the ``ak1ra_lab.general.random_*`` names.

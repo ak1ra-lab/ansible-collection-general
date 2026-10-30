@@ -1,0 +1,9 @@
+---
+release_summary: |
+  First Galaxy release of the reorganized collection. The certificate roles now
+  live in ``ak1ra_lab.certificate``, and the ``random_*`` lookups moved in from
+  ``ak1ra_lab.network``. The collection is licensed GPL-3.0-or-later and
+  requires ansible-core >= 2.19.0.
+
+  The hand-maintained history for 0.1.0 through 0.3.1 is preserved in
+  ``CHANGELOG-LEGACY.md``; the generated changelog starts with this release.

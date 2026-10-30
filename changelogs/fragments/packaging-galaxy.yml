@@ -1,0 +1,8 @@
+---
+minor_changes:
+  - Prepared the collection for Galaxy with ``build_ignore``, a
+    ``meta/runtime.yml`` minimum of ansible-core 2.19.0, controller-side
+    ``requirements.txt``/``meta/execution-environment.yml`` metadata, and a
+    build-import CI gate that checks the tarball and runs ``galaxy-importer``.
+  - Added a protected release workflow that builds, imports and publishes the
+    collection from the ``vX.Y.Z`` GitHub release tag matching ``galaxy.yml``.

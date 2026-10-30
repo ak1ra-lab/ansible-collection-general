@@ -1,0 +1,8 @@
+---
+minor_changes:
+  - Migrated release notes to antsibull-changelog. ``CHANGELOG.rst`` is now
+    the canonical changelog, generated from ``changelogs/fragments/``; the
+    pre-Galaxy 0.1.0-0.3.1 history is kept in ``CHANGELOG-LEGACY.md``.
+  - CI installs ansible-lint, antsibull-changelog and Molecule from the uv
+    dependency groups and runs every Python tool through ``uv run``, matching
+    the local just recipes.

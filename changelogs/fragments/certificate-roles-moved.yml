@@ -1,0 +1,8 @@
+---
+breaking_changes:
+  - The ``acme_dns``, ``acme_dns_register``, ``certbot`` and ``cert_manager``
+    roles, their Molecule scenarios, playbooks and documentation moved to the
+    new ``ak1ra_lab.certificate`` collection. Use the
+    ``ak1ra_lab.certificate.*`` FQCNs and add ``ak1ra_lab.certificate`` to the
+    consumer requirements; the ``ak1ra_lab.general.*`` certificate FQCNs are
+    no longer available.

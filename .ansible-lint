@@ -12,6 +12,10 @@ profile: production
 exclude_paths:
   - .git/
   - .venv/
+  # Generated changelog metadata is not Ansible source.
+  - changelogs/
+  # Sphinx/antsibull-docs configuration is documentation tooling.
+  - docs/
   - playbooks/host_vars/
   - playbooks/group_vars/
   # An ansible-galaxy role requirements file, not a playbook.  Molecule's

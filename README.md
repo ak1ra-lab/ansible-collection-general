@@ -4,6 +4,7 @@ Shared Ansible collection for reusable roles, custom modules, and lookup
 plugins consumed across multiple `ak1ra-lab` repositories.
 
 Documentation: <https://ak1ra-lab.github.io/ansible-collection-general/>
+Release notes: [CHANGELOG.rst](CHANGELOG.rst)
 
 ## Roles
 
@@ -47,34 +48,77 @@ for examples.
 
 ## Requirements
 
-- Controller: `ansible-core >= 2.19.0`, Python `>= 3.11`.
-- Managed nodes: Debian 12/13 for the APT-based roles.
+- Controller: `ansible-core >= 2.19.0`; tested with ansible-core 2.19, 2.20,
+  and 2.21 (plus the weekly `devel`/`milestone` builds).
+- Controller Python: `>= 3.11`; tested with Python 3.11, 3.12, and 3.13.
+  ansible-core 2.20 and 2.21 additionally support Python 3.12-3.14.
+- Managed nodes: Debian 12 (target Python 3.11) and Debian 13 (target Python
+  3.13) for the APT-based roles. The roles use the managed node's
+  `/usr/bin/python3`; no newer target interpreter is required.
 - Collections: `ansible.posix >= 1.5.4` and `community.general >= 8.0.0`
   (resolved from [`galaxy.yml`](galaxy.yml)).
 - `go` on the controller for `go_build`; `uv` for local
   `pyproject_install` builds.
 
+The runtime metadata is declared in
+[`meta/runtime.yml`](meta/runtime.yml), [`requirements.yml`](requirements.yml),
+and [`meta/execution-environment.yml`](meta/execution-environment.yml).
+
 ## Install
 
-Create a `requirements.yaml` in the consuming repository:
+Install the released collection from Ansible Galaxy:
+
+```shell
+ansible-galaxy collection install ak1ra_lab.general
+```
+
+Or pin it in a consumer `requirements.yml`:
 
 ```yaml
 ---
 collections:
-  - name: git+https://github.com/ak1ra-lab/ansible-collection-general.git
-    version: master
+  - name: ak1ra_lab.general
+    version: ">=0.4.0"
 ```
-
-Install into the project-local collections path:
 
 ```shell
-ansible-galaxy collection install -r requirements.yaml -p ./.ansible/collections
+ansible-galaxy collection install -r requirements.yml
 ```
 
-This collection is intended to be consumed from `./.ansible/collections`, with
-the consumer repository's `ansible.cfg` including that path at the front of
-`collections_path`. See [Getting started](https://ak1ra-lab.github.io/ansible-collection-general/getting-started.html)
+Galaxy resolves the declared `ansible.posix` and `community.general`
+dependencies automatically. See [Getting started](https://ak1ra-lab.github.io/ansible-collection-general/getting-started.html)
 for the control-node and managed-node requirements.
+
+## Versioning and deprecation
+
+The collection follows semantic versioning once it reaches `1.0.0`. Before
+`1.0.0`, a minor release may contain a documented breaking change; patch
+releases are limited to compatible fixes.
+
+- Breaking changes are listed under **Breaking Changes / Porting Guide** in
+  [CHANGELOG.rst](CHANGELOG.rst).
+- Deprecated role variables and features are documented in the changelog and
+  the role reference, and remain available for at least one minor release
+  before removal. Before `1.0.0`, removal may happen in a minor release.
+- Raising the minimum ansible-core or Python version is treated as a breaking
+  change.
+- The `galaxy.yml` version, the Git tag (`vX.Y.Z`), and the changelog release
+  must match for every release.
+
+Release order for the `ak1ra_lab` collections:
+
+1. `ak1ra_lab.general 0.4.0`
+2. `ak1ra_lab.certificate 0.1.0` (depends on general `>=0.4.0`)
+3. `ak1ra_lab.network 0.4.0` (depends on general `>=0.4.0`)
+
+## Communication
+
+- Ansible Forum: use the [`ak1ra-lab` tag](https://forum.ansible.com/tag/ak1ra-lab)
+  for questions and usage discussions.
+- Bug reports and feature requests:
+  <https://github.com/ak1ra-lab/ansible-collection-general/issues>
+- Code of Conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), which points to
+  the [Ansible Community Code of Conduct](https://docs.ansible.com/ansible/latest/community/code_of_conduct.html).
 
 ## Development
 
@@ -84,11 +128,12 @@ just all
 just molecule-test
 ```
 
-`just all` covers lint, mypy, unit tests, ansible-lint, docs lint, and the
-docs build. `just tox-list` shows the standard tox-ansible ansible-core/Python
-matrix. Molecule runs separately with an isolated container per scenario and
-needs a Podman runtime (rootless works locally; CI uses rootful). See
-[CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow.
+`just all` covers lint, mypy, unit tests, ansible-lint, changelog lint, docs
+lint, and the docs build. `just tox-list` shows the standard tox-ansible
+ansible-core/Python matrix. Molecule runs separately with an isolated
+container per scenario and needs a Podman runtime (rootless works locally; CI
+uses rootful). See [CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow
+and the release checklist.
 
 ## License
 
