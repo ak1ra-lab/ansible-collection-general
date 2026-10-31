@@ -47,8 +47,11 @@ build_ignore:
   - .ruff_cache
   - .tox
   - .venv
+  - AGENTS.md
   - ansible.cfg
   - config
+  - dist
+  - importer_result.json
   - justfile
   - pyproject.toml
   - ruff.toml
