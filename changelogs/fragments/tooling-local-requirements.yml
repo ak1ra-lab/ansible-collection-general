@@ -1,0 +1,12 @@
+---
+minor_changes:
+  - Moved the shared test-only collection requirements from
+    ``tests/molecule/requirements.yml`` to ``tests/requirements.yml`` so
+    ansible-lint and every tox-ansible test environment use the same file.
+  - The ``just ansible-collection-install`` recipe now also installs the shared
+    test-only collections, and the lint and Molecule recipes keep Ansible data
+    under the repository's ``.ansible/`` directory.
+bugfixes:
+  - Removed the unused ``distlib`` development dependency. It is only required
+    by the legacy ``manifest`` key in ``galaxy.yml``, which this collection does
+    not use.

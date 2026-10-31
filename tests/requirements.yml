@@ -1,0 +1,12 @@
+---
+# Test-only collections shared by ansible-lint and the tox-ansible
+# unit/integration/molecule environments. The collection under test and its
+# runtime dependencies (ansible.posix, community.general) stay in galaxy.yml
+# and are resolved by ansible-compat/ade. The runtime dependencies are repeated
+# here because the shared Molecule dependency action runs before the
+# ansible-compat prerun.
+collections:
+  - name: ansible.posix
+  - name: community.general
+  - name: containers.podman
+  - name: community.docker

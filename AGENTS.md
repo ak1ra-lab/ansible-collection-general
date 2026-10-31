@@ -63,8 +63,13 @@ must not duplicate variable tables. Module docs come from the plugin
 - Docs and changelog: `just docs-lint`, `just docs-build`, and
   `just changelog-lint`, using antsibull-docs/antsibull-changelog.
   `CHANGELOG.rst` is generated and must not be edited by hand.
-- `just ansible-collection-install` is only for lint, mypy, and docs; the
-  modules import themselves through the collection namespace.
+- `just ansible-collection-install` is only for lint, mypy, and docs; it
+  installs the collection and the shared test-only collections from
+  `tests/requirements.yml`. The modules import themselves through the
+  collection namespace.
+- Runtime collection dependencies belong in `galaxy.yml`. The root
+  `requirements.yml` is only the ansible-builder execution-environment list;
+  test-only collections live in `tests/requirements.yml`.
 
 ## Workflow and safety
 

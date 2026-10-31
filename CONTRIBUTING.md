@@ -12,11 +12,12 @@ just ansible-collection-install
 
 `just sync` installs the `dev` dependency group (ruff, mypy, ansible-core,
 ansible-lint, tox-ansible, Molecule, pre-commit, antsibull-docs, Sphinx).
-`just ansible-collection-install` installs the collection into
-`.ansible/collections` so FQCN role references and the modules' `module_utils`
-imports resolve for lint, mypy, and docs. Molecule does **not** use that copy:
-it installs the collection under test itself and reads its test collection
-requirements from `tests/molecule/requirements.yml`.
+`just ansible-collection-install` installs the collection and the shared
+test-only collections into `.ansible/collections` so FQCN role references, the
+modules' `module_utils` imports, and ansible-lint resolve for lint, mypy, and
+docs. Molecule installs the collection under test itself and reads its test
+collection requirements from `tests/requirements.yml`; the `just molecule-*`
+recipes keep its Ansible data under the repository's `.ansible/` directory.
 
 The repository's `ansible.cfg` pins `roles_path=./roles` and
 `collections_path=./.ansible/collections`; it does not read user-level or
@@ -43,8 +44,8 @@ Run one matrix entry with `just tox sanity-py3.13-2.21` (or any environment
 shown by `just tox-list`). `ansible-test sanity` is the authoritative
 Ansible/Python gate; mypy is the fast local typecheck. The matrix follows
 ansible-core 2.19/2.20/2.21 plus the weekly devel/milestone environments, and
-`tox-ansible` installs test collections from `tests/molecule/requirements.yml`
-through `ade` - do not pre-install them into `.ansible/collections`.
+`tox-ansible` installs test collections from `tests/requirements.yml`
+through `ade`; tox does not use the project-local `.ansible/collections`.
 
 Python changes under `plugins/` and `tests/` must pass ruff lint, ruff format,
 mypy, and the unit tests. Ansible changes must pass ansible-lint and the
@@ -78,10 +79,12 @@ just molecule-syntax                 # syntax-check converge playbooks
 just molecule-list
 ```
 
-Molecule's dependency action installs `tests/molecule/requirements.yml`
+Molecule's dependency action installs `tests/requirements.yml`
 (`containers.podman`, `community.docker`); ansible-compat's prerun installs
-the collection under test and its `galaxy.yml` dependencies. Do not pre-install
-the collection or test collections into `.ansible/collections` for Molecule.
+the collection under test and its `galaxy.yml` dependencies. A project-local
+`.ansible/collections` overlay is only needed when developing against an
+unpublished sibling collection; the `just molecule-*` recipes keep Ansible
+data under the repository's `.ansible/` directory.
 
 Podman is required. Rootless Podman works for the whole general suite; CI uses
 rootful Podman for a uniform systemd container runtime. A Docker daemon is

@@ -7,7 +7,7 @@
 #
 #   MOLECULE_CONTAINER_RUNTIME=docker just molecule-test
 #
-# Docker needs the community.docker collection (tests/molecule/requirements.yml)
+# Docker needs the community.docker collection (tests/requirements.yml)
 # and its Python SDK on the control node.  Both runtimes run the containers
 # privileged: systemd needs the capabilities anyway, and a privileged
 # container also gets the writable /sys that the systemd units and future
