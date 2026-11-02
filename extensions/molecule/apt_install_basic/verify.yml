@@ -5,20 +5,20 @@
 # package, and the removed legacy entry.
 
 - name: verify the converged apt_install state
-  hosts: all
+  hosts: test_resources_debian
   gather_facts: false
   tasks:
     - name: collect the rendered sources file
       ansible.builtin.slurp:
-        src: /etc/apt/sources.list.d/tailscale.sources
+        src: /etc/apt/sources.list.d/pgdg.sources
       register: _apt_install_sources
 
     - name: assert the sources file is enabled, signed, and carries the repo
       ansible.builtin.assert:
         that:
           - "'Enabled: yes' in (_apt_install_sources.content | ansible.builtin.b64decode)"
-          - "'URIs: https://pkgs.tailscale.com/stable/debian' in (_apt_install_sources.content | ansible.builtin.b64decode)"
-          - "'Signed-By: /etc/apt/keyrings/tailscale-archive-keyring.gpg' in (_apt_install_sources.content | ansible.builtin.b64decode)"
+          - "'URIs: https://apt.postgresql.org/pub/repos/apt' in (_apt_install_sources.content | ansible.builtin.b64decode)"
+          - "'Signed-By: /etc/apt/keyrings/postgresql-pgdg.asc' in (_apt_install_sources.content | ansible.builtin.b64decode)"
         fail_msg: >-
           unexpected sources file:
           {{ _apt_install_sources.content | ansible.builtin.b64decode }}
@@ -26,7 +26,7 @@
 
     - name: collect the imported keyring
       ansible.builtin.stat:
-        path: /etc/apt/keyrings/tailscale-archive-keyring.gpg
+        path: /etc/apt/keyrings/postgresql-pgdg.asc
       register: _apt_install_keyring
 
     - name: assert the keyring was imported with the documented mode
@@ -39,13 +39,13 @@
 
     - name: collect the pinning file
       ansible.builtin.slurp:
-        src: /etc/apt/preferences.d/90tailscale
+        src: /etc/apt/preferences.d/90pgdg
       register: _apt_install_pinning
 
     - name: assert the default origin pinning is in place
       ansible.builtin.assert:
         that:
-          - "'Pin: origin pkgs.tailscale.com' in (_apt_install_pinning.content | ansible.builtin.b64decode)"
+          - "'Pin: origin apt.postgresql.org' in (_apt_install_pinning.content | ansible.builtin.b64decode)"
           - "'Pin-Priority: 900' in (_apt_install_pinning.content | ansible.builtin.b64decode)"
         fail_msg: >-
           unexpected pinning file:
@@ -54,13 +54,13 @@
 
     - name: collect the unattended-upgrades file
       ansible.builtin.slurp:
-        src: /etc/apt/apt.conf.d/90unattended-upgrades-tailscale
+        src: /etc/apt/apt.conf.d/90unattended-upgrades-pgdg
       register: _apt_install_unattended
 
     - name: assert the default site origins pattern is in place
       ansible.builtin.assert:
         that:
-          - "'site=pkgs.tailscale.com' in (_apt_install_unattended.content | ansible.builtin.b64decode)"
+          - "'site=apt.postgresql.org' in (_apt_install_unattended.content | ansible.builtin.b64decode)"
         fail_msg: >-
           unexpected unattended-upgrades file:
           {{ _apt_install_unattended.content | ansible.builtin.b64decode }}
@@ -68,7 +68,7 @@
 
     - name: assert the seeded legacy entry was removed
       ansible.builtin.stat:
-        path: /etc/apt/sources.list.d/tailscale.list
+        path: /etc/apt/sources.list.d/pgdg.list
       register: _apt_install_legacy
 
     - name: assert the legacy list is gone
@@ -80,14 +80,14 @@
 
     - name: collect the apt policy for the installed package
       ansible.builtin.command:
-        argv: [apt-cache, policy, tailscale]
+        argv: [apt-cache, policy, postgresql-client-17]
       changed_when: false
       register: _apt_install_policy
 
     - name: assert the repository serves the package at the pinned priority
       ansible.builtin.assert:
         that:
-          - "'900 https://pkgs.tailscale.com/stable/debian' in _apt_install_policy.stdout"
+          - "'900 https://apt.postgresql.org/pub/repos/apt' in _apt_install_policy.stdout"
           - "'Installed:' in _apt_install_policy.stdout"
         fail_msg: >-
           unexpected apt policy:
@@ -96,7 +96,7 @@
 
     - name: collect the installed package status
       ansible.builtin.command:
-        argv: [dpkg-query, -W, "-f=${Status}", tailscale]
+        argv: [dpkg-query, -W, "-f=${Status}", postgresql-client-17]
       changed_when: false
       register: _apt_install_status
 
@@ -110,14 +110,14 @@
 
     - name: collect the package hold state
       ansible.builtin.command:
-        argv: [dpkg, --get-selections, tailscale]
+        argv: [dpkg, --get-selections, postgresql-client-17]
       changed_when: false
       register: _apt_install_selection
 
     - name: assert the package is held
       ansible.builtin.assert:
         that:
-          - _apt_install_selection.stdout is ansible.builtin.search('^tailscale\s+hold')
+          - _apt_install_selection.stdout is ansible.builtin.search('^postgresql-client-17\s+hold')
         fail_msg: >-
           the package must be held, got: {{ _apt_install_selection.stdout }}
         quiet: true

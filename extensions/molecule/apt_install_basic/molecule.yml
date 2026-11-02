@@ -1,6 +1,6 @@
 ---
 # apt_install_basic scenario - the enabled happy path against a real
-# third-party repository (the same shape as the Tailscale recipe in
+# third-party repository (the same shape as the PostgreSQL PGDG recipe in
 # ansible-playbooks-infra), followed by the role's revert
 # switches and the scenario teardown.
 #

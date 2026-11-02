@@ -1,21 +1,21 @@
 ---
-# apt_install_basic scenario - apply the tailscale repository with the role
+# apt_install_basic scenario - apply the PostgreSQL PGDG repository with the role
 # defaults: keyring from the repository's
 # GPG URL, default origin pinning, default site unattended-upgrades pattern,
 # and one package installed from the new repository and held.
 
-- name: apply the tailscale repository
-  hosts: all
+- name: apply the PostgreSQL PGDG repository
+  hosts: test_resources_debian
   gather_facts: true
   vars:
-    apt_install_keyrings_url: "https://pkgs.tailscale.com/stable/debian/{{ ansible_facts['distribution_release'] }}.noarmor.gpg"
-    apt_install_keyrings_dest: /etc/apt/keyrings/tailscale-archive-keyring.gpg
+    apt_install_keyrings_url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+    apt_install_keyrings_dest: /etc/apt/keyrings/postgresql-pgdg.asc
 
-    apt_install_repo: tailscale
+    apt_install_repo: pgdg
     apt_install_repo_uris:
-      - https://pkgs.tailscale.com/stable/debian
+      - https://apt.postgresql.org/pub/repos/apt
     apt_install_repo_suites:
-      - "{{ ansible_facts['distribution_release'] }}"
+      - "{{ ansible_facts['distribution_release'] }}-pgdg"
     apt_install_repo_components:
       - main
 
@@ -24,7 +24,7 @@
     apt_install_mark_hold: true
 
     apt_install_repo_packages:
-      - tailscale
+      - postgresql-client-17
   tasks:
     - name: apply ak1ra_lab.general.apt_install
       ansible.builtin.include_role:

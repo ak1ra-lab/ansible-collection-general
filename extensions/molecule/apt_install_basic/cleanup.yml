@@ -5,13 +5,13 @@
 # container (destroyed before cleanup).
 
 - name: tear down the apt_install test repository
-  hosts: all
+  hosts: test_resources_debian
   gather_facts: false
   ignore_unreachable: true
   tasks:
     - name: check whether the test package is installed
       ansible.builtin.stat:
-        path: /var/lib/dpkg/info/tailscale.list
+        path: /var/lib/dpkg/info/postgresql-client-17.list
       register: _apt_install_teardown_pkg
 
     - name: unhold and remove the test package
@@ -19,12 +19,12 @@
       block:
         - name: unhold the test package
           ansible.builtin.dpkg_selections:
-            name: tailscale
+            name: postgresql-client-17
             selection: install
 
         - name: remove the test package
           ansible.builtin.apt:
-            name: tailscale
+            name: postgresql-client-17
             state: absent
             purge: true
 
@@ -33,8 +33,8 @@
         path: "{{ item }}"
         state: absent
       loop:
-        - /etc/apt/sources.list.d/tailscale.sources
-        - /etc/apt/sources.list.d/tailscale.list
-        - /etc/apt/keyrings/tailscale-archive-keyring.gpg
-        - /etc/apt/preferences.d/90tailscale
-        - /etc/apt/apt.conf.d/90unattended-upgrades-tailscale
+        - /etc/apt/sources.list.d/pgdg.sources
+        - /etc/apt/sources.list.d/pgdg.list
+        - /etc/apt/keyrings/postgresql-pgdg.asc
+        - /etc/apt/preferences.d/90pgdg
+        - /etc/apt/apt.conf.d/90unattended-upgrades-pgdg

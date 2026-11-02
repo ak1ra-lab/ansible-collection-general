@@ -6,19 +6,19 @@
 # against it.
 
 - name: exercise the apt_install revert switches
-  hosts: all
+  hosts: test_resources_debian
   gather_facts: true
   vars:
-    apt_install_repo: tailscale
+    apt_install_repo: pgdg
     apt_install_repo_uris:
-      - https://pkgs.tailscale.com/stable/debian
+      - https://apt.postgresql.org/pub/repos/apt
     apt_install_repo_suites:
-      - "{{ ansible_facts['distribution_release'] }}"
+      - "{{ ansible_facts['distribution_release'] }}-pgdg"
     apt_install_repo_components:
       - main
 
     apt_install_keyrings_file: "{{ playbook_dir }}/files/dummy-key.asc"
-    apt_install_keyrings_dest: /etc/apt/keyrings/tailscale-archive-keyring.gpg
+    apt_install_keyrings_dest: /etc/apt/keyrings/postgresql-pgdg.asc
 
     apt_install_repo_enabled: false
     apt_install_pinning: false

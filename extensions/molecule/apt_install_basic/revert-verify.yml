@@ -4,12 +4,12 @@
 # keyring was imported, and APT still works with the disabled source present.
 
 - name: verify the apt_install revert state
-  hosts: all
+  hosts: test_resources_debian
   gather_facts: false
   tasks:
     - name: collect the rendered sources file
       ansible.builtin.slurp:
-        src: /etc/apt/sources.list.d/tailscale.sources
+        src: /etc/apt/sources.list.d/pgdg.sources
       register: _apt_install_revert_sources
 
     - name: assert the source is rendered as disabled
@@ -26,8 +26,8 @@
         path: "{{ item }}"
       register: _apt_install_revert_artifacts
       loop:
-        - /etc/apt/preferences.d/90tailscale
-        - /etc/apt/apt.conf.d/90unattended-upgrades-tailscale
+        - /etc/apt/preferences.d/90pgdg
+        - /etc/apt/apt.conf.d/90unattended-upgrades-pgdg
 
     - name: assert the pinning and unattended-upgrades files are gone
       ansible.builtin.assert:
@@ -41,7 +41,7 @@
 
     - name: assert the fixture keyring was imported
       ansible.builtin.stat:
-        path: /etc/apt/keyrings/tailscale-archive-keyring.gpg
+        path: /etc/apt/keyrings/postgresql-pgdg.asc
       register: _apt_install_revert_keyring
 
     - name: assert the keyring file exists
