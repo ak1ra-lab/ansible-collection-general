@@ -1,0 +1,30 @@
+---
+# Role metadata for ak1ra_lab.general.apt_repository
+
+galaxy_info:
+  author: ak1ra
+  description: Manage a third-party APT repository without installing packages
+  license: GPL-3.0-or-later
+  min_ansible_version: "2.19"
+
+  platforms:
+    - name: Debian
+      versions:
+        - trixie
+        - bookworm
+    - name: Ubuntu
+      versions:
+        - resolute
+        - noble
+        - jammy
+
+  galaxy_tags:
+    - debian
+    - ubuntu
+    - apt
+    - repository
+    - packaging
+
+dependencies: []
+
+allow_duplicates: false

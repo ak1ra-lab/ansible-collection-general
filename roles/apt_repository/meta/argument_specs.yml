@@ -1,0 +1,184 @@
+argument_specs:
+  main:
+    short_description: Manage a third-party APT repository without installing its packages
+    description:
+      - Manage a keyring, a DEB822 source, optional pinning, and optional
+        unattended-upgrades origins for one APT repository.
+      - The role does not install packages from the configured repository and
+        never changes package hold state; compose those actions in the
+        playbook after the repository is ready.
+      - The role installs the C(python3-debian) module dependency from the
+        existing base repositories because
+        C(ansible.builtin.deb822_repository) requires it.
+      - Targets Debian 12/13 and Ubuntu 22.04 and later. Ubuntu 24.04 and 26.04
+        are the tested Ubuntu releases.
+    options:
+      apt_repository_name:
+        description:
+          - Repository basename. Used for the DEB822 file, the pinning file,
+            the unattended-upgrades file, and the legacy .list cleanup.
+          - Must contain only letters, digits, hyphen, underscore, and period.
+        type: str
+        required: true
+      apt_repository_state:
+        description:
+          - Whether the repository artifacts should exist.
+          - With C(absent), the DEB822 source, role-owned pinning file, and
+            role-owned unattended-upgrades file are removed; the keyring is
+            removed when O(apt_repository_remove_keyring) is true.
+        type: str
+        choices:
+          - present
+          - absent
+        default: present
+        required: false
+      apt_repository_enabled:
+        description:
+          - Passed to the C(Enabled) field of the DEB822 source.
+        type: bool
+        default: true
+        required: false
+      apt_repository_types:
+        description:
+          - APT source types, either C(deb) or C(deb-src).
+        type: list
+        elements: str
+        choices:
+          - deb
+          - deb-src
+        default:
+          - deb
+        required: false
+      apt_repository_uris:
+        description:
+          - APT repository URIs. At least one URI is required when
+            O(apt_repository_state=present).
+        type: list
+        elements: str
+        default: []
+        required: false
+      apt_repository_suites:
+        description:
+          - APT suites. A suite can be a release codename, an archive name, or
+            a path ending with a slash.
+        type: list
+        elements: str
+        default:
+          - '{{ ansible_facts.get(''distribution_release'', '''') }}'
+        required: false
+      apt_repository_components:
+        description:
+          - APT components such as C(main), C(contrib), C(non-free), and
+            C(non-free-firmware).
+        type: list
+        elements: str
+        default:
+          - main
+        required: false
+      apt_repository_dpkg_architectures:
+        description:
+          - Mapping from Ansible architecture names to dpkg architecture names.
+          - Override only when the default mapping does not cover a target.
+        type: dict
+        default:
+          x86_64: amd64
+          i386: i386
+          i686: i386
+          aarch64: arm64
+          armv7l: armhf
+          armv6l: armel
+          ppc64le: ppc64el
+          s390x: s390x
+          riscv64: riscv64
+        required: false
+      apt_repository_architectures:
+        description:
+          - Architectures written to the DEB822 source.
+          - Defaults to the native dpkg architecture; set an empty list to let
+            APT use its configured architecture set.
+        type: list
+        elements: str
+        default:
+          - '{{ apt_repository_dpkg_architectures.get(ansible_facts.get(''architecture'', ''''), ansible_facts.get(''architecture'', '''')) }}'
+        required: false
+      apt_repository_keyring:
+        description:
+          - Keyring managed by the role.
+          - Exactly one of O(apt_repository_keyring) and
+            O(apt_repository_signed_by) is required when
+            O(apt_repository_state=present).
+          - 'Supported keys are C(dest), C(url), C(content), C(content_base64),
+            C(deb), C(member), C(checksum), C(force), C(mode), C(owner), and
+            C(group). The C(dest) key is required.'
+          - Use C(deb) with C(member) to extract a keyring from a keyring
+            package without installing the package.
+        type: dict
+        default: {}
+        required: false
+      apt_repository_signed_by:
+        description:
+          - Existing path, key fingerprint, or inline armored key passed to the
+            DEB822 C(Signed-By) field.
+          - Mutually exclusive with O(apt_repository_keyring).
+        type: str
+        default: ''
+        required: false
+      apt_repository_pinning:
+        description:
+          - List of apt_preference entries rendered into
+            O(apt_repository_pinning_file).
+          - An empty list disables pinning and removes a stale role-owned file.
+          - >-
+            Each entry contains C(packages), C(pin), and C(priority); C(pin) has
+            exactly one of C(release), C(site), or C(version). C(site) generates
+            C(Pin: origin) and is not the Release C(Origin:) field.
+        type: list
+        elements: dict
+        default: []
+        required: false
+      apt_repository_pinning_file:
+        description:
+          - Path of the role-owned APT preferences file.
+        type: str
+        default: '/etc/apt/preferences.d/90{{ apt_repository_name }}'
+        required: false
+      apt_repository_unattended_upgrades:
+        description:
+          - Unattended-upgrades policy for this repository.
+          - 'Supported key is C(origins_patterns), a non-empty list of origins
+            patterns. Each item is a mapping or a C(field=value) string.'
+          - An empty dictionary disables the policy and removes a stale
+            role-owned file.
+        type: dict
+        default: {}
+        required: false
+      apt_repository_unattended_upgrades_file:
+        description:
+          - Path of the role-owned unattended-upgrades file.
+        type: str
+        default: '/etc/apt/apt.conf.d/90unattended-upgrades-{{ apt_repository_name }}'
+        required: false
+      apt_repository_refresh_cache:
+        description:
+          - Refresh the APT index when the keyring, source, or legacy list
+            changed.
+          - This is a cache refresh only; it does not install packages from the
+            repository.
+        type: bool
+        default: true
+        required: false
+      apt_repository_remove_legacy_list:
+        description:
+          - Remove C(/etc/apt/sources.list.d/<name>.list) before rendering the
+            DEB822 source.
+        type: bool
+        default: true
+        required: false
+      apt_repository_remove_keyring:
+        description:
+          - Remove the role-managed keyring when O(apt_repository_state=absent).
+          - External keyrings referenced through O(apt_repository_signed_by) are
+            never removed.
+        type: bool
+        default: true
+        required: false

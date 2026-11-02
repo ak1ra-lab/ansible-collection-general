@@ -1,0 +1,47 @@
+---
+# roles/apt_repository
+
+# Basename used for the DEB822 source, the pinning file, and the
+# unattended-upgrades file.
+apt_repository_name: ""
+
+apt_repository_state: present
+apt_repository_enabled: true
+
+apt_repository_types:
+  - deb
+apt_repository_uris: []
+apt_repository_suites:
+  - "{{ ansible_facts.get('distribution_release', '') }}"
+apt_repository_components:
+  - main
+
+# ansible_facts['architecture'] returns x86_64, while dpkg uses amd64.
+apt_repository_dpkg_architectures: "{{ _apt_repository_dpkg_architectures }}"
+apt_repository_architectures:
+  - "{{ apt_repository_dpkg_architectures.get(ansible_facts.get('architecture', ''), ansible_facts.get('architecture', '')) }}"
+
+# Exactly one of apt_repository_keyring and apt_repository_signed_by is
+# required when apt_repository_state is present.
+#
+# apt_repository_keyring:
+#   dest: /etc/apt/keyrings/example.gpg
+#   url: https://example.invalid/key.gpg
+#   checksum: "sha256:..."
+#   # or content / content_base64 / deb + member
+apt_repository_keyring: {}
+apt_repository_signed_by: ""
+
+# A list of apt_preference entries. Empty disables pinning and removes a
+# stale role-owned preferences file.
+apt_repository_pinning: []
+apt_repository_pinning_file: "{{ _apt_repository_pinning_file }}"
+
+# origins_patterns for unattended-upgrades. Empty disables the policy and
+# removes a stale role-owned file.
+apt_repository_unattended_upgrades: {}
+apt_repository_unattended_upgrades_file: "{{ _apt_repository_unattended_upgrades_file }}"
+
+apt_repository_refresh_cache: true
+apt_repository_remove_legacy_list: true
+apt_repository_remove_keyring: true

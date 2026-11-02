@@ -1,0 +1,16 @@
+---
+minor_changes:
+  - Add the ``apt_keyring`` module for managing isolated APT keyrings from a
+    URL, inline content, or a member extracted from a keyring package without
+    installing the package.
+  - Add the ``apt_preference`` module for rendering apt_preferences(5)
+    records and normalizing full Release field names to APT's single-letter
+    fields.
+  - Add the ``apt_unattended_upgrades`` module for rendering
+    unattended-upgrades origins patterns, package rules, reboot settings, and
+    APT::Periodic options.
+  - Add the ``apt_repository`` role for managing one third-party APT
+    repository without installing packages from that repository. It composes
+    the new modules with ``ansible.builtin.deb822_repository``, installs the
+    ``python3-debian`` module dependency from the base repositories, and
+    targets Debian 12/13 and Ubuntu 22.04 and later.

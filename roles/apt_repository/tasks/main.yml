@@ -1,0 +1,191 @@
+---
+- name: assert the target platform is supported
+  ansible.builtin.assert:
+    that:
+      - (ansible_facts.get('os_family', '') | lower) == 'debian'
+      - (ansible_facts.get('pkg_mgr', '')) == 'apt'
+      - >-
+        (
+          ((ansible_facts.get('distribution', '') | lower) == 'debian') and
+          ((ansible_facts.get('distribution_major_version', '0') | int) >= 12)
+        ) or (
+          ((ansible_facts.get('distribution', '') | lower) == 'ubuntu') and
+          ((ansible_facts.get('distribution_major_version', '0') | int) >= 22)
+        )
+    fail_msg: >-
+      roles/apt_repository supports Debian >= 12 and Ubuntu >= 22.04; gather
+      facts before applying the role
+
+- name: assert the repository inputs are valid
+  ansible.builtin.assert:
+    that:
+      - (apt_repository_name | length) > 0
+      - apt_repository_name is match('^[A-Za-z0-9_.-]+$')
+      - (apt_repository_state == 'absent') or ((apt_repository_uris | length) > 0)
+      - >-
+        (apt_repository_state == 'absent') or
+        ((apt_repository_suites | reject('equalto', '') | list | length) > 0)
+      - >-
+        (apt_repository_state == 'absent') or
+        ((apt_repository_keyring | length) > 0) or
+        ((apt_repository_signed_by | length) > 0)
+      - not ((apt_repository_keyring | length) > 0 and (apt_repository_signed_by | length) > 0)
+      - >-
+        (apt_repository_keyring | length == 0) or
+        ((apt_repository_keyring.dest | default('') | length) > 0)
+    fail_msg: >-
+      apt_repository_name, apt_repository_uris, apt_repository_suites, and one of
+      apt_repository_keyring or apt_repository_signed_by must be set; the keyring
+      dictionary must include dest
+
+- name: assert the keyring dictionary has no unknown keys
+  when: (apt_repository_keyring | length) > 0
+  ansible.builtin.assert:
+    that:
+      - >-
+        (apt_repository_keyring.keys() | list | difference(
+          _apt_repository_keyring_options
+        ) | length) == 0
+    fail_msg: >-
+      apt_repository_keyring supports
+      {{ _apt_repository_keyring_options | join(', ') }}
+
+- name: assert the unattended-upgrades dictionary has no unknown keys
+  when:
+    - (apt_repository_unattended_upgrades | length) > 0
+  ansible.builtin.assert:
+    that:
+      - >-
+        (apt_repository_unattended_upgrades.keys() | list | difference(
+          _apt_repository_unattended_upgrades_options
+        ) | length) == 0
+      - (apt_repository_unattended_upgrades.origins_patterns | default([]) | length) > 0
+    fail_msg: >-
+      apt_repository_unattended_upgrades supports
+      {{ _apt_repository_unattended_upgrades_options | join(', ') }}, and at
+      least one origins pattern is required when the dictionary is set
+
+# deb822_repository needs python3-debian on the managed host. This is a
+# module dependency from the base repositories, not a package from the
+# repository being configured.
+- name: install python3-debian for deb822_repository
+  ansible.builtin.apt:
+    name: python3-debian
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: install the repository keyring
+  when:
+    - apt_repository_state == 'present'
+    - (apt_repository_keyring | length) > 0
+  ak1ra_lab.general.apt_keyring:
+    dest: "{{ apt_repository_keyring.dest }}"
+    state: present
+    url: "{{ apt_repository_keyring.url | default(omit) }}"
+    content: "{{ apt_repository_keyring.content | default(omit) }}"
+    content_base64: "{{ apt_repository_keyring.content_base64 | default(omit) }}"
+    deb: "{{ apt_repository_keyring.deb | default(omit) }}"
+    member: "{{ apt_repository_keyring.member | default(omit) }}"
+    checksum: "{{ apt_repository_keyring.checksum | default(omit) }}"
+    force: "{{ apt_repository_keyring.force | default(false) | ansible.builtin.bool }}"
+    mode: "{{ apt_repository_keyring.mode | default('0644') }}"
+    owner: "{{ apt_repository_keyring.owner | default('root') }}"
+    group: "{{ apt_repository_keyring.group | default('root') }}"
+  register: _apt_repository_keyring_result
+
+- name: remove the legacy sources.list.d entry
+  when: apt_repository_remove_legacy_list | ansible.builtin.bool
+  ansible.builtin.file:
+    path: "{{ _apt_repository_legacy_list_file }}"
+    state: absent
+  register: _apt_repository_legacy
+
+- name: add the DEB822 repository
+  when: apt_repository_state == 'present'
+  vars:
+    _apt_repository_suites: "{{ apt_repository_suites | reject('equalto', '') | list }}"
+    _apt_repository_architectures: "{{ apt_repository_architectures | reject('equalto', '') | list }}"
+  ansible.builtin.deb822_repository:
+    name: "{{ apt_repository_name }}"
+    state: present
+    enabled: "{{ apt_repository_enabled | ansible.builtin.bool }}"
+    types: "{{ apt_repository_types }}"
+    uris: "{{ apt_repository_uris }}"
+    suites: "{{ _apt_repository_suites }}"
+    components: "{{ apt_repository_components if (apt_repository_components | length) > 0 else omit }}"
+    architectures: "{{ _apt_repository_architectures if (_apt_repository_architectures | length) > 0 else omit }}"
+    signed_by: >-
+      {{
+        _apt_repository_keyring_result.dest
+        if (
+          _apt_repository_keyring_result is defined and
+          _apt_repository_keyring_result.dest is defined
+        )
+        else apt_repository_signed_by
+      }}
+  register: _apt_repository_source
+
+- name: remove the DEB822 repository
+  when: apt_repository_state == 'absent'
+  ansible.builtin.deb822_repository:
+    name: "{{ apt_repository_name }}"
+    state: absent
+  register: _apt_repository_source
+
+- name: remove the repository keyring
+  when:
+    - apt_repository_state == 'absent'
+    - (apt_repository_keyring | length) > 0
+    - apt_repository_remove_keyring | ansible.builtin.bool
+  ak1ra_lab.general.apt_keyring:
+    dest: "{{ apt_repository_keyring.dest }}"
+    state: absent
+  register: _apt_repository_keyring_removed
+
+# A changed key or source must be visible before a consumer installs a package
+# in the same play. This is a cache refresh only, not a package action.
+- name: refresh the APT index after repository changes
+  when:
+    - apt_repository_refresh_cache | ansible.builtin.bool
+    - >-
+      (_apt_repository_source.changed | default(false)) or
+      ((_apt_repository_legacy | default({})).changed | default(false)) or
+      ((_apt_repository_keyring_result | default({})).changed | default(false)) or
+      ((_apt_repository_keyring_removed | default({})).changed | default(false))
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: manage the APT preferences file
+  when:
+    - apt_repository_state == 'present'
+    - (apt_repository_pinning | length) > 0
+  ak1ra_lab.general.apt_preference:
+    path: "{{ apt_repository_pinning_file }}"
+    state: present
+    entries: "{{ apt_repository_pinning }}"
+  register: _apt_repository_pinning_result
+
+- name: remove the APT preferences file when pinning is disabled
+  when: (apt_repository_state == 'absent') or ((apt_repository_pinning | length) == 0)
+  ak1ra_lab.general.apt_preference:
+    path: "{{ apt_repository_pinning_file }}"
+    state: absent
+  register: _apt_repository_pinning_removed
+
+- name: manage the unattended-upgrades origins pattern
+  when:
+    - apt_repository_state == 'present'
+    - (apt_repository_unattended_upgrades | length) > 0
+  ak1ra_lab.general.apt_unattended_upgrades:
+    path: "{{ apt_repository_unattended_upgrades_file }}"
+    state: present
+    origins_patterns: "{{ apt_repository_unattended_upgrades.origins_patterns }}"
+  register: _apt_repository_unattended_result
+
+- name: remove the unattended-upgrades origins pattern when disabled
+  when: (apt_repository_state == 'absent') or ((apt_repository_unattended_upgrades | length) == 0)
+  ak1ra_lab.general.apt_unattended_upgrades:
+    path: "{{ apt_repository_unattended_upgrades_file }}"
+    state: absent
+  register: _apt_repository_unattended_removed
