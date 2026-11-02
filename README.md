@@ -12,6 +12,7 @@ Release notes: [CHANGELOG.rst](CHANGELOG.rst)
 | Role | Description |
 | --- | --- |
 | [`apt_install`](roles/apt_install/README.md) | Add a third-party APT repository in DEB822 format with keyring, pinning, unattended upgrades, and package installation. Debian only. |
+| [`apt_repository`](roles/apt_repository/README.md) | Manage one third-party APT repository without installing its packages: keyring, DEB822 source, optional pinning and unattended-upgrades policy. Debian and Ubuntu. |
 | [`debian_base`](roles/debian_base/README.md) | Apply a Debian baseline with curated packages, apt defaults, unattended upgrades, and host bootstrap settings. Debian only. |
 | [`docker`](roles/docker/README.md) | Install Docker CE from the official repository and manage `daemon.json` and the `docker` group. Debian only. |
 | [`go_build`](roles/go_build/README.md) | Clone and build a Go project on `localhost` and expose the built binary path. |
@@ -30,6 +31,12 @@ and examples.
 - `cpu_info`: collect CPU capability facts, including raw CPU flags and the
   detected x86-64 microarchitecture level, which can be fed into
   `github_releases_info` asset selection.
+- `apt_keyring`: manage an isolated APT keyring from a URL, inline content, or
+  a member extracted from a keyring package.
+- `apt_preference`: render APT preference and pinning records, normalizing
+  full Release field names to the single-letter fields APT understands.
+- `apt_unattended_upgrades`: render unattended-upgrades origins patterns,
+  package rules, reboot settings, and periodic schedule snippets.
 
 See the [module guide](https://ak1ra-lab.github.io/ansible-collection-general/modules.html)
 or the [generated reference](https://ak1ra-lab.github.io/ansible-collection-general/collection_index.html)
@@ -61,9 +68,10 @@ your own playbook project.
   and 2.21 (plus the weekly `devel`/`milestone` builds).
 - Controller Python: `>= 3.11`; tested with Python 3.11, 3.12, and 3.13.
   ansible-core 2.20 and 2.21 additionally support Python 3.12-3.14.
-- Managed nodes: Debian 12 (target Python 3.11) and Debian 13 (target Python
-  3.13) for the APT-based roles. The roles use the managed node's
-  `/usr/bin/python3`; no newer target interpreter is required.
+- Managed nodes: Debian 12 (target Python 3.11), Debian 13 (target Python
+  3.13), Ubuntu 24.04 (Python 3.12), and Ubuntu 26.04 (Python 3.14) for the
+  APT-based roles. The roles use the managed node's `/usr/bin/python3`; no
+  newer target interpreter is required.
 - Collections: `ansible.posix >= 1.5.4` and `community.general >= 8.0.0`
   (resolved from [`galaxy.yml`](galaxy.yml)).
 - `go` on the controller for `go_build`; `uv` for local

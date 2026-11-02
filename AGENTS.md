@@ -21,9 +21,10 @@ the URL is a fallback, not the normal workflow.
 
 ## Layout
 
-- Roles: `apt_install`, `debian_base`, `docker`, `go_build`, and
-  `pyproject_install` under `roles/`.
-- Modules: `github_releases_info` and `cpu_info`, with shared logic in
+- Roles: `apt_install`, `apt_repository`, `debian_base`, `docker`, `go_build`,
+  and `pyproject_install` under `roles/`.
+- Modules: `github_releases_info`, `cpu_info`, `apt_keyring`,
+  `apt_preference`, and `apt_unattended_upgrades`, with shared logic in
   `plugins/module_utils/`; lookup plugins are `random_*` under `plugins/lookup/`.
 - Unit tests live in `tests/unit/`; Molecule scenarios are flat under
   `extensions/molecule/`; the Sphinx source is `docs/docsite/`.

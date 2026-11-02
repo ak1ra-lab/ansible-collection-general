@@ -16,7 +16,7 @@ Role families
 -------------
 
 - **Host baseline and packages**: ``debian_base``, ``apt_install``,
-  ``docker``.
+  ``apt_repository``, ``docker``.
 - **Build and install**: ``go_build``, ``pyproject_install``.
 
 Each role owns its files and units. Roles do not share a global state
@@ -27,9 +27,14 @@ Host baseline and packages
 
 ``debian_base`` applies the Debian archive and security configuration,
 unattended-upgrades policy, baseline packages, and optional host bootstrap
-settings. ``apt_install`` is the reusable third-party repository layer: it
+settings. ``apt_install`` is the published package-installation layer: it
 manages the keyring, a DEB822 source, optional pinning, unattended-upgrades,
 package installation or hold, and legacy ``.list`` cleanup.
+``apt_repository`` is the repository-only layer: it manages the keyring,
+DEB822 source, optional pinning, unattended-upgrades origins, and legacy
+``.list`` cleanup. It does not install packages from the configured repository
+and never changes holds; it may install the ``python3-debian`` module
+dependency when missing. Compose the install and hold steps in the playbook.
 
 ``docker`` is a composition role: it imports ``apt_install`` for the Docker
 repository and its package list, then manages ``/etc/docker/daemon.json``, the

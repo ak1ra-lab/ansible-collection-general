@@ -15,7 +15,10 @@ collection version.
 The external repository includes:
 
 - Debian baseline and Docker profile entry points.
-- ``apt_install`` recipes for third-party repositories.
+- ``apt_repository`` recipes for third-party repositories, followed by the
+  playbook's own package installation and hold tasks.
+- Legacy ``apt_install`` recipes for package-installation recipes that still
+  need the published 0.4.0 behavior.
 - Controller-side ``go_build`` and GitHub release recipes.
 - Example inventory and site variables.
 

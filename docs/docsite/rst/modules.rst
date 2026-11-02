@@ -94,5 +94,60 @@ zero. Facts from third-party collections are not part of
        repo: example/tool
        asset_microarch: "{{ ansible_facts['cpu']['microarch_level'] }}"
 
+APT configuration modules
+-------------------------
+
+The APT modules manage one isolated piece of configuration each and never
+install packages.
+
+``apt_keyring`` writes a keyring from a URL, inline content, or a member
+extracted from a Debian package. The ``deb`` + ``member`` form is useful for
+keyring packages whose installation would also add a globally trusted key:
+
+.. code-block:: yaml
+
+   - name: Extract a keyring without installing the package
+     ak1ra_lab.general.apt_keyring:
+       deb: https://example.invalid/vendor-keyring.deb
+       member: usr/share/keyrings/vendor-keyring.pgp
+       checksum: "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+       dest: /etc/apt/keyrings/vendor.gpg
+
+``apt_preference`` renders apt_preferences(5) records. Release field names are
+normalized to the short forms APT requires; ``pin.site`` is the separate
+``Pin: origin`` hostname matcher:
+
+.. code-block:: yaml
+
+   - name: Prefer packages from a vendor host
+     ak1ra_lab.general.apt_preference:
+       name: 90vendor
+       entries:
+         - packages: ["*"]
+           pin:
+             site: packages.example.invalid
+           priority: 900
+
+``apt_unattended_upgrades`` renders an apt.conf.d drop-in with origins
+patterns, package rules, reboot settings, and APT::Periodic options. It
+accepts both the full and abbreviated field names and validates the generated
+file with ``apt-config``:
+
+.. code-block:: yaml
+
+   - name: Add a vendor origin to unattended-upgrades
+     ak1ra_lab.general.apt_unattended_upgrades:
+       name: vendor
+       origins_patterns:
+         - site: packages.example.invalid
+       periodic:
+         update_package_lists: 1
+         unattended_upgrade: 1
+
+The ``apt_repository`` role composes these modules with
+``ansible.builtin.deb822_repository``. It installs the ``python3-debian``
+module dependency when missing and refreshes the APT index after repository
+changes; installation of repository packages and holds remain playbook tasks.
+
 The same reference is available offline with
 ``ansible-doc ak1ra_lab.general.<module>`` against an installed collection.

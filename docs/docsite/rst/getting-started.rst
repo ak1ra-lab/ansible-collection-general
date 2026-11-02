@@ -49,12 +49,12 @@ Control-node requirements
 Managed-node requirements
 -------------------------
 
-The APT-based roles target Debian 12 and Debian 13. Debian 12 ships target
-Python 3.11 and Debian 13 ships target Python 3.13; the roles use the managed
-node's ``/usr/bin/python3`` and do not require a newer interpreter. The
-Molecule scenarios use the systemd-enabled ``debian:12`` and ``debian:13``
-container images from
-`ak1ra-lab/docker-systemd <https://github.com/ak1ra-lab/docker-systemd>`_.
+The APT-based roles target Debian 12/13 and Ubuntu 22.04 and later. The
+tested Ubuntu releases are 24.04 and 26.04. Debian 12 ships target Python
+3.11, Debian 13 ships Python 3.13, Ubuntu 24.04 ships Python 3.12, and Ubuntu
+26.04 ships Python 3.14; the roles use the managed node's
+``/usr/bin/python3``. The Molecule scenarios use the systemd-enabled images
+from `ak1ra-lab/docker-systemd <https://github.com/ak1ra-lab/docker-systemd>`_.
 
 .. list-table::
    :header-rows: 1
@@ -65,6 +65,10 @@ container images from
    * - ``apt_install``
      - Debian; root privileges for the keyring, APT source files, and package
        installation.
+   * - ``apt_repository``
+     - Debian 12/13 or Ubuntu 22.04+; root privileges. The role installs
+       ``python3-debian`` when missing unless
+       ``apt_repository_install_python_debian`` is false.
    * - ``debian_base``
      - Debian; root privileges.
    * - ``docker``

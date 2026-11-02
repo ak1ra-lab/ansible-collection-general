@@ -10,6 +10,10 @@ optional package installation.
 
 Targets Debian 12/13 only (`ansible_facts['distribution'] == 'debian'`).
 
+> For a repository-only role that never installs packages, see
+> [`apt_repository`](../apt_repository/README.md). This role keeps its
+> published package-installation behavior for existing consumers.
+
 `ansible.builtin.deb822_repository` needs the `python3-debian` library on the
 managed host; the role installs it before touching the repository, so minimal
 installations (containers, LXC) work without extra preparation.

@@ -63,14 +63,18 @@ scenario and no `shared_state`.
 | --- | --- |
 | `apt_install_basic` | Third-party repository keyring URL, DEB822 source, origin pinning, unattended-upgrades, package install and hold, the revert switches, legacy `.list` removal |
 | `apt_install_variants` | Inline keyring content, release-based pinning, `any-version` suites, a keyring package with a pinned checksum |
+| `apt_repository_debian` | PostgreSQL PGDG keyring and release pinning, unattended-upgrades, keyring extraction from a `.deb` without installing it, dependency install, role teardown |
+| `apt_repository_ubuntu` | PostgreSQL PGDG repository on Ubuntu 24.04/26.04, release pinning, unattended-upgrades, dependency install, role teardown |
 | `debian_base` | DEB822 archive/security sources, backports pinning and first-run index refresh, unattended-upgrades drop-ins, force-IPv4, baseline package, sudoers |
 | `go_build` | Fixture git repository, binary build and stamp-based rebuild skip |
 | `pyproject_install_local` | `uv build --wheel` on the controller, wheel install into the target venv, remote wheel cleanup |
 | `pyproject_install_pypi` | PyPI install into a target venv, role-provided system packages |
 
-The managed nodes are the Debian 12/13 systemd images from
-[ak1ra-lab/docker-systemd](https://github.com/ak1ra-lab/docker-systemd); the
-APT-based roles are Debian-only by contract.
+The default managed nodes are the Debian 12/13 systemd images from
+[ak1ra-lab/docker-systemd](https://github.com/ak1ra-lab/docker-systemd). The
+`apt_repository_ubuntu` scenario selects the Ubuntu 24.04/26.04 group through
+`MOLECULE_CONTAINER_GROUP=test_resources_ubuntu`; the shared inventory carries
+both groups. The legacy APT roles remain Debian-only by contract.
 
 ```shell
 just molecule-test                   # every scenario
