@@ -78,6 +78,12 @@ debian_base_unattended_upgrade_automatic_reboot_time: "02:00"
 # bool: 强制 apt 使用 IPv4
 debian_base_apt_force_ipv4_enabled: true
 
+# str: APT HTTP 代理，例如 http://proxy.example:3128。为空时删除 role 自有的
+# apt.conf.d drop-in。
+debian_base_apt_http_proxy: ""
+# str: APT HTTPS 代理。APT 通常使用 HTTP CONNECT，请填写 http:// 代理地址。
+debian_base_apt_https_proxy: ""
+
 # bool: 是否开启 TCP BBR 拥塞控制算法
 debian_base_tcp_bbr_enabled: false
 

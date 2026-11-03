@@ -18,8 +18,8 @@ Targets Debian 12/13 only (`ansible_facts['distribution'] == 'debian'`).
   runs an `apt upgrade`, and installs the baseline package list.
 - Manages unattended-upgrades for stable updates and, optionally, backports and
   automatic reboots.
-- Forcibly uses IPv4 for APT when enabled, and optionally adds a
-  `debian-backports` pinning file.
+- Configures an optional APT HTTP/HTTPS proxy, forcibly uses IPv4 for APT when
+  enabled, and optionally adds a `debian-backports` pinning file.
 - Grants the `sudo` group passwordless sudo via `community.general.sudoers`.
 - Optionally enables TCP BBR (`community.general.modprobe` + `ansible.posix.sysctl`),
   `net.ipv4.ip_forward`, a role-owned sshd drop-in, custom sysctl entries,
@@ -30,6 +30,14 @@ Targets Debian 12/13 only (`ansible_facts['distribution'] == 'debian'`).
 
 The canonical variable reference is generated from `meta/argument_specs.yml` in
 the collection documentation.
+
+## APT proxy
+
+`debian_base_apt_http_proxy` and `debian_base_apt_https_proxy` render the
+role-owned `/etc/apt/apt.conf.d/90ansible-debian-base-proxy` drop-in through
+`apt_conf`. Both settings are applied before the first APT network operation.
+An empty value removes the corresponding option; when both are empty the file
+is removed.
 
 ## Notes
 

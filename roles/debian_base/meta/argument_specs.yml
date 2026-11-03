@@ -111,6 +111,22 @@ argument_specs:
         type: bool
         default: true
         required: false
+      debian_base_apt_http_proxy:
+        description:
+          - APT HTTP proxy such as C(http://proxy.example:3128).
+          - Empty removes the role-owned C(/etc/apt/apt.conf.d) drop-in.
+        type: str
+        default: ''
+        required: false
+      debian_base_apt_https_proxy:
+        description:
+          - APT HTTPS proxy.
+          - APT normally uses an HTTP CONNECT proxy, so use an C(http://) proxy
+            URL unless the target APT version documents otherwise.
+          - Empty removes the role-owned drop-in.
+        type: str
+        default: ''
+        required: false
       debian_base_tcp_bbr_enabled:
         description: 是否开启 TCP BBR 拥塞控制算法.
         type: bool

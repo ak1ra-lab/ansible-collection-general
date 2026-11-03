@@ -91,6 +91,31 @@
         fail_msg: "unexpected unattended-upgrades or force-ipv4 drop-in state"
         quiet: true
 
+    - name: collect the force-IPv4 drop-in
+      ansible.builtin.slurp:
+        src: /etc/apt/apt.conf.d/99force-ipv4
+      register: _debian_base_force_ipv4
+
+    - name: assert the force-IPv4 drop-in is managed by apt_conf
+      ansible.builtin.assert:
+        that:
+          - "'ak1ra_lab.general.apt_conf' in (_debian_base_force_ipv4.content | ansible.builtin.b64decode)"
+          - "'Acquire::ForceIPv4 \"true\";' in (_debian_base_force_ipv4.content | ansible.builtin.b64decode)"
+        fail_msg: "unexpected force-IPv4 drop-in"
+        quiet: true
+
+    - name: collect the APT proxy drop-in
+      ansible.builtin.stat:
+        path: /etc/apt/apt.conf.d/90ansible-debian-base-proxy
+      register: _debian_base_apt_proxy
+
+    - name: assert the APT proxy drop-in is absent when no proxy is configured
+      ansible.builtin.assert:
+        that:
+          - not _debian_base_apt_proxy.stat.exists
+        fail_msg: "the APT proxy drop-in must be absent when both proxies are empty"
+        quiet: true
+
     - name: collect the baseline package status
       ansible.builtin.command:
         argv: [dpkg-query, -W, "-f=${Status}", hello]

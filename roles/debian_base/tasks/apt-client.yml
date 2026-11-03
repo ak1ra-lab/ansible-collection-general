@@ -1,0 +1,13 @@
+---
+- name: configure the APT client proxy drop-in
+  ak1ra_lab.general.apt_conf:
+    path: "{{ _debian_base_apt_proxy_file }}"
+    state: "{{ 'present' if _debian_base_apt_proxy_options | length > 0 else 'absent' }}"
+    options: "{{ _debian_base_apt_proxy_options }}"
+
+- name: configure the APT client force-IPv4 drop-in
+  ak1ra_lab.general.apt_conf:
+    path: "{{ _debian_base_apt_force_ipv4_file }}"
+    state: "{{ 'present' if debian_base_apt_force_ipv4_enabled | ansible.builtin.bool else 'absent' }}"
+    options:
+      Acquire::ForceIPv4: true

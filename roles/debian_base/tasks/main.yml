@@ -6,6 +6,11 @@
       - (ansible_facts['distribution_major_version'] | int) >= 12
     fail_msg: "roles/debian_base currently only support Debian Linux"
 
+# The proxy and force-IPv4 settings must exist before the first apt network
+# operation, which is the python3-debian install inside debian.yml.
+- name: configure the APT client before using apt
+  ansible.builtin.include_tasks: apt-client.yml
+
 - name: include_tasks if os_family is debian
   when:
     - (ansible_facts['os_family'] | lower) == 'debian'

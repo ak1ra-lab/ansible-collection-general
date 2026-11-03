@@ -10,3 +10,23 @@ _debian_base_sysctl_file: /etc/sysctl.d/90-ansible-debian-base.conf
 # obtained value).  Directives in sshd_config before the Include still win and
 # must be reconciled manually.
 _debian_base_sshd_config_file: /etc/ssh/sshd_config.d/00-ansible-debian-base.conf
+
+# Role-owned APT client drop-ins.  Keep the existing force-IPv4 path so
+# upgrades from earlier role versions do not leave a stale file behind.
+_debian_base_apt_force_ipv4_file: /etc/apt/apt.conf.d/99force-ipv4
+_debian_base_apt_proxy_file: /etc/apt/apt.conf.d/90ansible-debian-base-proxy
+
+# Build the proxy options from the public defaults.  An empty dictionary makes
+# the module remove the role-owned file.
+_debian_base_apt_proxy_options: >-
+  {{
+    {}
+    | ansible.builtin.combine(
+        {'Acquire::http::Proxy': debian_base_apt_http_proxy}
+        if debian_base_apt_http_proxy | length > 0 else {}
+      )
+    | ansible.builtin.combine(
+        {'Acquire::https::Proxy': debian_base_apt_https_proxy}
+        if debian_base_apt_https_proxy | length > 0 else {}
+      )
+  }}
