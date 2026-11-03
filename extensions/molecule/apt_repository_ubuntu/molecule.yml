@@ -1,0 +1,24 @@
+---
+# apt_repository_ubuntu - the same role against Ubuntu 24.04 and 26.04.
+#
+# The shared inventory also carries Debian hosts; MOLECULE_CONTAINER_GROUP
+# selects the Ubuntu group for the container lifecycle and shared prepare
+# playbooks.  The scenario uses the PostgreSQL PGDG repository as a FOSS
+# third-party repository with published key, Debian, and Ubuntu suites.
+ansible:
+  env:
+    MOLECULE_CONTAINER_GROUP: test_resources_ubuntu
+
+scenario:
+  test_sequence:
+    - dependency
+    - destroy
+    - create
+    - prepare
+    - converge
+    - idempotence
+    - side_effect
+    - verify
+    - cleanup
+    - verify absent-verify.yml
+    - destroy

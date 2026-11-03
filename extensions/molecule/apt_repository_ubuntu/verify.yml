@@ -1,0 +1,86 @@
+---
+- name: verify the PostgreSQL PGDG repository on Ubuntu
+  hosts: test_resources_ubuntu
+  gather_facts: true
+  tasks:
+    - name: collect the PGDG source, pinning, and unattended files
+      ansible.builtin.slurp:
+        src: "{{ item }}"
+      register: _apt_repository_ubuntu_files
+      loop:
+        - /etc/apt/sources.list.d/pgdg.sources
+        - /etc/apt/preferences.d/90pgdg
+        - /etc/apt/apt.conf.d/90unattended-upgrades-pgdg
+
+    - name: decode the PGDG configuration files
+      ansible.builtin.set_fact:
+        _apt_repository_ubuntu_sources: >-
+          {{ _apt_repository_ubuntu_files.results[0].content | ansible.builtin.b64decode }}
+        _apt_repository_ubuntu_pinning: >-
+          {{ _apt_repository_ubuntu_files.results[1].content | ansible.builtin.b64decode }}
+        _apt_repository_ubuntu_unattended: >-
+          {{ _apt_repository_ubuntu_files.results[2].content | ansible.builtin.b64decode }}
+
+    - name: assert the PGDG source is enabled and signed
+      ansible.builtin.assert:
+        that:
+          - "'Enabled: yes' in _apt_repository_ubuntu_sources"
+          - "'URIs: https://apt.postgresql.org/pub/repos/apt' in _apt_repository_ubuntu_sources"
+          - "'Signed-By: /etc/apt/keyrings/postgresql-pgdg.asc' in _apt_repository_ubuntu_sources"
+        fail_msg: "unexpected PGDG source file"
+        quiet: true
+
+    - name: assert the PGDG release pinning is in place
+      ansible.builtin.assert:
+        that:
+          - "('Pin: release o=apt.postgresql.org,n=' ~ ansible_facts['distribution_release'] ~ '-pgdg') in _apt_repository_ubuntu_pinning"
+          - "'Pin-Priority: 900' in _apt_repository_ubuntu_pinning"
+        fail_msg: "unexpected PGDG pinning file"
+        quiet: true
+
+    - name: assert the PGDG unattended-upgrades pattern is in place
+      ansible.builtin.assert:
+        that:
+          - "('origin=apt.postgresql.org,codename=' ~ ansible_facts['distribution_release'] ~ '-pgdg') in _apt_repository_ubuntu_unattended"
+        fail_msg: "unexpected PGDG unattended-upgrades file"
+        quiet: true
+
+    - name: collect the PGDG keyring
+      ansible.builtin.stat:
+        path: /etc/apt/keyrings/postgresql-pgdg.asc
+      register: _apt_repository_ubuntu_keyring
+
+    - name: assert the PGDG keyring exists with the documented mode
+      ansible.builtin.assert:
+        that:
+          - _apt_repository_ubuntu_keyring.stat.exists
+          - _apt_repository_ubuntu_keyring.stat.mode == '0644'
+        fail_msg: "the PGDG keyring was not installed correctly"
+        quiet: true
+
+    - name: collect the APT package-file policy
+      ansible.builtin.command:
+        argv: [apt-cache, policy]
+      changed_when: false
+      register: _apt_repository_ubuntu_policy
+
+    - name: assert the PGDG repository is visible to APT
+      ansible.builtin.assert:
+        that:
+          - "'apt.postgresql.org' in _apt_repository_ubuntu_policy.stdout"
+          - "(' ' ~ ansible_facts['distribution_release'] ~ '-pgdg/main') in _apt_repository_ubuntu_policy.stdout"
+        fail_msg: "unexpected PGDG policy"
+        quiet: true
+
+    - name: collect the python3-debian package state
+      ansible.builtin.command:
+        argv: [dpkg-query, -W, "-f=${Status}", python3-debian]
+      changed_when: false
+      register: _apt_repository_python_debian
+
+    - name: assert the role installed its deb822 dependency
+      ansible.builtin.assert:
+        that:
+          - _apt_repository_python_debian.stdout is ansible.builtin.search('ok installed')
+        fail_msg: "apt_repository must install python3-debian when missing"
+        quiet: true

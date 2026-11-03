@@ -1,0 +1,46 @@
+---
+- name: verify the apt_repository teardown
+  hosts: test_resources_debian
+  gather_facts: false
+  tasks:
+    - name: collect the PGDG teardown paths
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: _apt_repository_absent
+      loop:
+        - /etc/apt/sources.list.d/pgdg.sources
+        - /etc/apt/keyrings/postgresql-pgdg.asc
+        - /etc/apt/preferences.d/90pgdg
+        - /etc/apt/apt.conf.d/90unattended-upgrades-pgdg
+
+    - name: assert the PGDG artifacts are gone
+      ansible.builtin.assert:
+        that:
+          - not item.stat.exists
+        fail_msg: "{{ item.item }} must be gone after cleanup"
+        quiet: true
+      loop: "{{ _apt_repository_absent.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+- name: verify the deb-multimedia teardown
+  hosts: debian-13
+  gather_facts: false
+  tasks:
+    - name: collect the deb-multimedia teardown paths
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: _apt_repository_dmo_absent
+      loop:
+        - /etc/apt/sources.list.d/deb-multimedia-org.sources
+        - /etc/apt/keyrings/deb-multimedia.gpg
+
+    - name: assert the deb-multimedia artifacts are gone
+      ansible.builtin.assert:
+        that:
+          - not item.stat.exists
+        fail_msg: "{{ item.item }} must be gone after cleanup"
+        quiet: true
+      loop: "{{ _apt_repository_dmo_absent.results }}"
+      loop_control:
+        label: "{{ item.item }}"

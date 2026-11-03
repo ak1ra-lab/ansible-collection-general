@@ -1,0 +1,30 @@
+---
+- name: apply the PostgreSQL PGDG repository
+  hosts: test_resources_ubuntu
+  gather_facts: true
+  vars:
+    apt_repository_name: pgdg
+    apt_repository_uris:
+      - https://apt.postgresql.org/pub/repos/apt
+    apt_repository_suites:
+      - "{{ ansible_facts['distribution_release'] }}-pgdg"
+    apt_repository_components:
+      - main
+    apt_repository_keyring:
+      url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+      dest: /etc/apt/keyrings/postgresql-pgdg.asc
+    apt_repository_pinning:
+      - packages: ["postgresql-*", "postgresql-common"]
+        pin:
+          release:
+            origin: apt.postgresql.org
+            codename: "{{ ansible_facts['distribution_release'] }}-pgdg"
+        priority: 900
+    apt_repository_unattended_upgrades:
+      origins_patterns:
+        - origin: apt.postgresql.org
+          codename: "{{ ansible_facts['distribution_release'] }}-pgdg"
+  tasks:
+    - name: apply ak1ra_lab.general.apt_repository
+      ansible.builtin.include_role:
+        name: ak1ra_lab.general.apt_repository

@@ -1,0 +1,185 @@
+---
+- name: verify the PostgreSQL PGDG repository
+  hosts: test_resources_debian
+  gather_facts: true
+  tasks:
+    - name: collect the PGDG source, pinning, and unattended files
+      ansible.builtin.slurp:
+        src: "{{ item }}"
+      register: _apt_repository_pgdg_files
+      loop:
+        - /etc/apt/sources.list.d/pgdg.sources
+        - /etc/apt/preferences.d/90pgdg
+        - /etc/apt/apt.conf.d/90unattended-upgrades-pgdg
+
+    - name: decode the PGDG configuration files
+      ansible.builtin.set_fact:
+        _apt_repository_pgdg_sources: >-
+          {{ _apt_repository_pgdg_files.results[0].content | ansible.builtin.b64decode }}
+        _apt_repository_pgdg_pinning: >-
+          {{ _apt_repository_pgdg_files.results[1].content | ansible.builtin.b64decode }}
+        _apt_repository_pgdg_unattended: >-
+          {{ _apt_repository_pgdg_files.results[2].content | ansible.builtin.b64decode }}
+
+    - name: assert the PGDG source is enabled and signed
+      ansible.builtin.assert:
+        that:
+          - "'Enabled: yes' in _apt_repository_pgdg_sources"
+          - "'URIs: https://apt.postgresql.org/pub/repos/apt' in _apt_repository_pgdg_sources"
+          - "'Signed-By: /etc/apt/keyrings/postgresql-pgdg.asc' in _apt_repository_pgdg_sources"
+        fail_msg: "unexpected PGDG source file"
+        quiet: true
+
+    - name: assert the PGDG release pinning is in place
+      ansible.builtin.assert:
+        that:
+          - "('Pin: release o=apt.postgresql.org,n=' ~ ansible_facts['distribution_release'] ~ '-pgdg') in _apt_repository_pgdg_pinning"
+          - "'Pin-Priority: 900' in _apt_repository_pgdg_pinning"
+        fail_msg: "unexpected PGDG pinning file"
+        quiet: true
+
+    - name: assert the PGDG unattended-upgrades pattern is in place
+      ansible.builtin.assert:
+        that:
+          - "('origin=apt.postgresql.org,codename=' ~ ansible_facts['distribution_release'] ~ '-pgdg') in _apt_repository_pgdg_unattended"
+        fail_msg: "unexpected PGDG unattended-upgrades file"
+        quiet: true
+
+    - name: collect the PGDG keyring
+      ansible.builtin.stat:
+        path: /etc/apt/keyrings/postgresql-pgdg.asc
+      register: _apt_repository_pgdg_keyring
+
+    - name: assert the PGDG keyring exists with the documented mode
+      ansible.builtin.assert:
+        that:
+          - _apt_repository_pgdg_keyring.stat.exists
+          - _apt_repository_pgdg_keyring.stat.mode == '0644'
+        fail_msg: "the PGDG keyring was not installed correctly"
+        quiet: true
+
+    - name: assert the legacy PGDG .list was removed
+      ansible.builtin.stat:
+        path: /etc/apt/sources.list.d/pgdg.list
+      register: _apt_repository_pgdg_legacy
+
+    - name: assert the legacy PGDG .list is gone
+      ansible.builtin.assert:
+        that:
+          - not _apt_repository_pgdg_legacy.stat.exists
+        fail_msg: "the legacy PGDG sources.list.d entry must be removed"
+        quiet: true
+
+    - name: collect the APT package-file policy
+      ansible.builtin.command:
+        argv: [apt-cache, policy]
+      changed_when: false
+      register: _apt_repository_pgdg_policy
+
+    - name: assert the PGDG repository is visible to APT
+      ansible.builtin.assert:
+        that:
+          - "'apt.postgresql.org' in _apt_repository_pgdg_policy.stdout"
+          - "(' ' ~ ansible_facts['distribution_release'] ~ '-pgdg/main') in _apt_repository_pgdg_policy.stdout"
+        fail_msg: "unexpected PGDG policy"
+        quiet: true
+
+    - name: collect the python3-debian package state
+      ansible.builtin.command:
+        argv: [dpkg-query, -W, "-f=${Status}", python3-debian]
+      changed_when: false
+      register: _apt_repository_python_debian
+
+    - name: assert the role installed its deb822 dependency
+      ansible.builtin.assert:
+        that:
+          - _apt_repository_python_debian.stdout is ansible.builtin.search('ok installed')
+        fail_msg: "apt_repository must install python3-debian when missing"
+        quiet: true
+
+- name: verify the deb-multimedia repository
+  hosts: debian-13
+  gather_facts: false
+  tasks:
+    - name: collect the deb-multimedia source file
+      ansible.builtin.slurp:
+        src: /etc/apt/sources.list.d/deb-multimedia-org.sources
+      register: _apt_repository_dmo_sources
+
+    - name: assert the deb-multimedia source is signed by the extracted key
+      ansible.builtin.assert:
+        that:
+          - "'URIs: https://www.deb-multimedia.org' in (_apt_repository_dmo_sources.content | ansible.builtin.b64decode)"
+          - "'Signed-By: /etc/apt/keyrings/deb-multimedia.gpg' in (_apt_repository_dmo_sources.content | ansible.builtin.b64decode)"
+        fail_msg: "unexpected deb-multimedia source file"
+        quiet: true
+
+    - name: collect the extracted deb-multimedia keyring
+      ansible.builtin.stat:
+        path: /etc/apt/keyrings/deb-multimedia.gpg
+      register: _apt_repository_dmo_keyring
+
+    - name: assert the extracted keyring exists
+      ansible.builtin.assert:
+        that:
+          - _apt_repository_dmo_keyring.stat.exists
+          - _apt_repository_dmo_keyring.stat.size > 0
+        fail_msg: "the deb-multimedia keyring was not extracted"
+        quiet: true
+
+    - name: collect the APT package-file policy
+      ansible.builtin.command:
+        argv: [apt-cache, policy]
+      changed_when: false
+      register: _apt_repository_dmo_policy
+
+    - name: assert the deb-multimedia repository serves packages
+      ansible.builtin.assert:
+        that:
+          - "'https://www.deb-multimedia.org' in _apt_repository_dmo_policy.stdout"
+        fail_msg: "unexpected deb-multimedia policy"
+        quiet: true
+
+    - name: collect the keyring package state
+      ansible.builtin.command:
+        argv: [dpkg-query, -W, "-f=${Status}", deb-multimedia-keyring]
+      changed_when: false
+      failed_when: false
+      register: _apt_repository_dmo_package
+
+    - name: assert the keyring package was not installed
+      ansible.builtin.assert:
+        that:
+          - _apt_repository_dmo_package.rc != 0
+        fail_msg: "apt_repository must not install the keyring package"
+        quiet: true
+
+    - name: collect the global trusted key path
+      ansible.builtin.stat:
+        path: /etc/apt/trusted.gpg.d/deb-multimedia-keyring.asc
+      register: _apt_repository_dmo_global_key
+
+    - name: assert the global trusted key was not installed
+      ansible.builtin.assert:
+        that:
+          - not _apt_repository_dmo_global_key.stat.exists
+        fail_msg: "extracting a keyring must not create a trusted.gpg.d key"
+        quiet: true
+
+    - name: assert pinning and unattended policy are disabled for deb-multimedia
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: _apt_repository_dmo_disabled
+      loop:
+        - /etc/apt/preferences.d/90deb-multimedia-org
+        - /etc/apt/apt.conf.d/90unattended-upgrades-deb-multimedia-org
+
+    - name: assert the disabled deb-multimedia artifacts are absent
+      ansible.builtin.assert:
+        that:
+          - not item.stat.exists
+        fail_msg: "{{ item.item }} must not exist"
+        quiet: true
+      loop: "{{ _apt_repository_dmo_disabled.results }}"
+      loop_control:
+        label: "{{ item.item }}"

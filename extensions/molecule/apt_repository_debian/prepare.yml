@@ -1,0 +1,24 @@
+---
+# apt_repository_debian - shared preparation and the legacy .list fixture
+# removed by the role. The role itself installs python3-debian when missing.
+
+- name: run the shared container preparation
+  import_playbook: ../shared/prepare.yml
+
+- name: seed the legacy source and exercise the dependency install
+  hosts: test_resources_debian
+  gather_facts: false
+  tasks:
+    - name: remove python3-debian so the role exercises its dependency install
+      ansible.builtin.apt:
+        name: python3-debian
+        state: absent
+        purge: true
+
+    - name: seed a legacy sources.list.d entry
+      ansible.builtin.copy:
+        content: |
+          # Molecule fixture: a legacy pre-DEB822 entry removed by apt_repository.
+          # deb https://apt.postgresql.org/pub/repos/apt trixie-pgdg main
+        dest: /etc/apt/sources.list.d/pgdg.list
+        mode: "0644"

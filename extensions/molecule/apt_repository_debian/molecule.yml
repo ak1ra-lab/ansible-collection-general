@@ -1,0 +1,20 @@
+---
+# apt_repository_debian - exercise the repository role on Debian 12/13.
+#
+# PostgreSQL PGDG covers a downloaded keyring, release pinning, and
+# unattended-upgrades origins.  deb-multimedia covers extracting a keyring
+# from a .deb without installing the keyring package, and therefore without
+# adding a global trusted.gpg.d key.
+scenario:
+  test_sequence:
+    - dependency
+    - destroy
+    - create
+    - prepare
+    - converge
+    - idempotence
+    - side_effect
+    - verify
+    - cleanup
+    - verify absent-verify.yml
+    - destroy

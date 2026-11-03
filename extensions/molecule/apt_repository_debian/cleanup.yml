@@ -1,0 +1,33 @@
+---
+# The role has a real absent state, so cleanup exercises it instead of
+# duplicating the file list by hand.
+
+- name: remove the PostgreSQL PGDG repository
+  hosts: test_resources_debian
+  gather_facts: true
+  vars:
+    apt_repository_name: pgdg
+    apt_repository_state: absent
+    apt_repository_keyring:
+      dest: /etc/apt/keyrings/postgresql-pgdg.asc
+    apt_repository_pinning: []
+    apt_repository_unattended_upgrades: {}
+  tasks:
+    - name: apply ak1ra_lab.general.apt_repository with state=absent
+      ansible.builtin.include_role:
+        name: ak1ra_lab.general.apt_repository
+
+- name: remove the deb-multimedia repository
+  hosts: debian-13
+  gather_facts: true
+  vars:
+    apt_repository_name: deb-multimedia-org
+    apt_repository_state: absent
+    apt_repository_keyring:
+      dest: /etc/apt/keyrings/deb-multimedia.gpg
+    apt_repository_pinning: []
+    apt_repository_unattended_upgrades: {}
+  tasks:
+    - name: apply ak1ra_lab.general.apt_repository with state=absent
+      ansible.builtin.include_role:
+        name: ak1ra_lab.general.apt_repository

@@ -1,0 +1,24 @@
+---
+- name: verify the Ubuntu apt_repository teardown
+  hosts: test_resources_ubuntu
+  gather_facts: false
+  tasks:
+    - name: collect the PGDG teardown paths
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: _apt_repository_ubuntu_absent
+      loop:
+        - /etc/apt/sources.list.d/pgdg.sources
+        - /etc/apt/keyrings/postgresql-pgdg.asc
+        - /etc/apt/preferences.d/90pgdg
+        - /etc/apt/apt.conf.d/90unattended-upgrades-pgdg
+
+    - name: assert the PGDG artifacts are gone
+      ansible.builtin.assert:
+        that:
+          - not item.stat.exists
+        fail_msg: "{{ item.item }} must be gone after cleanup"
+        quiet: true
+      loop: "{{ _apt_repository_ubuntu_absent.results }}"
+      loop_control:
+        label: "{{ item.item }}"
