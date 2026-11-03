@@ -90,7 +90,7 @@ debian_base_tcp_bbr_enabled: false
 # bool: 是否设置 IPv4 ip_forward
 debian_base_ip_forward_enabled: false
 
-# bool: 是否安装 qemu-guest-agent
+# bool: 是否在 QEMU/KVM 虚拟机中管理 qemu-guest-agent；非 QEMU/KVM 环境会删除该包
 debian_base_qemu_guest_agent_enabled: true
 
 # bool: 是否写入 role 自有的 sshd drop-in

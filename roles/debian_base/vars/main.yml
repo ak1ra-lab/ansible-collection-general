@@ -16,6 +16,19 @@ _debian_base_sshd_config_file: /etc/ssh/sshd_config.d/00-ansible-debian-base.con
 _debian_base_apt_force_ipv4_file: /etc/apt/apt.conf.d/99force-ipv4
 _debian_base_apt_proxy_file: /etc/apt/apt.conf.d/90ansible-debian-base-proxy
 
+# qemu-guest-agent is useful only inside a QEMU/KVM guest.  Ansible reports
+# the technology as kvm on most QEMU/KVM guests and as qemu on some emulated
+# setups.  Containers and other hypervisors must not keep the package.
+_debian_base_qemu_guest_agent_present: >-
+  {{
+    (debian_base_qemu_guest_agent_enabled | ansible.builtin.bool)
+    and ((ansible_facts.get('virtualization_role', '') | lower) == 'guest')
+    and (
+      ((ansible_facts.get('virtualization_type', '') | lower) in ['kvm', 'qemu'])
+      or ('kvm' in (ansible_facts.get('virtualization_tech_guest', []) | map('lower') | list))
+    )
+  }}
+
 # Build the proxy options from the public defaults.  An empty dictionary makes
 # the module remove the role-owned file.
 _debian_base_apt_proxy_options: >-

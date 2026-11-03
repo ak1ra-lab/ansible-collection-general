@@ -138,7 +138,10 @@ argument_specs:
         default: false
         required: false
       debian_base_qemu_guest_agent_enabled:
-        description: 是否安装 qemu-guest-agent.
+        description:
+          - Install C(qemu-guest-agent) when the host is a QEMU/KVM guest.
+          - When disabled, or when the host is not a QEMU/KVM guest, the role
+            removes the package.
         type: bool
         default: true
         required: false

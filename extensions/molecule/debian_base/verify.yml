@@ -116,6 +116,17 @@
         fail_msg: "the APT proxy drop-in must be absent when both proxies are empty"
         quiet: true
 
+    - name: collect installed packages
+      ansible.builtin.package_facts:
+        manager: auto
+
+    - name: assert qemu-guest-agent is absent outside QEMU/KVM
+      ansible.builtin.assert:
+        that:
+          - "'qemu-guest-agent' not in ansible_facts.packages"
+        fail_msg: "qemu-guest-agent must not be installed on a container host"
+        quiet: true
+
     - name: collect the baseline package status
       ansible.builtin.command:
         argv: [dpkg-query, -W, "-f=${Status}", hello]

@@ -90,12 +90,9 @@
   loop_control:
     loop_var: entry
 
-- name: ensure qemu-guest-agent package installed
-  when:
-    - (debian_base_qemu_guest_agent_enabled | ansible.builtin.bool)
-  ansible.builtin.package:
-    name:
-      - qemu-guest-agent
-    state: present
+- name: manage the qemu-guest-agent package
+  ansible.builtin.apt:
+    name: qemu-guest-agent
+    state: "{{ 'present' if _debian_base_qemu_guest_agent_present else 'absent' }}"
   notify:
     - ensure qemu-guest-agent enabled

@@ -22,7 +22,6 @@
     debian_base_apt_force_ipv4_enabled: true
     debian_base_tcp_bbr_enabled: false
     debian_base_ip_forward_enabled: false
-    debian_base_qemu_guest_agent_enabled: false
     debian_base_custom_sshd_config_enabled: false
     debian_base_custom_sysctl_conf_enabled: false
   tasks:
