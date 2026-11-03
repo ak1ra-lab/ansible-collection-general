@@ -33,7 +33,7 @@ ansible:
     create: ../shared/create.yml
     destroy: ../shared/destroy.yml
     # Shared apt-index refresh side effect; a scenario sequence may pass its
-    # own playbook (for example the apt_install revert exercise).
+    # own playbook.
     side_effect: ../shared/refresh-apt.yml
 
 dependency:

@@ -21,14 +21,15 @@ the URL is a fallback, not the normal workflow.
 
 ## Layout
 
-- Roles: `apt_install`, `apt_repository`, `debian_base`, `docker`, `go_build`,
-  and `pyproject_install` under `roles/`.
-- Modules: `github_releases_info`, `cpu_info`, `apt_keyring`,
+- Roles: `apt_repository`, `debian_base`, `docker`, `go_build`, and
+  `pyproject_install` under `roles/`.
+- Modules: `github_releases_info`, `cpu_info`, `apt_keyring`, `apt_conf`,
   `apt_preference`, and `apt_unattended_upgrades`, with shared logic in
   `plugins/module_utils/`; lookup plugins are `random_*` under `plugins/lookup/`.
 - Unit tests live in `tests/unit/`; Molecule scenarios are flat under
   `extensions/molecule/`; the Sphinx source is `docs/docsite/`.
-- `apt_install` keeps its published 0.4.0 behavior. Do not add playbooks or
+- `apt_repository` is the only third-party APT repository role. Package
+  installation and holds stay in consumer playbooks. Do not add playbooks or
   operational inventories here.
 
 ## YAML and documentation

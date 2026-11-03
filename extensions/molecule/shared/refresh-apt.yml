@@ -1,7 +1,7 @@
 ---
 # Shared side effect: refresh the APT index after converge.
 #
-# Verify playbooks assert state; they must not mutate it.  The apt_install
+# Verify playbooks assert state; they must not mutate it.  The apt_repository
 # and debian_base scenarios add repositories during converge, so a side_effect
 # step refreshes the index before their verify playbook reads apt policy.
 

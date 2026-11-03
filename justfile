@@ -84,7 +84,7 @@ docs-serve: docs-build
 molecule-test:
     ANSIBLE_HOME="$PWD/.ansible" uv run molecule test --all
 
-# Run one Molecule scenario, e.g. `just molecule-test-one apt_install_basic`
+# Run one Molecule scenario, e.g. `just molecule-test-one apt_repository_debian`
 molecule-test-one scenario:
     ANSIBLE_HOME="$PWD/.ansible" uv run molecule test -s {{scenario}}
 
