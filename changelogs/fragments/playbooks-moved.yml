@@ -1,0 +1,6 @@
+---
+minor_changes:
+  - Operational playbooks and helper scripts moved to the separate
+    ``ansible-playbooks-infra`` repository. The collection is now a library of
+    roles, modules and lookup plugins; runnable examples and inventory live in
+    that repository.

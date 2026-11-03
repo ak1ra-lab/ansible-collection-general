@@ -11,9 +11,9 @@ Release Summary
 ---------------
 
 First Galaxy release of the reorganized collection. The certificate roles now
-live in ``ak1ra_lab.certificate``, and the ``random_*`` lookups moved
-in from ``ak1ra_lab.network``. The collection is licensed
-GPL-3.0-or-later and requires ansible-core >= 2.19.0.
+live in ``ak1ra_lab.certificate``, and the ``random_*`` lookups moved in from
+``ak1ra_lab.network``. The collection is licensed GPL-3.0-or-later and
+requires ansible-core >= 2.19.0.
 
 The hand-maintained history for 0.1.0 through 0.3.1 is preserved in
 ``CHANGELOG-LEGACY.md``; the generated changelog starts with this release.
@@ -23,16 +23,27 @@ Minor Changes
 
 - Added a protected release workflow that builds, imports and publishes the collection from the ``vX.Y.Z`` GitHub release tag matching ``galaxy.yml``.
 - Added the tox-ansible matrix for ansible-core 2.19/2.20/2.21 and the weekly devel/milestone environments, plus mypy alongside ruff and ansible-lint.
+- CI and the release workflow now run ``galaxy-importer`` against the tarball produced by the build step instead of rebuilding the collection, so the artifact that is tested is the artifact that is published.
 - CI installs ansible-lint, antsibull-changelog and Molecule from the uv dependency groups and runs every Python tool through ``uv run``, matching the local just recipes.
 - Flattened the Molecule scenarios, gave each scenario its own containers, and removed the shared lifecycle and ``MOLECULE_GLOB`` workflow.
 - Migrated release notes to antsibull-changelog. ``CHANGELOG.rst`` is now the canonical changelog, generated from ``changelogs/fragments/``; the pre-Galaxy 0.1.0-0.3.1 history is kept in ``CHANGELOG-LEGACY.md``.
 - Migrated the documentation site to Sphinx and antsibull-docs. Role reference pages are generated from ``meta/argument_specs.yml`` and plugin reference pages from the plugin documentation, replacing MkDocs.
+- Moved the shared test-only collection requirements from ``tests/molecule/requirements.yml`` to ``tests/requirements.yml`` so ansible-lint and every tox-ansible test environment use the same file.
 - Operational playbooks and helper scripts moved to the separate ``ansible-playbooks-infra`` repository. The collection is now a library of roles, modules and lookup plugins; runnable examples and inventory live in that repository.
 - Prepared the collection for Galaxy with ``build_ignore``, a ``meta/runtime.yml`` minimum of ansible-core 2.19.0, controller-side ``requirements.txt``/``meta/execution-environment.yml`` metadata, and a build-import CI gate that checks the tarball and runs ``galaxy-importer``.
+- Removed the hard-coded collection version, license and dependency assertions from CI. The release workflow already checks the release tag against ``galaxy.yml``, and ``galaxy-importer`` validates the metadata.
+- The ``just ansible-collection-install`` recipe now also installs the shared test-only collections, and the lint and Molecule recipes keep Ansible data under the repository's ``.ansible/`` directory.
 - The ``random_password``, ``random_base64_key`` and ``random_uuid`` lookup plugins and their unit tests moved here from ``ak1ra_lab.network``. Use the ``ak1ra_lab.general.random_*`` names.
+- The build step now asserts that exactly one collection artifact exists and exposes its path to the importer, smoke test and publish steps.
 - The collection, its roles and its Python sources are licensed under GPL-3.0-or-later. ``galaxy.yml`` and the role metadata now declare that license.
 
 Breaking Changes / Porting Guide
 --------------------------------
 
 - The ``acme_dns``, ``acme_dns_register``, ``certbot`` and ``cert_manager`` roles, their Molecule scenarios, playbooks and documentation moved to the new ``ak1ra_lab.certificate`` collection. Use the ``ak1ra_lab.certificate.*`` FQCNs and add ``ak1ra_lab.certificate`` to the consumer requirements; the ``ak1ra_lab.general.*`` certificate FQCNs are no longer available.
+
+Bugfixes
+--------
+
+- Excluded ``AGENTS.md``, ``importer_result.json`` and the generated ``dist`` directory from the Galaxy artifact.
+- Removed the unused ``distlib`` development dependency. It is only required by the legacy ``manifest`` key in ``galaxy.yml``, which this collection does not use.
