@@ -43,3 +43,126 @@ _debian_base_apt_proxy_options: >-
         if debian_base_apt_https_proxy | length > 0 else {}
       )
   }}
+
+# Default content for the public debian_base variables.  Keeping the long
+# lists here lets defaults/main.yml stay a compact interface while the public
+# variables remain overridable through normal variable precedence.
+_debian_base_custom_sshd_config_entries:
+  ## Specifies whether root can log in using ssh(1).
+  ## The argument must be yes, prohibit-password, forced-commands-only, or no. The default is prohibit-password.
+  - "PermitRootLogin prohibit-password"
+  ## Specifies whether password authentication is allowed. The default is yes.
+  - "PasswordAuthentication no"
+  ## PasswordAuthentication only disables the password method; PAM
+  ## keyboard-interactive can still prompt for a password.  Disable both for
+  ## key-only SSH.  The default is yes.
+  - "KbdInteractiveAuthentication no"
+  ## Specifies whether TCP forwarding is permitted. The default is yes.
+  ## vscode: remote.SSH extension makes use of an SSH tunnel to facilitate communication with the host.
+  - "AllowTcpForwarding yes"
+  ## Specifies whether forwarding Unix domain sockets is permitted. The default is yes.
+  ## vscode: `remote.SSH.remoteServerListenOnSocket` requires this to be yes.
+  - "AllowStreamLocalForwarding yes"
+
+_debian_base_custom_sysctl_conf_entries:
+  # ref: https://docs.kernel.org/admin-guide/sysctl/net.html
+  # NAPI busy polling: 50 us is the kernel-documented value when enabling
+  # this globally.  Requires CONFIG_NET_RX_BUSY_POLL and a supporting NIC;
+  # prefer SO_BUSY_POLL on selected sockets.  Increases CPU usage and power.
+  - name: net.core.busy_read
+    value: "50"
+  - name: net.core.busy_poll
+    value: "50"
+
+  # Hard limits for SO_SNDBUF/SO_RCVBUF.  Debian 13 default in our test:
+  # 212992; raising these does NOT raise the TCP autotuning limits in
+  # tcp_wmem/tcp_rmem.
+  - name: net.core.wmem_max
+    value: 8388608
+  - name: net.core.rmem_max
+    value: 8388608
+
+  # Per-CPU input queue for packets that arrive faster than NAPI can process.
+  # Default 1000; 5000 is a modest increase for bursty/high-packet-rate NICs.
+  - name: net.core.netdev_max_backlog
+    value: 5000
+
+  # 0x1 = client TFO (default), 0x2 = server TFO.  Server support still needs
+  # TCP_FASTOPEN on the listener unless 0x400 is also set.  Some middleboxes
+  # blackhole TFO; keep the kernel's blackhole detection in mind.
+  - name: net.ipv4.tcp_fastopen
+    value: "3"
+
+  # 1 (default) resets cwnd after an idle period per RFC 2861; 0 keeps cwnd
+  # and can reduce latency for bursty request/response traffic, at the cost of
+  # larger bursts after idle.
+  - name: net.ipv4.tcp_slow_start_after_idle
+    value: "0"
+
+  # Default 60.  Lower values make the kernel less willing to swap; the right
+  # value is workload-dependent (databases often use 10, general servers 30).
+  - name: vm.swappiness
+    value: "30"
+
+  # Optional TCP buffer tuning: the kernel picks tcp_rmem[2] (up to 32 MiB)
+  # and tcp_wmem[2] (up to 4 MiB) from RAM size.  Hardcoding the current
+  # defaults is a no-op and can lower the max on large hosts; set these only
+  # after measuring a high-bandwidth/long-RTT path, for example:
+  # - name: net.ipv4.tcp_rmem
+  #   value: "4096 131072 8388608"
+  # - name: net.ipv4.tcp_wmem
+  #   value: "4096 16384 8388608"
+
+  # vm.dirty_ratio / vm.dirty_background_ratio are workload-specific:
+  # raising dirty_ratio increases the dirty page cache and can cause I/O
+  # latency spikes and more data at risk on crash.  Leave the kernel defaults
+  # (20/10 on our Debian 13 test) unless the workload has been benchmarked.
+
+_debian_base_apt_packages:
+  - 7zip
+  - bash-completion
+  - bat
+  - bc
+  - btop
+  - bzip2
+  - conntrack
+  - curl
+  - bind9-dnsutils
+  - dos2unix
+  - file
+  - gawk
+  - git
+  - git-lfs
+  - gnupg
+  - htop
+  - iftop
+  - iotop
+  - iperf3
+  - jq
+  - less
+  - logrotate
+  - mtr
+  - ncdu
+  - nfs-common
+  - parallel
+  - parted
+  - pipx
+  - plocate
+  - pv
+  - python3
+  - python3-pip
+  - rename
+  - ripgrep
+  - rsync
+  - screen
+  - shellcheck
+  - shfmt
+  - stow
+  - systemd-cron
+  - systemd-oomd
+  - telnet
+  - tmux
+  - tree
+  - unattended-upgrades
+  - vim
+  - xxd
