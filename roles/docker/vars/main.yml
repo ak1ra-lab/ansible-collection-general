@@ -1,0 +1,21 @@
+---
+# Repository-specific values derived from the public Docker defaults.
+# Pin Docker packages by the configured Docker release metadata.
+_docker_apt_pinning: >-
+  {{
+    [
+      {
+        'packages': docker_apt_pinning_package,
+        'pin': {'release': docker_apt_pinning_pin_release},
+        'priority': 900,
+      }
+    ]
+    if docker_apt_pinning | ansible.builtin.bool else []
+  }}
+
+# Build the unattended-upgrades policy from the configured Docker origins.
+_docker_apt_unattended_upgrades: >-
+  {{
+    {'origins_patterns': [docker_apt_unattended_upgrade_origins_pattern]}
+    if docker_apt_unattended_upgrade | ansible.builtin.bool else {}
+  }}

@@ -5,8 +5,9 @@
 > artifacts, and operational notes.
 
 Installs Docker CE from the official Docker APT repository (through
-`ak1ra_lab.general.apt_install`), templates `/etc/docker/daemon.json`, adds
-regular users to the `docker` group, and starts and enables `docker.service`.
+`ak1ra_lab.general.apt_repository`), installs and optionally holds the Docker
+packages, templates `/etc/docker/daemon.json`, adds regular users to the
+`docker` group, and starts and enables `docker.service`.
 
 Targets Debian 12/13 only, matching the Debian repository
 (`https://download.docker.com/linux/debian`).
@@ -28,9 +29,17 @@ The template always writes:
 The file is written with `force: true` and notifies a restart of
 `docker.service`.
 
+## Keyring download
+
+Use `docker_apt_keyrings_proxy` and `docker_apt_keyrings_no_proxy` when the
+keyring download needs a proxy. `docker_apt_keyrings_checksum` and
+`docker_apt_keyrings_force` control integrity checks and refreshes.
+
 ## Notes
 
-- The role imports `ak1ra_lab.general.apt_install` internally; do not apply
-  `apt_install` for the Docker repository yourself.
+- The role imports `ak1ra_lab.general.apt_repository` internally; do not apply
+  `apt_repository` for the Docker repository yourself.
+- The package installation and hold steps live in this role because
+  `apt_repository` never installs packages from the repository it configures.
 - Regular users are detected by parsing `/etc/passwd` for `uid >= 1000` with a
   login shell; if no such user exists, the group step is a no-op.

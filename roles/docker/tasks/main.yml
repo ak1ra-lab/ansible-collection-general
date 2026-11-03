@@ -1,30 +1,76 @@
 ---
-- name: import roles/apt_install
+- name: assert the target platform is supported
+  ansible.builtin.assert:
+    that:
+      - (ansible_facts.get('distribution', '') | lower) == 'debian'
+      - (ansible_facts.get('distribution_major_version', '0') | int) >= 12
+    fail_msg: "roles/docker supports Debian >= 12; gather facts before applying the role"
+
+- name: assert the Docker repository inputs are valid
+  ansible.builtin.assert:
+    that:
+      - (docker_apt_repo | length) > 0
+      - (docker_apt_repo_uris | length) > 0
+      - (docker_apt_keyrings_url | length) > 0
+      - (docker_apt_keyrings_dest | length) > 0
+    fail_msg: >-
+      docker_apt_repo, docker_apt_repo_uris, docker_apt_keyrings_url, and
+      docker_apt_keyrings_dest must be set
+
+- name: assert the Docker APT policy inputs are valid
+  ansible.builtin.assert:
+    that:
+      - >-
+        (not (docker_apt_pinning | ansible.builtin.bool)) or
+        ((docker_apt_pinning_pin_release | length) > 0)
+      - >-
+        (not (docker_apt_unattended_upgrade | ansible.builtin.bool)) or
+        ((docker_apt_unattended_upgrade_origins_pattern | length) > 0)
+    fail_msg: >-
+      docker_apt_pinning_pin_release is required when docker_apt_pinning is
+      true, and docker_apt_unattended_upgrade_origins_pattern is required when
+      docker_apt_unattended_upgrade is true
+
+- name: configure the Docker APT repository
   ansible.builtin.import_role:
-    name: ak1ra_lab.general.apt_install
+    name: ak1ra_lab.general.apt_repository
   vars:
-    # https://docs.docker.com/engine/install/debian/
-    # curl -sL https://download.docker.com/linux/debian/gpg | gpg
-    # pub   rsa4096 2017-02-22 [SCEA]
-    #       9DC858229FC7DD38854AE2D88D81803C0EBFCD88
-    # uid           Docker Release (CE deb) <docker@docker.com>
-    # sub   rsa4096 2017-02-22 [S]
-    apt_install_keyrings_url: "{{ docker_apt_keyrings_url }}"
-    apt_install_keyrings_dest: "{{ docker_apt_keyrings_dest }}"
+    apt_repository_name: "{{ docker_apt_repo }}"
+    apt_repository_uris: "{{ docker_apt_repo_uris | list }}"
+    apt_repository_suites:
+      - "{{ docker_apt_repo_suites }}"
+    apt_repository_components:
+      - "{{ docker_apt_repo_components }}"
+    apt_repository_keyring:
+      url: "{{ docker_apt_keyrings_url }}"
+      dest: "{{ docker_apt_keyrings_dest }}"
+      checksum: "{{ docker_apt_keyrings_checksum }}"
+      force: "{{ docker_apt_keyrings_force | ansible.builtin.bool }}"
+    apt_repository_download_proxy: "{{ docker_apt_keyrings_proxy }}"
+    apt_repository_download_no_proxy: "{{ docker_apt_keyrings_no_proxy }}"
+    apt_repository_pinning: "{{ _docker_apt_pinning }}"
+    apt_repository_unattended_upgrades: "{{ _docker_apt_unattended_upgrades }}"
 
-    apt_install_repo: "{{ docker_apt_repo }}"
-    apt_install_repo_uris: "{{ docker_apt_repo_uris | list }}"
-    apt_install_repo_suites: "{{ docker_apt_repo_suites }}"
-    apt_install_repo_components: "{{ docker_apt_repo_components }}"
+- name: install the Docker packages
+  when:
+    - (docker_apt_repo_packages | length) > 0
+  ansible.builtin.apt:
+    name: "{{ docker_apt_repo_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
 
-    apt_install_pinning: "{{ docker_apt_pinning | ansible.builtin.bool }}"
-    apt_install_pinning_package: "{{ docker_apt_pinning_package }}"
-    apt_install_unattended_upgrade: "{{ docker_apt_unattended_upgrade | ansible.builtin.bool }}"
-    apt_install_mark_hold: "{{ docker_apt_mark_hold | ansible.builtin.bool }}"
-    apt_install_pinning_pin_release: "{{ docker_apt_pinning_pin_release }}"
-    apt_install_unattended_upgrade_origins_pattern: "{{ docker_apt_unattended_upgrade_origins_pattern }}"
-
-    apt_install_repo_packages: "{{ docker_apt_repo_packages | list }}"
+- name: hold the Docker packages
+  when:
+    - (docker_apt_repo_packages | length) > 0
+    - (docker_apt_mark_hold | ansible.builtin.bool)
+  ansible.builtin.dpkg_selections:
+    name: "{{ package }}"
+    selection: hold
+  loop: "{{ docker_apt_repo_packages }}"
+  loop_control:
+    loop_var: package
+    label: "{{ package }}"
 
 - name: ensure /etc/docker directory exist
   ansible.builtin.file:

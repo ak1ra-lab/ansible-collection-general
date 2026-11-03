@@ -2,8 +2,8 @@ argument_specs:
   main:
     short_description: Install Docker CE and manage the daemon configuration
     description:
-      - Install Docker CE from the official Docker APT repository through ak1ra_lab.general.apt_install, install the Docker
-        packages, and manage /etc/docker/daemon.json and the docker group.
+      - Install Docker CE from the official Docker APT repository through ak1ra_lab.general.apt_repository, install the
+        Docker packages, hold them when requested, and manage /etc/docker/daemon.json and the docker group.
     options:
       docker_apt_keyrings_url:
         description: Docker APT keyring URL.
@@ -14,6 +14,27 @@ argument_specs:
         description: Destination path for the Docker APT keyring.
         type: str
         default: /etc/apt/keyrings/docker-ce.asc
+        required: false
+      docker_apt_keyrings_checksum:
+        description: Optional checksum for the downloaded keyring.
+        type: str
+        default: ''
+        required: false
+      docker_apt_keyrings_force:
+        description: Re-download the keyring even when the destination exists.
+        type: bool
+        default: false
+        required: false
+      docker_apt_keyrings_proxy:
+        description:
+          - Proxy URL used for the keyring download.
+        type: str
+        default: ''
+        required: false
+      docker_apt_keyrings_no_proxy:
+        description: Comma-separated no_proxy value for the keyring download.
+        type: str
+        default: ''
         required: false
       docker_apt_repo:
         description: DEB822 repository name and legacy .list name for the Docker repository.
@@ -58,12 +79,18 @@ argument_specs:
         default: false
         required: false
       docker_apt_pinning_pin_release:
-        description: 'Pin: release line for Docker packages. When empty, the role pins by origin.'
+        description:
+          - 'Pin: release line for Docker packages.'
+          - Required when O(docker_apt_pinning=true); disable pinning instead of
+            leaving it empty.
         type: str
         default: o=Docker,a={{ docker_apt_repo_suites }},c={{ docker_apt_repo_components }}
         required: false
       docker_apt_unattended_upgrade_origins_pattern:
-        description: Unattended-upgrades origins pattern for Docker packages.
+        description:
+          - Unattended-upgrades origins pattern for Docker packages.
+          - Required when O(docker_apt_unattended_upgrade=true); disable the
+            policy instead of leaving it empty.
         type: str
         default: origin=Docker,suite={{ docker_apt_repo_suites }},component={{ docker_apt_repo_components }}
         required: false
@@ -84,3 +111,4 @@ argument_specs:
         type: list
         default: []
         required: false
+        elements: str

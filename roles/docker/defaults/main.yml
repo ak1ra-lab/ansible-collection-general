@@ -7,6 +7,13 @@
 # sub   rsa4096 2017-02-22 [S]
 docker_apt_keyrings_url: https://download.docker.com/linux/debian/gpg
 docker_apt_keyrings_dest: /etc/apt/keyrings/docker-ce.asc
+# Optional checksum for the downloaded keyring, in the ansible.builtin.get_url
+# format accepted by apt_keyring.
+docker_apt_keyrings_checksum: ""
+docker_apt_keyrings_force: false
+# Proxy and no_proxy values for the keyring download.
+docker_apt_keyrings_proxy: ""
+docker_apt_keyrings_no_proxy: ""
 
 docker_apt_repo: docker-ce
 docker_apt_repo_uris:
@@ -21,6 +28,8 @@ docker_apt_pinning: true
 docker_apt_pinning_package: "docker-* containerd.io"
 docker_apt_unattended_upgrade: false
 docker_apt_mark_hold: false
+# Docker release metadata used by the pinning and unattended-upgrades
+# policies. Keep these explicit instead of relying on a hostname fallback.
 docker_apt_pinning_pin_release: "o=Docker,a={{ docker_apt_repo_suites }},c={{ docker_apt_repo_components }}"
 docker_apt_unattended_upgrade_origins_pattern: "origin=Docker,suite={{ docker_apt_repo_suites }},component={{ docker_apt_repo_components }}"
 
