@@ -123,6 +123,40 @@ argument_specs:
         type: str
         default: ''
         required: false
+      apt_repository_download_proxy:
+        description:
+          - Proxy URL used for the keyring download.
+          - Empty leaves the task environment unchanged.
+          - Use O(apt_repository_download_no_proxy) to bypass the proxy for
+            selected hosts.
+        type: str
+        default: ''
+        required: false
+      apt_repository_download_no_proxy:
+        description:
+          - Comma-separated C(no_proxy) value applied with
+            O(apt_repository_download_proxy).
+        type: str
+        default: ''
+        required: false
+      apt_repository_keyring_timeout:
+        description:
+          - HTTP timeout in seconds for the keyring download.
+        type: int
+        default: 30
+        required: false
+      apt_repository_keyring_retries:
+        description:
+          - Number of attempts for the keyring download task.
+        type: int
+        default: 3
+        required: false
+      apt_repository_keyring_retry_delay:
+        description:
+          - Delay in seconds between keyring download attempts.
+        type: int
+        default: 5
+        required: false
       apt_repository_pinning:
         description:
           - List of apt_preference entries rendered into

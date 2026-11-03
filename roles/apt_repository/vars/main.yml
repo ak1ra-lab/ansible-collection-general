@@ -19,6 +19,25 @@ _apt_repository_pinning_file: "/etc/apt/preferences.d/90{{ apt_repository_name }
 _apt_repository_unattended_upgrades_file: "/etc/apt/apt.conf.d/90unattended-upgrades-{{ apt_repository_name }}"
 _apt_repository_legacy_list_file: "/etc/apt/sources.list.d/{{ apt_repository_name }}.list"
 
+# Keep the environment empty when no download proxy is configured; the task
+# then inherits no override.
+_apt_repository_proxy_env: >-
+  {{
+    (
+      {
+        'http_proxy': apt_repository_download_proxy,
+        'https_proxy': apt_repository_download_proxy,
+      }
+      | ansible.builtin.combine(
+          {'no_proxy': apt_repository_download_no_proxy}
+          if apt_repository_download_no_proxy | length > 0
+          else {}
+        )
+    )
+    if apt_repository_download_proxy | length > 0
+    else {}
+  }}
+
 # Supported keys for the public dictionaries.
 _apt_repository_keyring_options:
   - dest

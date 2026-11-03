@@ -89,10 +89,15 @@
     member: "{{ apt_repository_keyring.member | default(omit) }}"
     checksum: "{{ apt_repository_keyring.checksum | default(omit) }}"
     force: "{{ apt_repository_keyring.force | default(false) | ansible.builtin.bool }}"
+    timeout: "{{ apt_repository_keyring_timeout | int }}"
     mode: "{{ apt_repository_keyring.mode | default('0644') }}"
     owner: "{{ apt_repository_keyring.owner | default('root') }}"
     group: "{{ apt_repository_keyring.group | default('root') }}"
+  environment: "{{ _apt_repository_proxy_env }}"
   register: _apt_repository_keyring_result
+  until: _apt_repository_keyring_result is succeeded
+  retries: "{{ apt_repository_keyring_retries | int }}"
+  delay: "{{ apt_repository_keyring_retry_delay | int }}"
 
 - name: remove the legacy sources.list.d entry
   when: apt_repository_remove_legacy_list | ansible.builtin.bool

@@ -32,6 +32,13 @@ apt_repository_architectures:
 apt_repository_keyring: {}
 apt_repository_signed_by: ""
 
+# Proxy and retry settings for the keyring download.
+apt_repository_download_proxy: ""
+apt_repository_download_no_proxy: ""
+apt_repository_keyring_timeout: 30
+apt_repository_keyring_retries: 3
+apt_repository_keyring_retry_delay: 5
+
 # A list of apt_preference entries. Empty disables pinning and removes a
 # stale role-owned preferences file.
 apt_repository_pinning: []

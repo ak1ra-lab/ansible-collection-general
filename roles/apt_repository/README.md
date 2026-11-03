@@ -55,6 +55,22 @@ apt_repository_keyring:
 The role extracts only the requested member; it does not add the package to
 the dpkg database or install the global `trusted.gpg.d` key.
 
+## Keyring download proxy and retries
+
+Set `apt_repository_download_proxy` (and optionally
+`apt_repository_download_no_proxy`) when the keyring download needs a proxy:
+
+```yaml
+apt_repository_download_proxy: http://proxy.example:3128
+apt_repository_download_no_proxy: localhost,127.0.0.1,.internal
+```
+
+The role passes these values to the keyring task's environment. Timeout and
+retry behavior are controlled by `apt_repository_keyring_timeout`,
+`apt_repository_keyring_retries`, and `apt_repository_keyring_retry_delay`.
+Set a checksum on `apt_repository_keyring` when the source publishes one, so a
+truncated download is rejected instead of installed.
+
 ## Pinning and unattended upgrades
 
 Both features are opt-in. An empty `apt_repository_pinning` list and an empty
