@@ -44,3 +44,11 @@ docker_apt_repo_packages:
 # docker daemon settings
 docker_daemon_registry_mirrors: []
 # - https://docker-registry.example.com
+
+# Optional proxy configuration for the Docker daemon itself. This is separate
+# from the APT proxy and from the keyring download proxy.
+# docker_daemon_proxies:
+#   http-proxy: http://proxy.example:3128
+#   https-proxy: http://proxy.example:3128
+#   no-proxy: localhost,127.0.0.1,.internal
+docker_daemon_proxies: {}

@@ -112,3 +112,13 @@ argument_specs:
         default: []
         required: false
         elements: str
+      docker_daemon_proxies:
+        description:
+          - Optional Docker daemon proxy configuration written to
+            /etc/docker/daemon.json.
+          - Uses the Docker keys http-proxy, https-proxy, and no-proxy.
+          - Docker Desktop ignores daemon.json proxy settings; this role targets
+            Docker Engine on Debian.
+        type: dict
+        default: {}
+        required: false

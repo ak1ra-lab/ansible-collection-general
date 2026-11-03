@@ -26,6 +26,12 @@ The template always writes:
 - `storage-driver: overlay2`
 - `registry-mirrors` from `docker_daemon_registry_mirrors`
 
+When `docker_daemon_proxies` is non-empty, it also writes a `proxies` object
+with `http-proxy`, `https-proxy`, and `no-proxy`. This configures the Docker
+daemon's own registry and swarm traffic and is separate from the APT proxy and
+from Ansible module downloads. Newer Docker Engine releases support this key;
+Docker Desktop ignores it.
+
 The file is written with `force: true` and notifies a restart of
 `docker.service`.
 

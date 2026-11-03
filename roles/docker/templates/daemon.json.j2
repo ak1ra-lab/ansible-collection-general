@@ -1,5 +1,8 @@
 {
     "registry-mirrors": {{ docker_daemon_registry_mirrors | tojson }},
+{% if docker_daemon_proxies | length > 0 %}
+    "proxies": {{ docker_daemon_proxies | tojson }},
+{% endif %}
     "exec-opts": [
         "native.cgroupdriver=systemd"
     ],
