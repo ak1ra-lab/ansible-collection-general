@@ -11,10 +11,9 @@ Release notes: [CHANGELOG.rst](CHANGELOG.rst)
 
 | Role | Description |
 | --- | --- |
-| [`apt_install`](roles/apt_install/README.md) | Add a third-party APT repository in DEB822 format with keyring, pinning, unattended upgrades, and package installation. Debian only. |
 | [`apt_repository`](roles/apt_repository/README.md) | Manage one third-party APT repository without installing its packages: keyring, DEB822 source, optional pinning and unattended-upgrades policy. Debian and Ubuntu. |
 | [`debian_base`](roles/debian_base/README.md) | Apply a Debian baseline with curated packages, apt defaults, unattended upgrades, and host bootstrap settings. Debian only. |
-| [`docker`](roles/docker/README.md) | Install Docker CE from the official repository and manage `daemon.json` and the `docker` group. Debian only. |
+| [`docker`](roles/docker/README.md) | Install Docker CE from the official repository and manage `daemon.json` and the `docker` group. Debian and Ubuntu. |
 | [`go_build`](roles/go_build/README.md) | Clone and build a Go project on `localhost` and expose the built binary path. |
 | [`pyproject_install`](roles/pyproject_install/README.md) | Build or install a Python package into a target virtual environment from a local wheel or an index. |
 
@@ -35,6 +34,8 @@ and examples.
   a member extracted from a keyring package.
 - `apt_preference`: render APT preference and pinning records, normalizing
   full Release field names to the single-letter fields APT understands.
+- `apt_conf`: render arbitrary APT configuration drop-ins, including proxy,
+  timeout, IPv4, and unattended-upgrades list options.
 - `apt_unattended_upgrades`: render unattended-upgrades origins patterns,
   package rules, reboot settings, and periodic schedule snippets.
 

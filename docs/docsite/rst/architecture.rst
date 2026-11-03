@@ -15,8 +15,8 @@ not a collection-wide dependency graph.
 Role families
 -------------
 
-- **Host baseline and packages**: ``debian_base``, ``apt_install``,
-  ``apt_repository``, ``docker``.
+- **Host baseline and packages**: ``debian_base``, ``apt_repository``,
+  ``docker``.
 - **Build and install**: ``go_build``, ``pyproject_install``.
 
 Each role owns its files and units. Roles do not share a global state
@@ -26,20 +26,22 @@ Host baseline and packages
 --------------------------
 
 ``debian_base`` applies the Debian archive and security configuration,
-unattended-upgrades policy, baseline packages, and optional host bootstrap
-settings. ``apt_install`` is the published package-installation layer: it
-manages the keyring, a DEB822 source, optional pinning, unattended-upgrades,
-package installation or hold, and legacy ``.list`` cleanup.
+unattended-upgrades policy, baseline packages, optional APT proxy and IPv4
+settings, and optional host bootstrap settings. It uses ``apt_conf`` for the
+APT client drop-ins, ``apt_preference`` for the backports pin, and
+``apt_unattended_upgrades`` for its policy files.
+
 ``apt_repository`` is the repository-only layer: it manages the keyring,
 DEB822 source, optional pinning, unattended-upgrades origins, and legacy
 ``.list`` cleanup. It does not install packages from the configured repository
 and never changes holds; it may install the ``python3-debian`` module
 dependency when missing. Compose the install and hold steps in the playbook.
 
-``docker`` is a composition role: it imports ``apt_install`` for the Docker
-repository and its package list, then manages ``/etc/docker/daemon.json``, the
-``docker`` group, and the Docker service. It does not duplicate the APT
-repository logic.
+``docker`` is a composition role: it imports ``apt_repository`` for the Docker
+repository, installs and optionally holds the Docker packages itself, then
+manages ``/etc/docker/daemon.json``, the ``docker`` group, and the Docker
+service. It supports Debian and Ubuntu and derives the repository path from
+the target distribution.
 
 Build and install
 -----------------

@@ -31,6 +31,11 @@ Targets Debian 12/13 only (`ansible_facts['distribution'] == 'debian'`).
 The canonical variable reference is generated from `meta/argument_specs.yml` in
 the collection documentation.
 
+The long default lists (`debian_base_apt_packages` and the sshd/sysctl entry
+lists) are stored as internal `_debian_base_*` values in `vars/main.yml`. The
+public variables stay in `defaults/main.yml`, so play vars, inventory vars, role
+params, and `-e @file.yml` overrides keep their normal precedence.
+
 ## APT proxy
 
 `debian_base_apt_http_proxy` and `debian_base_apt_https_proxy` render the
@@ -41,9 +46,9 @@ is removed.
 
 ## Notes
 
-- The `qemu-guest-agent` task notifies a handler that enables the service; on
-  hardware without the virtio device the package still installs, but the service
-  stays inactive.
+- `qemu-guest-agent` is managed only on QEMU/KVM guests. On bare metal,
+  containers, and other hypervisors the role removes the package. Other
+  hypervisor guest agents are not managed by this role.
 - The first run reports changes because it runs `apt upgrade`. The upgrade task
   refreshes the APT index after the DEB822 sources and the backports suite are
   written, so packages from a newly enabled suite are upgraded in the same run.

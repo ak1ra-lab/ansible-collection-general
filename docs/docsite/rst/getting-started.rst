@@ -49,12 +49,13 @@ Control-node requirements
 Managed-node requirements
 -------------------------
 
-The APT-based roles target Debian 12/13 and Ubuntu 22.04 and later. The
-tested Ubuntu releases are 24.04 and 26.04. Debian 12 ships target Python
-3.11, Debian 13 ships Python 3.13, Ubuntu 24.04 ships Python 3.12, and Ubuntu
-26.04 ships Python 3.14; the roles use the managed node's
-``/usr/bin/python3``. The Molecule scenarios use the systemd-enabled images
-from `ak1ra-lab/docker-systemd <https://github.com/ak1ra-lab/docker-systemd>`_.
+``apt_repository`` and ``docker`` target Debian 12/13 and Ubuntu 22.04 and
+later; ``debian_base`` targets Debian only. The tested Ubuntu releases are
+24.04 and 26.04. Debian 12 ships target Python 3.11, Debian 13 ships Python
+3.13, Ubuntu 24.04 ships Python 3.12, and Ubuntu 26.04 ships Python 3.14; the
+roles use the managed node's ``/usr/bin/python3``. The Molecule scenarios use
+the systemd-enabled images from
+`ak1ra-lab/docker-systemd <https://github.com/ak1ra-lab/docker-systemd>`_.
 
 .. list-table::
    :header-rows: 1
@@ -62,18 +63,15 @@ from `ak1ra-lab/docker-systemd <https://github.com/ak1ra-lab/docker-systemd>`_.
 
    * - Role
      - Requirements
-   * - ``apt_install``
-     - Debian; root privileges for the keyring, APT source files, and package
-       installation.
    * - ``apt_repository``
      - Debian 12/13 or Ubuntu 22.04+; root privileges. The role installs
-       ``python3-debian`` when missing unless
-       ``apt_repository_install_python_debian`` is false.
+       ``python3-debian`` when missing.
    * - ``debian_base``
      - Debian; root privileges.
    * - ``docker``
-     - Debian; root privileges. The role imports ``apt_install`` for the
-       Docker repository and installs the Docker packages.
+     - Debian 12/13 or Ubuntu 22.04+; root privileges. The role imports
+       ``apt_repository`` for the Docker repository and installs the Docker
+       packages itself.
    * - ``go_build``
      - ``go`` on the controller; the build runs on ``localhost``, not the
        managed host.

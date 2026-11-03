@@ -3,10 +3,9 @@
 Modules
 =======
 
-The collection provides two custom modules. The generated reference pages
-:doc:`cpu_info_module` and :doc:`github_releases_info_module` are built from
-their ``DOCUMENTATION``, ``EXAMPLES``, and ``RETURN`` blocks; this page
-explains how they fit together.
+The collection provides information and APT configuration modules. Generated
+reference pages are built from each module's ``DOCUMENTATION``, ``EXAMPLES``,
+and ``RETURN`` blocks; this page explains how they fit together.
 
 github_releases_info
 --------------------
@@ -128,10 +127,24 @@ normalized to the short forms APT requires; ``pin.site`` is the separate
              site: packages.example.invalid
            priority: 900
 
-``apt_unattended_upgrades`` renders an apt.conf.d drop-in with origins
-patterns, package rules, reboot settings, and APT::Periodic options. It
-accepts both the full and abbreviated field names and validates the generated
-file with ``apt-config``:
+``apt_conf`` renders arbitrary apt.conf.d configuration. Scalar values become
+``Name "value";`` entries and list values become repeated ``Name:: "value";``
+entries. It is the right module for generic APT client settings such as
+proxies, timeouts, and IPv4:
+
+.. code-block:: yaml
+
+   - name: Configure an APT proxy
+     ak1ra_lab.general.apt_conf:
+       name: 90ansible-proxy
+       options:
+         Acquire::http::Proxy: http://proxy.example:3128
+         Acquire::https::Proxy: http://proxy.example:3128
+
+``apt_unattended_upgrades`` is the domain module for unattended-upgrades. It
+renders origins patterns, package rules, reboot settings, and APT::Periodic
+options, accepts both the full and abbreviated field names, and validates the
+generated file with ``apt-config``:
 
 .. code-block:: yaml
 
@@ -144,10 +157,16 @@ file with ``apt-config``:
          update_package_lists: 1
          unattended_upgrade: 1
 
+Both modules share the same rendering, atomic write, and validation helpers.
+Use ``apt_conf`` when the setting is not specific to unattended-upgrades, and
+``apt_unattended_upgrades`` when origins or policy validation matters.
+
 The ``apt_repository`` role composes these modules with
 ``ansible.builtin.deb822_repository``. It installs the ``python3-debian``
 module dependency when missing and refreshes the APT index after repository
 changes; installation of repository packages and holds remain playbook tasks.
+Its keyring download has separate proxy and retry settings because that
+one-shot module call does not use APT's proxy configuration.
 
 The same reference is available offline with
 ``ansible-doc ak1ra_lab.general.<module>`` against an installed collection.
