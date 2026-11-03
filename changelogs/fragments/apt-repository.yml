@@ -6,6 +6,9 @@ minor_changes:
   - Add the ``apt_preference`` module for rendering apt_preferences(5)
     records and normalizing full Release field names to APT's single-letter
     fields.
+  - Add the ``apt_conf`` module for rendering arbitrary apt.conf.d drop-ins.
+    Scalar values render as scalar directives and list values render as APT
+    list entries.
   - Add the ``apt_unattended_upgrades`` module for rendering
     unattended-upgrades origins patterns, package rules, reboot settings, and
     APT::Periodic options.
@@ -14,3 +17,38 @@ minor_changes:
     the new modules with ``ansible.builtin.deb822_repository``, installs the
     ``python3-debian`` module dependency from the base repositories, and
     targets Debian 12/13 and Ubuntu 22.04 and later.
+  - Add keyring download proxy, ``no_proxy``, timeout, and retry settings to
+    ``apt_repository``. These settings apply to the keyring download.
+  - Add ``debian_base_apt_http_proxy`` and ``debian_base_apt_https_proxy`` to
+    ``debian_base``. The role renders its APT proxy and force-IPv4 drop-ins
+    with ``apt_conf`` before the first APT network operation and uses
+    ``apt_preference`` and ``apt_unattended_upgrades`` for its policy files.
+  - Change ``docker`` to manage its repository through ``apt_repository`` and
+    install or hold the Docker packages itself. Add keyring checksum, force,
+    and download proxy settings, plus optional Docker daemon proxy
+    configuration in ``daemon.json``.
+  - Extend ``docker`` to Ubuntu 22.04 and later. The Docker repository path is
+    derived from the target distribution.
+  - Add ``docker_apt_pinning_priority`` and ``docker_daemon_options`` to
+    ``docker``. The daemon options dictionary is merged over the role defaults
+    so callers can add or override individual ``daemon.json`` keys. The
+    default log configuration now caps ``max-file`` at ``3``.
+breaking_changes:
+  - The ``docker`` role no longer forces ``storage-driver=overlay2`` in the
+    generated ``daemon.json``. Docker selects the default storage driver for
+    the host, and callers can set ``docker_daemon_options.storage-driver``
+    explicitly.
+  - The ``docker`` role no longer falls back from an empty pin release or
+    unattended-upgrades origins pattern to the repository hostname. Set
+    explicit Docker release metadata or disable the respective policy.
+removed_features:
+  - Remove the ``apt_install`` role and its Molecule scenarios. Use
+    ``apt_repository`` for repository artifacts and install or hold packages in
+    the playbook.
+bugfixes:
+  - Remove a stale ``debian_base`` unattended-upgrades backports drop-in when
+    the backports repository stays enabled but unattended backports are
+    disabled.
+  - Install ``qemu-guest-agent`` only on QEMU/KVM guests. The ``debian_base``
+    role now removes the package on bare metal, in containers, and on other
+    hypervisors.
