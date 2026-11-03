@@ -1,0 +1,10 @@
+---
+- name: remove the generic apt.conf.d configuration
+  hosts: test_resources_debian
+  gather_facts: false
+  ignore_unreachable: true
+  tasks:
+    - name: remove the role-owned APT configuration
+      ak1ra_lab.general.apt_conf:
+        name: 90ansible-molecule-apt-conf
+        state: absent

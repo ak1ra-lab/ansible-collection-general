@@ -1,0 +1,14 @@
+---
+- name: apply the generic apt.conf.d configuration
+  hosts: test_resources_debian
+  gather_facts: false
+  tasks:
+    - name: write the generic APT configuration
+      ak1ra_lab.general.apt_conf:
+        name: 90ansible-molecule-apt-conf
+        options:
+          Acquire::ForceIPv4: true
+          Acquire::http::Proxy: http://proxy.example:3128
+          Unattended-Upgrade::Origins-Pattern:
+            - origin=Debian,codename=trixie
+            - origin=Debian,codename=trixie-security

@@ -1,0 +1,16 @@
+---
+- name: verify the generic apt.conf.d teardown
+  hosts: test_resources_debian
+  gather_facts: false
+  tasks:
+    - name: collect the removed APT configuration
+      ansible.builtin.stat:
+        path: /etc/apt/apt.conf.d/90ansible-molecule-apt-conf
+      register: _apt_conf_absent
+
+    - name: assert the APT configuration is gone
+      ansible.builtin.assert:
+        that:
+          - not _apt_conf_absent.stat.exists
+        fail_msg: "the role-owned APT configuration must be gone after cleanup"
+        quiet: true

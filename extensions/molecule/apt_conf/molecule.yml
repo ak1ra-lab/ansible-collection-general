@@ -1,0 +1,6 @@
+---
+# apt_conf - exercise generic apt.conf.d rendering on the supported Debian
+# image. The scenario uses the shared create/prepare/destroy lifecycle and
+# removes the role-owned file during cleanup.
+scenario:
+  name: apt_conf

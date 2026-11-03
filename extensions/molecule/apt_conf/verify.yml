@@ -1,0 +1,26 @@
+---
+- name: verify the generic apt.conf.d configuration
+  hosts: test_resources_debian
+  gather_facts: false
+  tasks:
+    - name: collect the generated APT configuration
+      ansible.builtin.slurp:
+        src: /etc/apt/apt.conf.d/90ansible-molecule-apt-conf
+      register: _apt_conf_file
+
+    - name: decode the generated APT configuration
+      ansible.builtin.set_fact:
+        _apt_conf_content: "{{ _apt_conf_file.content | ansible.builtin.b64decode }}"
+
+    - name: assert scalar and list directives are rendered
+      ansible.builtin.assert:
+        that:
+          - "'// Managed by Ansible (ak1ra_lab.general.apt_conf).' in _apt_conf_content"
+          - "'Acquire::ForceIPv4 \"true\";' in _apt_conf_content"
+          - "'Acquire::http::Proxy \"http://proxy.example:3128\";' in _apt_conf_content"
+          - "'Unattended-Upgrade::Origins-Pattern:: \"origin=Debian,codename=trixie\";' in _apt_conf_content"
+          - >-
+            'Unattended-Upgrade::Origins-Pattern:: "origin=Debian,codename=trixie-security";'
+            in _apt_conf_content
+        fail_msg: "unexpected apt.conf content: {{ _apt_conf_content }}"
+        quiet: true
