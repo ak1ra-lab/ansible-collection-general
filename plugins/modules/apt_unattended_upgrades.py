@@ -207,7 +207,7 @@ from ansible_collections.ak1ra_lab.general.plugins.module_utils.apt import (
     format_periodic_value,
     normalize_origins_pattern,
     remove_file,
-    render_apt_conf_option,
+    render_apt_conf_options,
     validate_apt_conf,
     validate_filename,
     write_file,
@@ -247,26 +247,18 @@ def _validate_regex(value: str, field: str) -> str:
     return text
 
 
-def _append_list_option(lines: list[str], option: str, values: list[str]) -> None:
-    for value in values:
-        lines.append(f'{option}:: "{value}";')
-
-
 def _render(module: AnsibleModule) -> str:
     params = module.params
-    lines = [
-        "// Managed by Ansible (ak1ra_lab.general.apt_unattended_upgrades).",
-        "",
-    ]
-    populated = False
+    options: dict[str, object] = {}
 
+    origins = []
     for index, pattern in enumerate(params["origins_patterns"] or []):
         try:
-            normalized = normalize_origins_pattern(pattern)
+            origins.append(normalize_origins_pattern(pattern))
         except ValueError as exc:
             module.fail_json(msg=f"origins_patterns[{index}]: {exc}")
-        lines.append(f'Unattended-Upgrade::Origins-Pattern:: "{normalized}";')
-        populated = True
+    if origins:
+        options["Unattended-Upgrade::Origins-Pattern"] = origins
 
     for field in ("package_blacklist", "package_whitelist"):
         option = (
@@ -281,23 +273,15 @@ def _render(module: AnsibleModule) -> str:
             except ValueError as exc:
                 module.fail_json(msg=str(exc))
         if values:
-            _append_list_option(lines, option, values)
-            populated = True
+            options[option] = values
 
     for field, option in UNATTENDED_BOOL_OPTIONS.items():
         value = params[field]
         if value is not None:
-            lines.append(render_apt_conf_option(option, value))
-            populated = True
+            options[option] = value
 
     if params["package_whitelist_strict"] is not None:
-        lines.append(
-            render_apt_conf_option(
-                "Unattended-Upgrade::Package-Whitelist-Strict",
-                params["package_whitelist_strict"],
-            )
-        )
-        populated = True
+        options["Unattended-Upgrade::Package-Whitelist-Strict"] = params["package_whitelist_strict"]
 
     for field, option in UNATTENDED_STRING_OPTIONS.items():
         value = params[field]
@@ -305,8 +289,7 @@ def _render(module: AnsibleModule) -> str:
             continue
         if field == "automatic_reboot_time" and value != "now" and not _TIME_RE.fullmatch(value):
             module.fail_json(msg="automatic_reboot_time must be 'now' or a 24-hour HH:MM value")
-        lines.append(render_apt_conf_option(option, value))
-        populated = True
+        options[option] = value
 
     for key, value in (params["periodic"] or {}).items():
         if key not in PERIODIC_OPTIONS:
@@ -314,19 +297,20 @@ def _render(module: AnsibleModule) -> str:
                 msg=f"unknown periodic key {key!r}; accepted keys are: " + ", ".join(sorted(PERIODIC_OPTIONS))
             )
         try:
-            rendered = format_periodic_value(value, f"periodic.{key}")
+            options[PERIODIC_OPTIONS[key]] = format_periodic_value(value, f"periodic.{key}")
         except ValueError as exc:
             module.fail_json(msg=str(exc))
-        lines.append(f'{PERIODIC_OPTIONS[key]} "{rendered}";')
-        populated = True
 
-    if not populated:
+    if not options:
         module.fail_json(
             msg="at least one origins pattern, package rule, unattended-upgrades option, "
             "or periodic option must be set when state=present"
         )
 
-    return "\n".join(lines) + "\n"
+    return render_apt_conf_options(
+        options,
+        header="Managed by Ansible (ak1ra_lab.general.apt_unattended_upgrades).",
+    )
 
 
 def main() -> None:
