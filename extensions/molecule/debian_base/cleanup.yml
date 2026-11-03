@@ -8,7 +8,7 @@
 # molecule's failure cleanup finds a playbook and stays quiet.
 
 - name: debian_base teardown (nothing to reset)
-  hosts: all
+  hosts: test_resources_debian
   gather_facts: false
   ignore_unreachable: true
   tasks:

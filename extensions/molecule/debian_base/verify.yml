@@ -4,7 +4,7 @@
 # baseline package, the sudoers rule, and a working APT update.
 
 - name: verify the converged debian_base state
-  hosts: all
+  hosts: test_resources_debian
   gather_facts: true
   tasks:
     - name: collect the sources.list placeholder

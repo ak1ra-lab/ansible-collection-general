@@ -8,7 +8,7 @@
 # index and the next converge upgrades the backports packages instead.
 
 - name: verify the first converge fetched the backports index
-  hosts: all
+  hosts: test_resources_debian
   gather_facts: false
   tasks:
     - name: collect the backports index files

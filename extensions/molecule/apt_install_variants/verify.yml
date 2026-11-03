@@ -4,7 +4,7 @@
 # the deb-multimedia keyring package import with the revert switches.
 
 - name: verify the converged apt_install variants
-  hosts: all
+  hosts: test_resources_debian
   gather_facts: false
   tasks:
     - name: collect the caddy sources file

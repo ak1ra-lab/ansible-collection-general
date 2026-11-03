@@ -4,7 +4,7 @@
 # the managed hosts like a real playbook would.
 
 - name: build the fixture module with go_build
-  hosts: all
+  hosts: test_resources_debian
   gather_facts: false
   tasks:
     - name: build the fixture module

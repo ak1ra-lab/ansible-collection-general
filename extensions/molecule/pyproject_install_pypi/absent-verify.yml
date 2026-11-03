@@ -2,7 +2,7 @@
 # pyproject_install_pypi scenario - assert the teardown removed the venv.
 
 - name: verify the pyproject_install pypi teardown
-  hosts: all
+  hosts: test_resources_debian
   gather_facts: false
   tasks:
     - name: collect the test virtual environment

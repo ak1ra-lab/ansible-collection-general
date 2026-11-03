@@ -4,7 +4,7 @@
 # repository with a keyring package.
 
 - name: apply the caddy repository from inline keyring content
-  hosts: all
+  hosts: test_resources_debian
   gather_facts: true
   vars:
     # The lookup runs on the controller; the armored key becomes keyrings
@@ -32,7 +32,7 @@
         name: ak1ra_lab.general.apt_install
 
 - name: apply the deb-multimedia repository from a keyring package
-  hosts: all
+  hosts: test_resources_debian
   gather_facts: true
   vars:
     apt_install_keyrings_package: https://www.deb-multimedia.org/pool/main/d/deb-multimedia-keyring/deb-multimedia-keyring_2024.9.1_all.deb

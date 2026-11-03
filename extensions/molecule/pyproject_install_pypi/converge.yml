@@ -3,7 +3,7 @@
 # fresh virtual environment on the managed host.
 
 - name: install the PyPI test package
-  hosts: all
+  hosts: test_resources_debian
   gather_facts: true
   vars:
     pyproject_install_source: pypi

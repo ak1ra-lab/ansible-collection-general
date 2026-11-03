@@ -3,7 +3,7 @@
 # keyring package; tolerates a fresh host and an unreachable container.
 
 - name: tear down the apt_install variants
-  hosts: all
+  hosts: test_resources_debian
   gather_facts: false
   ignore_unreachable: true
   tasks:

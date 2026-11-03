@@ -3,7 +3,7 @@
 # tolerates a fresh host and an unreachable container.
 
 - name: tear down the pyproject_install pypi fixtures
-  hosts: all
+  hosts: test_resources_debian
   gather_facts: false
   ignore_unreachable: true
   tasks:

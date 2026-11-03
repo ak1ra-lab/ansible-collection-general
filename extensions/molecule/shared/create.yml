@@ -11,6 +11,7 @@
   gather_facts: false
   vars:
     _molecule_container_runtime: "{{ lookup('ansible.builtin.env', 'MOLECULE_CONTAINER_RUNTIME') | default('podman', true) }}"
+    _molecule_container_group: "{{ lookup('ansible.builtin.env', 'MOLECULE_CONTAINER_GROUP') | default('test_resources_debian', true) }}"
   tasks:
     - name: create containers with podman
       when: _molecule_container_runtime == 'podman'
@@ -23,7 +24,7 @@
         privileged: "{{ hostvars[item]['container_privileged'] | default(true) }}"
         volumes: "{{ hostvars[item]['container_volumes'] | default([]) }}"
         state: started
-      loop: "{{ groups['test_resources'] }}"
+      loop: "{{ groups[_molecule_container_group] }}"
       loop_control:
         label: "{{ item }}"
       register: _molecule_containers_podman
@@ -38,7 +39,7 @@
         privileged: "{{ hostvars[item]['container_privileged'] | default(true) }}"
         volumes: "{{ hostvars[item]['container_volumes'] | default([]) }}"
         state: started
-      loop: "{{ groups['test_resources'] }}"
+      loop: "{{ groups[_molecule_container_group] }}"
       loop_control:
         label: "{{ item }}"
       register: _molecule_containers_docker
@@ -74,6 +75,6 @@
       retries: 30
       delay: 2
       delegate_to: "{{ item }}"
-      loop: "{{ groups['test_resources'] }}"
+      loop: "{{ groups[_molecule_container_group] }}"
       loop_control:
         label: "{{ item }}"

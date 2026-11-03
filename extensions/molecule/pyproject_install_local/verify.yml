@@ -3,7 +3,7 @@
 # controller, installed into the venv, and cleaned from the remote tmp.
 
 - name: verify the converged pyproject_install local state
-  hosts: all
+  hosts: test_resources_debian
   gather_facts: false
   vars:
     _pyproject_install_venv: /tmp/molecule-ak1ra-general-pyproject-local/venv

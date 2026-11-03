@@ -6,7 +6,7 @@
 # the one the stale-index regression used to defer to the next run.
 
 - name: apply the Debian baseline
-  hosts: all
+  hosts: test_resources_debian
   gather_facts: true
   vars:
     debian_base_apt_packages:

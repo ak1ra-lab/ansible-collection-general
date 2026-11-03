@@ -3,7 +3,7 @@
 # packages are installed, and the package imports from the venv.
 
 - name: verify the converged pyproject_install pypi state
-  hosts: all
+  hosts: test_resources_debian
   gather_facts: false
   vars:
     _pyproject_install_venv: /tmp/molecule-ak1ra-general-pyproject-pypi/venv

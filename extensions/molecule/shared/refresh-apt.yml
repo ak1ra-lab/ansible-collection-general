@@ -6,7 +6,7 @@
 # step refreshes the index before their verify playbook reads apt policy.
 
 - name: refresh the APT index
-  hosts: all
+  hosts: "{{ lookup('ansible.builtin.env', 'MOLECULE_CONTAINER_GROUP') | default('test_resources_debian', true) }}"
   gather_facts: false
   tasks:
     - name: refresh the APT index

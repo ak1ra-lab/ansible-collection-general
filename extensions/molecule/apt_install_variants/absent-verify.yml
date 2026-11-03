@@ -3,7 +3,7 @@
 # the keyring package are gone.
 
 - name: verify the apt_install variants teardown
-  hosts: all
+  hosts: test_resources_debian
   gather_facts: false
   tasks:
     - name: collect the teardown paths

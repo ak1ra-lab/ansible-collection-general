@@ -3,7 +3,7 @@
 # the fixture project on the controller; tolerates a fresh host.
 
 - name: tear down the pyproject_install local target fixtures
-  hosts: all
+  hosts: test_resources_debian
   gather_facts: false
   ignore_unreachable: true
   tasks:

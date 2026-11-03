@@ -3,7 +3,7 @@
 # controller and install it into a venv on the managed host.
 
 - name: build and install the fixture wheel
-  hosts: all
+  hosts: test_resources_debian
   gather_facts: true
   vars:
     pyproject_install_source: local
