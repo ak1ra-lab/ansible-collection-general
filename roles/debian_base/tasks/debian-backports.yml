@@ -1,20 +1,11 @@
 ---
-- name: manage /etc/apt/preferences.d/90debian-backports
-  block:
-    - name: set linux kernel preferences on debian-backports if enabled
-      when:
-        - (debian_base_apt_repo_debian_backports_enabled | ansible.builtin.bool)
-      ansible.builtin.copy:
-        dest: /etc/apt/preferences.d/90debian-backports
-        mode: "0644"
-        content: |
-          Package: {{ debian_base_apt_repo_debian_backports_preferences_package }}
-          Pin: release n={{ ansible_facts['distribution_release'] }}-backports
-          Pin-Priority: {{ debian_base_apt_repo_debian_backports_preferences_pin_priority | int }}
-
-    - name: revert linux kernel preferences on debian-backports if not enabled
-      when:
-        - not (debian_base_apt_repo_debian_backports_enabled | ansible.builtin.bool)
-      ansible.builtin.file:
-        path: /etc/apt/preferences.d/90debian-backports
-        state: absent
+- name: manage the Debian backports APT preference
+  ak1ra_lab.general.apt_preference:
+    path: /etc/apt/preferences.d/90debian-backports
+    state: "{{ 'present' if debian_base_apt_repo_debian_backports_enabled | ansible.builtin.bool else 'absent' }}"
+    entries:
+      - packages: "{{ debian_base_apt_repo_debian_backports_preferences_package }}"
+        pin:
+          release:
+            codename: "{{ ansible_facts['distribution_release'] }}-backports"
+        priority: "{{ debian_base_apt_repo_debian_backports_preferences_pin_priority | int }}"

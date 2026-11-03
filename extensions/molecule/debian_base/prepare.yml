@@ -1,5 +1,18 @@
 ---
-# debian_base scenario - shared container preparation only.
+# debian_base scenario - shared container preparation plus a stale
+# unattended-upgrades backports policy.  The role must remove it even though
+# the backports repository itself stays enabled.
 
 - name: run the shared container preparation
   import_playbook: ../shared/prepare.yml
+
+- name: seed stale unattended-upgrades drift
+  hosts: test_resources_debian
+  gather_facts: false
+  tasks:
+    - name: seed a stale backports policy
+      ansible.builtin.copy:
+        content: |
+          Unattended-Upgrade::Origins-Pattern:: "origin=stale";
+        dest: /etc/apt/apt.conf.d/90unattended-upgrades-backports
+        mode: "0644"
