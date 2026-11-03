@@ -4,11 +4,18 @@ argument_specs:
     description:
       - Install Docker CE from the official Docker APT repository through ak1ra_lab.general.apt_repository, install the
         Docker packages, hold them when requested, and manage /etc/docker/daemon.json and the docker group.
+      - Targets Debian 12/13 and Ubuntu 22.04 and later. The repository path is derived from the target distribution.
     options:
+      docker_apt_repo_distribution:
+        description:
+          - Distribution path used by the Docker repository, normally C(debian) or C(ubuntu).
+        type: str
+        default: '{{ ansible_facts.get(''distribution'', '''') | lower }}'
+        required: false
       docker_apt_keyrings_url:
         description: Docker APT keyring URL.
         type: str
-        default: https://download.docker.com/linux/debian/gpg
+        default: 'https://download.docker.com/linux/{{ docker_apt_repo_distribution }}/gpg'
         required: false
       docker_apt_keyrings_dest:
         description: Destination path for the Docker APT keyring.
@@ -45,13 +52,13 @@ argument_specs:
         description: Docker APT repository mirrors.
         type: list
         default:
-          - https://download.docker.com/linux/debian
+          - 'https://download.docker.com/linux/{{ docker_apt_repo_distribution }}'
         required: false
         elements: str
       docker_apt_repo_suites:
         description: Docker APT repository suite.
         type: str
-        default: '{{ ansible_facts[''distribution_release''] }}'
+        default: '{{ ansible_facts.get(''distribution_release'', '''') }}'
         required: false
       docker_apt_repo_components:
         description: Docker APT repository component.
@@ -67,6 +74,11 @@ argument_specs:
         description: Package globs covered by the Docker pinning file.
         type: str
         default: docker-* containerd.io
+        required: false
+      docker_apt_pinning_priority:
+        description: APT pin priority for Docker packages.
+        type: int
+        default: 900
         required: false
       docker_apt_unattended_upgrade:
         description: Allow unattended upgrades of Docker packages.
@@ -117,8 +129,27 @@ argument_specs:
           - Optional Docker daemon proxy configuration written to
             /etc/docker/daemon.json.
           - Uses the Docker keys http-proxy, https-proxy, and no-proxy.
-          - Docker Desktop ignores daemon.json proxy settings; this role targets
-            Docker Engine on Debian.
+          - Applies to the daemon's registry and swarm traffic.
+        type: dict
+        default: {}
+        required: false
+      docker_daemon_options:
+        description:
+          - Additional or overriding keys for /etc/docker/daemon.json.
+          - >-
+            Merged recursively over the role defaults: C(exec-opts) with
+            C(native.cgroupdriver=systemd), C(log-driver=json-file), and
+            C(log-opts) with C(max-size=100m) and C(max-file=3).
+          - >-
+            Use it for settings without a dedicated variable, such as
+            C(data-root), C(insecure-registries), or
+            C(default-address-pools).
+          - >-
+            O(docker_daemon_registry_mirrors) and O(docker_daemon_proxies)
+            override the same keys when non-empty.
+          - >-
+            The role does not force a storage driver; Docker selects its
+            default unless this dictionary sets C(storage-driver).
         type: dict
         default: {}
         required: false

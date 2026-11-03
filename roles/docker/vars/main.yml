@@ -7,7 +7,7 @@ _docker_apt_pinning: >-
       {
         'packages': docker_apt_pinning_package,
         'pin': {'release': docker_apt_pinning_pin_release},
-        'priority': 900,
+        'priority': docker_apt_pinning_priority | int,
       }
     ]
     if docker_apt_pinning | ansible.builtin.bool else []
@@ -18,4 +18,29 @@ _docker_apt_unattended_upgrades: >-
   {{
     {'origins_patterns': [docker_apt_unattended_upgrade_origins_pattern]}
     if docker_apt_unattended_upgrade | ansible.builtin.bool else {}
+  }}
+
+# Role defaults for daemon.json. Do not force storage-driver: Docker selects
+# the best driver for the host filesystem unless the caller sets one.
+_docker_daemon_default_options:
+  exec-opts:
+    - native.cgroupdriver=systemd
+  log-driver: json-file
+  log-opts:
+    max-size: 100m
+    max-file: "3"
+
+# Merge role defaults, caller options, and the dedicated mirror/proxy values.
+_docker_daemon_config: >-
+  {{
+    _docker_daemon_default_options
+    | ansible.builtin.combine(docker_daemon_options, recursive=True)
+    | ansible.builtin.combine(
+        {'registry-mirrors': docker_daemon_registry_mirrors}
+        if docker_daemon_registry_mirrors | length > 0 else {}
+      )
+    | ansible.builtin.combine(
+        {'proxies': docker_daemon_proxies}
+        if docker_daemon_proxies | length > 0 else {}
+      )
   }}

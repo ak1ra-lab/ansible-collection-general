@@ -2,9 +2,19 @@
 - name: assert the target platform is supported
   ansible.builtin.assert:
     that:
-      - (ansible_facts.get('distribution', '') | lower) == 'debian'
-      - (ansible_facts.get('distribution_major_version', '0') | int) >= 12
-    fail_msg: "roles/docker supports Debian >= 12; gather facts before applying the role"
+      - (ansible_facts.get('os_family', '') | lower) == 'debian'
+      - (ansible_facts.get('pkg_mgr', '')) == 'apt'
+      - >-
+        (
+          ((ansible_facts.get('distribution', '') | lower) == 'debian') and
+          ((ansible_facts.get('distribution_major_version', '0') | int) >= 12)
+        ) or (
+          ((ansible_facts.get('distribution', '') | lower) == 'ubuntu') and
+          ((ansible_facts.get('distribution_major_version', '0') | int) >= 22)
+        )
+    fail_msg: >-
+      roles/docker supports Debian >= 12 and Ubuntu >= 22.04; gather facts
+      before applying the role
 
 - name: assert the Docker repository inputs are valid
   ansible.builtin.assert:
@@ -30,6 +40,17 @@
       docker_apt_pinning_pin_release is required when docker_apt_pinning is
       true, and docker_apt_unattended_upgrade_origins_pattern is required when
       docker_apt_unattended_upgrade is true
+
+- name: assert the Docker daemon proxy keys are valid
+  when: (docker_daemon_proxies | length) > 0
+  ansible.builtin.assert:
+    that:
+      - >-
+        (docker_daemon_proxies.keys() | list | difference(
+          ['http-proxy', 'https-proxy', 'no-proxy']
+        ) | length) == 0
+    fail_msg: >-
+      docker_daemon_proxies supports http-proxy, https-proxy, and no-proxy
 
 - name: configure the Docker APT repository
   ansible.builtin.import_role:
@@ -83,7 +104,6 @@
     src: daemon.json.j2
     dest: /etc/docker/daemon.json
     mode: "0644"
-    force: true
   notify: systemctl restart docker.service
 
 - name: register ansible regular user

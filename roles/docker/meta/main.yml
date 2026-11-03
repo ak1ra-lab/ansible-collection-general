@@ -3,7 +3,7 @@
 
 galaxy_info:
   author: ak1ra
-  description: Install Docker CE from the official repository and manage the daemon configuration
+  description: Install Docker CE from the official repository on Debian and Ubuntu and manage the daemon configuration
   license: GPL-3.0-or-later
   min_ansible_version: "2.19"
 
@@ -12,9 +12,15 @@ galaxy_info:
       versions:
         - trixie
         - bookworm
+    - name: Ubuntu
+      versions:
+        - resolute
+        - noble
+        - jammy
 
   galaxy_tags:
     - debian
+    - ubuntu
     - docker
     - containers
 

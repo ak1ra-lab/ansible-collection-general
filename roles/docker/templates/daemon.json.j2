@@ -1,14 +1,1 @@
-{
-    "registry-mirrors": {{ docker_daemon_registry_mirrors | tojson }},
-{% if docker_daemon_proxies | length > 0 %}
-    "proxies": {{ docker_daemon_proxies | tojson }},
-{% endif %}
-    "exec-opts": [
-        "native.cgroupdriver=systemd"
-    ],
-    "log-driver": "json-file",
-    "log-opts": {
-        "max-size": "100m"
-    },
-    "storage-driver": "overlay2"
-}
+{{ _docker_daemon_config | ansible.builtin.to_nice_json(indent=4, sort_keys=False) }}

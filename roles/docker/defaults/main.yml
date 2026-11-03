@@ -1,11 +1,13 @@
 ---
-# https://docs.docker.com/engine/install/debian/
+# Docker publishes the same repository layout for Debian and Ubuntu:
+# https://download.docker.com/linux/debian and .../linux/ubuntu.
 # curl -sL https://download.docker.com/linux/debian/gpg | gpg
 # pub   rsa4096 2017-02-22 [SCEA]
 #       9DC858229FC7DD38854AE2D88D81803C0EBFCD88
 # uid           Docker Release (CE deb) <docker@docker.com>
 # sub   rsa4096 2017-02-22 [S]
-docker_apt_keyrings_url: https://download.docker.com/linux/debian/gpg
+docker_apt_repo_distribution: "{{ ansible_facts.get('distribution', '') | lower }}"
+docker_apt_keyrings_url: "https://download.docker.com/linux/{{ docker_apt_repo_distribution }}/gpg"
 docker_apt_keyrings_dest: /etc/apt/keyrings/docker-ce.asc
 # Optional checksum for the downloaded keyring, in the ansible.builtin.get_url
 # format accepted by apt_keyring.
@@ -17,15 +19,16 @@ docker_apt_keyrings_no_proxy: ""
 
 docker_apt_repo: docker-ce
 docker_apt_repo_uris:
-  # - https://mirrors.tencent.com/docker-ce/linux/debian
-  # - https://mirrors.aliyun.com/docker-ce/linux/debian
-  - https://download.docker.com/linux/debian
+  # - https://mirrors.tencent.com/docker-ce/linux/{{ docker_apt_repo_distribution }}
+  # - https://mirrors.aliyun.com/docker-ce/linux/{{ docker_apt_repo_distribution }}
+  - "https://download.docker.com/linux/{{ docker_apt_repo_distribution }}"
 
-docker_apt_repo_suites: "{{ ansible_facts['distribution_release'] }}"
+docker_apt_repo_suites: "{{ ansible_facts.get('distribution_release', '') }}"
 docker_apt_repo_components: stable
 
 docker_apt_pinning: true
 docker_apt_pinning_package: "docker-* containerd.io"
+docker_apt_pinning_priority: 900
 docker_apt_unattended_upgrade: false
 docker_apt_mark_hold: false
 # Docker release metadata used by the pinning and unattended-upgrades
@@ -45,10 +48,22 @@ docker_apt_repo_packages:
 docker_daemon_registry_mirrors: []
 # - https://docker-registry.example.com
 
-# Optional proxy configuration for the Docker daemon itself. This is separate
-# from the APT proxy and from the keyring download proxy.
+# Optional proxy configuration for the Docker daemon.
 # docker_daemon_proxies:
 #   http-proxy: http://proxy.example:3128
 #   https-proxy: http://proxy.example:3128
 #   no-proxy: localhost,127.0.0.1,.internal
 docker_daemon_proxies: {}
+
+# Additional or overriding /etc/docker/daemon.json keys. Merged recursively
+# over the role defaults; docker_daemon_registry_mirrors and
+# docker_daemon_proxies override the same keys when non-empty.
+# docker_daemon_options:
+#   data-root: /srv/docker
+#   log-opts:
+#     max-size: 50m
+#     max-file: "5"
+#   default-address-pools:
+#     - base: 172.31.0.0/16
+#       size: 24
+docker_daemon_options: {}
