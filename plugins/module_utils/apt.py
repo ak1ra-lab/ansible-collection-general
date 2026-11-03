@@ -31,8 +31,7 @@ KEYRINGS_DIR = "/etc/apt/keyrings"
 SHARE_KEYRINGS_DIR = "/usr/share/keyrings"
 
 _APT_FILENAME_RE = re.compile(r"^[A-Za-z0-9_.-]+$")
-_APT_CONF_OPTION_RE = re.compile(r"^[A-Za-z0-9/_:.+-]+$")
-_APT_CONF_OPTION_PREFIXES = ("Unattended-Upgrade::", "APT::Periodic::")
+_APT_CONF_OPTION_RE = re.compile(r"^[A-Za-z0-9/_.+-]+(?:::[A-Za-z0-9/_.+-]+)*$")
 
 # APT's apt_preferences(5) parser only understands these single-letter
 # prefixes.  A full name such as ``origin=`` is silently ignored by APT (and
@@ -435,12 +434,55 @@ def format_periodic_value(value: Any, field: str) -> str:
     raise ValueError(f"{field} must be a non-negative integer")
 
 
-def render_apt_conf_option(name: str, value: Any) -> str:
+def _validate_apt_conf_option_name(name: str) -> None:
     if not _APT_CONF_OPTION_RE.fullmatch(name):
         raise ValueError(f"invalid APT configuration option name {name!r}")
-    if not name.startswith(_APT_CONF_OPTION_PREFIXES):
-        raise ValueError(f"APT configuration option {name!r} must start with " + " or ".join(_APT_CONF_OPTION_PREFIXES))
+
+
+def render_apt_conf_option(name: str, value: Any) -> str:
+    """Render one scalar APT configuration directive."""
+
+    _validate_apt_conf_option_name(name)
     return f'{name} "{format_apt_conf_value(value, name)}";'
+
+
+def render_apt_conf_options(
+    options: Mapping[str, Any],
+    *,
+    header: str = "",
+) -> str:
+    """Render an apt.conf(5) file from a mapping of option names.
+
+    Scalar values render as ``Name "value";``.  A sequence renders one
+    ``Name:: "value";`` entry per item, which is APT's list syntax.
+    """
+
+    if not isinstance(options, Mapping):
+        raise ValueError("options must be a mapping of APT configuration names to values")  # noqa: TRY004
+    if not options:
+        raise ValueError("options must contain at least one APT configuration option")
+
+    lines: list[str] = []
+    if header:
+        lines.extend([f"// {header}", ""])
+
+    populated = False
+    for name, value in options.items():
+        if not isinstance(name, str):
+            raise ValueError("APT configuration option names must be strings")  # noqa: TRY004
+        _validate_apt_conf_option_name(name)
+
+        if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+            for item in value:
+                lines.append(f'{name}:: "{format_apt_conf_value(item, name)}";')
+                populated = True
+        else:
+            lines.append(render_apt_conf_option(name, value))
+            populated = True
+
+    if not populated:
+        raise ValueError("options must contain at least one APT configuration option")
+    return "\n".join(lines) + "\n"
 
 
 def validate_apt_conf(module: Any, content: str) -> None:

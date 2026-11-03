@@ -123,6 +123,44 @@ def test_format_apt_conf_value_and_periodic_value() -> None:
         apt.format_periodic_value("daily", "periodic")
 
 
+def test_render_apt_conf_option_accepts_generic_names() -> None:
+    assert apt.render_apt_conf_option("Acquire::ForceIPv4", True) == 'Acquire::ForceIPv4 "true";'
+
+
+def test_render_apt_conf_options_scalars_and_lists() -> None:
+    rendered = apt.render_apt_conf_options(
+        {
+            "Acquire::http::Proxy": "http://proxy.example:3128",
+            "Acquire::ForceIPv4": True,
+            "Unattended-Upgrade::Origins-Pattern": [
+                "origin=Debian,codename=trixie",
+                "origin=Debian,codename=trixie-security",
+            ],
+        },
+        header="Managed by test",
+    )
+
+    assert rendered.startswith("// Managed by test\n\n")
+    assert 'Acquire::http::Proxy "http://proxy.example:3128";' in rendered
+    assert 'Acquire::ForceIPv4 "true";' in rendered
+    assert 'Unattended-Upgrade::Origins-Pattern:: "origin=Debian,codename=trixie";' in rendered
+    assert 'Unattended-Upgrade::Origins-Pattern:: "origin=Debian,codename=trixie-security";' in rendered
+
+
+def test_render_apt_conf_options_rejects_empty_input() -> None:
+    with pytest.raises(ValueError, match="at least one APT configuration option"):
+        apt.render_apt_conf_options({})
+    with pytest.raises(ValueError, match="at least one APT configuration option"):
+        apt.render_apt_conf_options({"Acquire::http::Proxy": []})
+
+
+def test_render_apt_conf_options_rejects_invalid_names_and_values() -> None:
+    with pytest.raises(ValueError, match="invalid APT configuration option name"):
+        apt.render_apt_conf_options({"Bad Name": "value"})
+    with pytest.raises(ValueError):
+        apt.render_apt_conf_options({"Acquire::http::Proxy": None})
+
+
 def test_data_checksum_and_armored_detection() -> None:
     assert apt.data_checksum(b"abc") == ("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
     assert apt.is_armored_key(b"-----BEGIN PGP PUBLIC KEY BLOCK-----\n")
