@@ -1,0 +1,8 @@
+---
+minor_changes:
+  - Documentation linting now passes
+    ``docs/docsite/antsibull-docs.cfg`` to antsibull-docs, which disables the
+    default ``~/antsibull.log`` file emitter while keeping warnings on stderr.
+  - The CI, docs, release and Dependabot workflows, the ``just`` recipes,
+    pre-commit hooks, and the editor/YAML formatter scaffolding are aligned
+    with the sibling ``certificate`` and ``network`` collections.
