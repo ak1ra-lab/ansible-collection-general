@@ -5,19 +5,21 @@ default:
 # Run all available recipes
 all: lint typecheck unit-test ansible-lint changelog-lint docs-lint docs-build
 
+# Python source paths ruff and mypy operate on (project-specific).
+lint_paths := "plugins/ tests/"
+
 # Sync development dependencies (may update uv.lock if pyproject.toml changed)
 sync *ARGS:
     uv sync {{ARGS}} --group dev
 
-# Lint and format collection Python plugins and tests
+# Lint and format collection Python code and tests
 lint:
-    uv run ruff check --fix plugins/ tests/
-    uv run ruff format plugins/ tests/
+    uv run ruff check --fix {{lint_paths}}
+    uv run ruff format {{lint_paths}}
 
-# Run static type checks with mypy
-# Resolving the collection-namespace imports requires a fresh install
+# Run static type checks with mypy (the collection must be installed first)
 typecheck: ansible-collection-install
-    uv run mypy plugins/ tests/
+    uv run mypy {{lint_paths}}
 
 # Show the tox-ansible environment matrix
 tox-list:
@@ -68,9 +70,9 @@ docs-clean:
 
 # Lint collection documentation with antsibull-docs
 docs-lint: ansible-collection-install docs-clean
-    ANSIBLE_HOME="$PWD/.ansible" uv run --group docs antsibull-docs lint-collection-docs --plugin-docs --validate-collection-refs self .
+    ANSIBLE_HOME="$PWD/.ansible" uv run --group docs antsibull-docs --config-file docs/docsite/antsibull-docs.cfg lint-collection-docs --plugin-docs --validate-collection-refs self .
 
-# Regenerate the role/plugin reference pages and build the Sphinx site into
+# Regenerate the role/filter reference pages and build the Sphinx site into
 # docs/docsite/_build/html
 docs-build: ansible-collection-install docs-clean
     ANSIBLE_HOME="$PWD/.ansible" ANSIBLE_COLLECTIONS_PATH="$PWD/.ansible/collections" uv run --group docs bash docs/docsite/build.sh
@@ -80,11 +82,11 @@ docs-serve: docs-build
     uv run --group docs python -m http.server 8000 -d docs/docsite/_build/html
 
 # Run every Molecule scenario. Scenarios are flat and each one owns its
-# containers; no MOLECULE_GLOB is used.
+# containers; controller-only scenarios create none.
 molecule-test:
     ANSIBLE_HOME="$PWD/.ansible" uv run molecule test --all
 
-# Run one Molecule scenario, e.g. `just molecule-test-one apt_repository_debian`
+# Run one Molecule scenario by name
 molecule-test-one scenario:
     ANSIBLE_HOME="$PWD/.ansible" uv run molecule test -s {{scenario}}
 
@@ -98,6 +100,6 @@ molecule-list:
 
 # Remove build artifacts
 clean:
-    rm -rf .ansible/ .molecule/ .tox/ .cache/ .ruff_cache/ dist/ site/ docs/docsite/_build/
-    find plugins/ -type f -name "*.pyc" -delete
-    find plugins/ -type d -name "__pycache__" -delete
+    rm -rf .ansible/ .molecule/ .tox/ .cache/ .pytest_cache/ .ruff_cache/ dist/ site/ docs/docsite/_build/
+    find . -type f -name "*.pyc" -not -path "./.venv/*" -delete
+    find . -type d -name "__pycache__" -not -path "./.venv/*" -delete

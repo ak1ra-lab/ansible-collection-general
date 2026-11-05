@@ -1,10 +1,10 @@
 ---
 # Build the Sphinx site and publish it to GitHub Pages.
 #
-# antsibull-docs reads the installed collection through ansible-doc, so the
-# workflow installs the collection under test into the project-local
-# collections path before generating the role/plugin reference pages. Role
-# argument specs and role READMEs therefore trigger a rebuild.
+# The docs plugin reads the collection through ansible-doc, so the workflow
+# installs the collection under test into the project-local collections path
+# before building. Role READMEs are included through Markdown snippets, which
+# is why changes under roles/**/README.md trigger a rebuild.
 name: Docs
 
 on:
@@ -40,8 +40,6 @@ jobs:
     name: Build
     runs-on: ubuntu-24.04
     timeout-minutes: 10
-    permissions:
-      contents: read
     steps:
       - name: Check out the repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -51,7 +49,7 @@ jobs:
         uses: astral-sh/setup-uv@18d369b23da25a81e9458561248e1aafff6a70fa # v10.3.1
       - name: Install docs dependencies
         run: uv sync --locked --no-dev --group docs
-      - name: Install the collection under test
+      - name: Install the collection and its dependencies
         run: |
           mkdir -p .ansible/collections
           uv run --no-sync ansible-galaxy collection install \
@@ -60,8 +58,9 @@ jobs:
         env:
           ANSIBLE_COLLECTIONS_PATH: ${{ github.workspace }}/.ansible/collections
         run: >-
-          uv run --no-sync antsibull-docs lint-collection-docs
-          --plugin-docs --validate-collection-refs self .
+          uv run --no-sync antsibull-docs
+          --config-file docs/docsite/antsibull-docs.cfg
+          lint-collection-docs --plugin-docs --validate-collection-refs self .
       - name: Build the Sphinx documentation site
         env:
           ANSIBLE_COLLECTIONS_PATH: ${{ github.workspace }}/.ansible/collections

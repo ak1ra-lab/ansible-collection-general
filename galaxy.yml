@@ -47,19 +47,19 @@ build_ignore:
   - .ruff_cache
   - .tox
   - .venv
+  - .yamlfmt.yml
   - AGENTS.md
   - ansible.cfg
+  - changelogs/.plugin-cache.yaml
+  - collections
   - config
   - dist
+  - docs/docsite/_build
   - importer_result.json
   - justfile
   - pyproject.toml
   - ruff.toml
   - site
-  - docs/docsite/_build
   - tests/output
   - uv.lock
-  - .yamlfmt.yml
-  - changelogs/.plugin-cache.yaml
   - "*.tar.gz"
-  - collections

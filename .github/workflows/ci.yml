@@ -8,7 +8,8 @@
 #
 # The Molecule job stays separate and deliberately does not use the full
 # Python x ansible-core matrix. It runs rootful Podman because systemd needs
-# the capabilities, and the runner additionally needs Go for go_build.
+# the capabilities. Add repository-specific setup steps below when a scenario
+# needs extra controller tooling (for example Go for go_build).
 name: CI
 
 on:
@@ -69,8 +70,9 @@ jobs:
         env:
           ANSIBLE_COLLECTIONS_PATH: ${{ github.workspace }}/.ansible/collections
         run: >-
-          uv run --no-sync antsibull-docs lint-collection-docs
-          --plugin-docs --validate-collection-refs self .
+          uv run --no-sync antsibull-docs
+          --config-file docs/docsite/antsibull-docs.cfg
+          lint-collection-docs --plugin-docs --validate-collection-refs self .
       - name: Build the Sphinx documentation site
         env:
           ANSIBLE_COLLECTIONS_PATH: ${{ github.workspace }}/.ansible/collections

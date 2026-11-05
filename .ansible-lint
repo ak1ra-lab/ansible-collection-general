@@ -5,16 +5,21 @@
 #   min → basic → moderate → safety → shared → production
 profile: production
 
-# Paths to exclude from linting.  Generated changelog metadata and
-# documentation tooling are not Ansible source.
+# Paths to exclude from linting. Generated changelog metadata, documentation
+# tooling, local state, controller-generated data, and consumer inventory are
+# not Ansible source.
 exclude_paths:
   - .git/
+  - .agents/
+  - .ansible/
+  - .molecule/
+  - .tox/
   - .venv/
-  # Generated changelog metadata is not Ansible source.
   - changelogs/
-  # Sphinx/antsibull-docs configuration is documentation tooling.
   - docs/
-  # An ansible-galaxy role requirements file, not a playbook.  Molecule's
+  - config/
+  - site/
+  # An ansible-galaxy role requirements file, not a playbook. Molecule's
   # dependency action reads it; the scenarios have no standalone role deps.
   - extensions/molecule/shared/roles-requirements.yml
 
@@ -22,9 +27,9 @@ exclude_paths:
 skip_list:
   - name[casing]
 
-# Do not add a `kinds:` mapping back.  The default kind detection already
+# Do not add a `kinds:` mapping back. The default kind detection already
 # covers every path in this repository, and remapping role `defaults/` or
 # `vars/` files to a custom kind silently disables
-# `var-naming[no-role-prefix]` for that role.  Remapping playbooks (e.g. the
+# `var-naming[no-role-prefix]` for that role. Remapping playbooks (e.g. the
 # Molecule scenarios) to the plain "yaml" kind also skips the rules that only
 # run for playbook files.
